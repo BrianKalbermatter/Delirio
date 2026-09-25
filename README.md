@@ -9,7 +9,15 @@ Co-op wave-based browser game for up to 10 players. Retro neon voxel look, third
 
 ## Getting started (fresh clone)
 
-Requirements: [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) (`emcc`), Node.js + npm, a C compiler.
+Requirements: [Emscripten](https://emscripten.org/docs/getting_started/downloads.html) (`emcc`), Node.js + npm, a C compiler, Go.
+
+On Arch, Debian/Ubuntu or Fedora (including WSL2) the installer sets up all of them plus the client npm packages. It only needs Go and git to start:
+
+```bash
+cd installer && go run .          # add -dry-run to only print the commands
+```
+
+Then build and run:
 
 ```bash
 # 1. Build the C lab (src/main.c via src/web.c) to WebAssembly
@@ -17,7 +25,7 @@ Requirements: [Emscripten](https://emscripten.org/docs/getting_started/downloads
 
 # 2. Run the browser client
 cd client
-npm install
+npm install   # already done if you ran the installer
 npm run dev
 ```
 
