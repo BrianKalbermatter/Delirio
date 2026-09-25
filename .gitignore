@@ -1,0 +1,14 @@
+server/build/
+client/node_modules/
+client/dist/
+*:Zone.Identifier
+
+# Emscripten build output
+client/src/infrastructure/wasm/generated/game.js
+client/src/infrastructure/wasm/generated/game.wasm
+
+# Native build output
+src/main
+
+# Local agent tooling
+.atl/
