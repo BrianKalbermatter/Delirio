@@ -1,1 +1,3 @@
-Three.js adapter: scene, third-person camera, glTF voxel models, low-res pixel post-fx and bloom.
+Canvas 2D rendering: the maze in 3/4 view (tall walls, gates), sprites and
+animations, camera, day/night light, the player glow, the cursor and the
+placeholder ability effects.

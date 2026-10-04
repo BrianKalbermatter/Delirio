@@ -1,1 +1,3 @@
-Game model on the client: match state, entities, interpolation. No Three.js, no DOM.
+Client-side model, no DOM and no rendering: facing and the smooth turn
+between directions, items, inventory, and the tile grid mirrored from the
+maze generated in C.
