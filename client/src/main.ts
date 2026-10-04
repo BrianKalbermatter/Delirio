@@ -73,13 +73,15 @@ const ctx = canvas.getContext("2d")!;
 let screenScale = 1; // CSS pixels per canvas pixel
 fitCanvas();
 
-// Every item sprite, loaded once from public/assets.
+// Every item sprite, loaded once from public/assets. Paths start at the base
+// the site is served from ("/" locally, "/Delirio/" on GitHub Pages).
+const BASE = import.meta.env.BASE_URL;
 const assetNames = ITEM_SPRITES;
 const [game, playerSheet, mazeTiles, ...assetSheets] = await Promise.all([
   loadGameWasm(),
-  loadSpriteSheet("/sprites/personaje_2"),
-  loadMazeTiles("/assets/maze_tiles"),
-  ...assetNames.map((name) => loadSpriteSheet(`/assets/${name}`)),
+  loadSpriteSheet(`${BASE}sprites/personaje_2`),
+  loadMazeTiles(`${BASE}assets/maze_tiles`),
+  ...assetNames.map((name) => loadSpriteSheet(`${BASE}assets/${name}`)),
 ]);
 const sheets = new Map<string, SpriteSheet>(assetNames.map((name, i) => [name, assetSheets[i]]));
 
@@ -308,6 +310,7 @@ function showCoreDebug(core: ReturnType<typeof coreState>): void {
   const sent = target ? `${target.x.toFixed(1)}, ${target.y.toFixed(1)}` : "-";
   const inC = game.targetInC();
   coreDebug.show([
+    ["fps", fps.toFixed(0)],
     ["mouse", mouse.held ? "held" : "-"],
     ["destino enviado", sent],
     ["destino en C", inC ? `${inC.x.toFixed(1)}, ${inC.y.toFixed(1)}` : "-"],
@@ -501,11 +504,22 @@ function isMapKey(e: KeyboardEvent): boolean {
   return e.code === "Backquote" || e.key === "`" || e.key === "Dead" || e.code === "KeyM";
 }
 
+// Frames per second, averaged over half a second (shown in the C core panel).
+let fps = 0;
+let fpsFrames = 0;
+let fpsSince = performance.now();
+
 let last = performance.now();
 function frame(now: number): void {
   // Cap the step so a background tab does not teleport the player.
   const dtMs = Math.min(now - last, 100);
   last = now;
+  fpsFrames++;
+  if (now - fpsSince >= 500) {
+    fps = (fpsFrames * 1000) / (now - fpsSince);
+    fpsFrames = 0;
+    fpsSince = now;
+  }
   if (mouse.locked) update(dtMs); // paused while the menu is open
   draw();
   requestAnimationFrame(frame);

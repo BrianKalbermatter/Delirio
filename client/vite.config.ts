@@ -58,5 +58,8 @@ function cCore(): Plugin {
 }
 
 export default defineConfig({
+  // Where the site is served from: "/" locally; the GitHub Pages build sets
+  // BASE_PATH=/Delirio/.
+  base: process.env.BASE_PATH ?? "/",
   plugins: [cCore()],
 });
