@@ -12,3 +12,6 @@ src/main
 
 # Local agent tooling
 .atl/
+
+# Local editor flags (machine-specific paths)
+src/compile_flags.txt

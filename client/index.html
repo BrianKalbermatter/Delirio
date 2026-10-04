@@ -5,11 +5,117 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Delirio</title>
     <style>
-      html, body { margin: 0; height: 100%; background: #000; }
-      canvas { display: block; image-rendering: pixelated; }
+      :root {
+        --bg: #0d0b12;
+        --panel: #16131d;
+        --line: #2c2735;
+        --text: #b9b3a6;
+        --muted: #6f6979;
+        --accent: #5fcde4;
+      }
+      html, body { margin: 0; height: 100%; background: var(--bg); color: var(--text); }
+      body {
+        display: flex;
+        font: 13px/1.4 ui-monospace, "Cascadia Mono", monospace;
+        overflow: hidden;
+      }
+      #game {
+        position: relative;
+        flex: 0 0 75%;
+        overflow: hidden;
+        background: #000;
+      }
+      .pause {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        place-items: center;
+        background: rgba(9, 7, 16, 0.78);
+      }
+      .pause[hidden] { display: none; }
+      .pause-box { text-align: center; }
+      .pause-title { margin: 0 0 24px; font-size: 32px; letter-spacing: 0.2em; color: #d8cfb8; }
+      .pause-resume {
+        padding: 12px 40px;
+        font: inherit;
+        font-size: 16px;
+        color: #0d0b12;
+        background: #d8cfb8;
+        border: 0;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .pause-resume:hover { background: #fff; }
+      .pause-help, .pause-options { margin: 16px 0 0; color: var(--muted); }
+      .pause-error { min-height: 1.4em; margin: 12px 0 0; color: #d95763; }
+      #game canvas { display: block; image-rendering: pixelated; }
+      .map-book {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        transform: translate(-50%, -50%);
+        image-rendering: pixelated;
+        box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+      }
+      .map-book[hidden] { display: none; }
+      .cursor {
+        position: fixed;
+        left: 0;
+        top: 0;
+        z-index: 1000;
+        pointer-events: none;
+        image-rendering: pixelated;
+      }
+      .cursor[hidden] { display: none; }
+      #panel {
+        flex: 1;
+        min-width: 0;
+        padding: 16px;
+        background: var(--panel);
+        border-left: 1px solid var(--line);
+        overflow-y: auto;
+      }
+      #panel h2 {
+        margin: 18px 0 8px;
+        font-size: 11px;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      #panel h2:first-child { margin-top: 0; }
+      .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }
+      .slot {
+        position: relative;
+        aspect-ratio: 1;
+        display: grid;
+        place-items: center;
+        padding: 0;
+        background: #0f0d14;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+        cursor: pointer;
+      }
+      .slot:hover, .slot.is-hover { border-color: var(--muted); }
+      .slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+      .slot canvas { width: 64%; image-rendering: pixelated; }
+      .slot .count { position: absolute; right: 4px; bottom: 2px; font-size: 11px; color: var(--text); }
+      .selected { min-height: 1.4em; color: var(--text); }
+      .log { margin: 0; padding-left: 18px; color: var(--muted); }
+      .log li:first-child { color: var(--text); }
+      .hint { margin-top: 24px; color: var(--muted); font-size: 11px; }
+      .abilities { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
+      .abilities li { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 8px; color: var(--text); }
+      .abilities kbd { padding: 1px 6px; font: inherit; font-size: 11px; text-align: center; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; }
+      .abilities .status { color: var(--muted); font-size: 12px; }
+      .abilities li.is-active .status { color: var(--accent); }
+      .abilities li.is-active kbd { color: var(--accent); border-color: var(--accent); }
+      .abilities li.is-cooling { color: var(--muted); }
+      .core { margin: 0; padding: 8px; background: #0f0d14; border: 1px solid var(--line); border-radius: 4px; color: var(--accent); white-space: pre; overflow-x: auto; }
     </style>
   </head>
   <body>
+    <main id="game"></main>
+    <aside id="panel"></aside>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
