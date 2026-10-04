@@ -28,6 +28,7 @@
       .pause {
         position: absolute;
         inset: 0;
+        z-index: 2; /* always above the map book */
         display: grid;
         place-items: center;
         background: rgba(9, 7, 16, 0.78);
@@ -51,13 +52,15 @@
       #game canvas { display: block; image-rendering: pixelated; }
       .map-book {
         position: absolute;
+        z-index: 1;
         left: 50%;
         top: 50%;
         transform: translate(-50%, -50%);
         image-rendering: pixelated;
         box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
       }
-      .map-book[hidden] { display: none; }
+      /* #game in the selector: it has to beat "#game canvas { display: block }" */
+      #game .map-book[hidden] { display: none; }
       .cursor {
         position: fixed;
         left: 0;
