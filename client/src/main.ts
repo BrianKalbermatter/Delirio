@@ -256,7 +256,7 @@ function pickUpItems(): void {
     if (Math.hypot(prop.x - player.x, prop.y - player.y) > PICKUP_RADIUS) return true;
     if (!inventory.add(prop.pickup)) return true; // full: leave it on the floor
     panel.log(`Picked up: ${prop.pickup.name}`);
-    if (prop.pickup.id === "map_book") panel.log("Press M to open it and draw the maze.");
+    if (prop.pickup.id === "map_book") panel.log("Press ` to open it and draw the maze.");
     return false;
   });
 }
@@ -472,7 +472,8 @@ function drawMedusaHud(): void {
 
 window.addEventListener("keydown", (e) => {
   if (e.code === "KeyT") game.reset();
-  if (e.code === "KeyM" && mouse.locked) {
+  if (isMapKey(e) && mouse.locked) {
+    e.preventDefault();
     if (inventory.has("map_book")) book.toggle();
     else panel.log("You have no map. Look for the book in the square.");
   }
@@ -493,6 +494,12 @@ window.addEventListener("keydown", (e) => {
   const digit = /^Digit([1-9])$/.exec(e.code);
   if (digit) inventory.select(Number(digit[1]) - 1);
 });
+
+// The map book opens with ` (and M). On Spanish keyboards ` is a dead key:
+// the browser reports it as "Dead" instead of "`", so that counts too.
+function isMapKey(e: KeyboardEvent): boolean {
+  return e.code === "Backquote" || e.key === "`" || e.key === "Dead" || e.code === "KeyM";
+}
 
 let last = performance.now();
 function frame(now: number): void {

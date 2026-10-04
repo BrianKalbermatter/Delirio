@@ -83,7 +83,7 @@ server/, gateway/, protocol/, installer/   multiplayer skeleton and setup (not u
 | A · Space · D | Support · parry · ultimate |
 | S | Roll |
 | Shift (hold) | Run |
-| M | Map book: left click draws, right click erases (pick it up in the square first) |
+| `` ` `` (or M) | Map book: left click draws, right click erases (pick it up in the square first) |
 | 1-9 or click a slot | Select inventory slot |
 | Esc | Release the mouse and open the menu |
 

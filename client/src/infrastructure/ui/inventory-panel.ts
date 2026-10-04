@@ -24,7 +24,7 @@ export class InventoryPanel {
       <div class="selected"></div>
       <h2>Log</h2>
       <ol class="log"></ol>
-      <p class="hint">Left click: move · M: map book (left draws, right erases) · 1-9 or click a slot: select · F: clock speed · G: test gates · Esc: menu</p>
+      <p class="hint">Left click: move · \`: map book (left draws, right erases) · 1-9 or click a slot: select · F: clock speed · G: test gates · Esc: menu</p>
     `;
     const slotsEl = root.querySelector<HTMLElement>(".slots")!;
     this.selectedEl = root.querySelector<HTMLElement>(".selected")!;
