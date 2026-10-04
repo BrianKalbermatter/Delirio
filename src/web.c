@@ -23,7 +23,12 @@ EMSCRIPTEN_KEEPALIVE void web_actualizar(float dt_ms) { juego_actualizar(dt_ms);
 EMSCRIPTEN_KEEPALIVE void web_usar(int h) { juego_usar_habilidad(h); }
 EMSCRIPTEN_KEEPALIVE void web_mantener(int h, int apretada) { juego_mantener_habilidad(h, apretada); }
 EMSCRIPTEN_KEEPALIVE int web_hab_cantidad(void) { return HAB_CANTIDAD; }
-EMSCRIPTEN_KEEPALIVE const char *web_hab_nombre(int h) { return juego_jugador_completo()->habilidades[h].nombre; }
+EMSCRIPTEN_KEEPALIVE const char *web_hab_nombre(int h) {
+  const Jugador *j = juego_jugador_completo();
+  // Antes de web_iniciar el jugador no tiene tabla todavia (NULL)
+  if (!j->habilidades || h < 0 || h >= HAB_CANTIDAD) return "?";
+  return j->habilidades[h].nombre;
+}
 EMSCRIPTEN_KEEPALIVE int web_hab_activa(int h) { return jugador_activa(juego_jugador_completo(), h); }
 EMSCRIPTEN_KEEPALIVE float web_hab_recarga(int h) { return jugador_recarga_restante(juego_jugador_completo(), h); }
 

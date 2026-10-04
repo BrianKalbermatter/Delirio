@@ -135,7 +135,13 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const abilityActive = num("web_hab_activa", 1);
   const abilityCooldown = num("web_hab_recarga", 1);
   const abilityName = mod.cwrap<(h: number) => string>("web_hab_nombre", "string", ["number"]);
-  const names = Array.from({ length: num("web_hab_cantidad", 0)() }, (_, h) => abilityName(h));
+  const abilityCount = num("web_hab_cantidad", 0)();
+  // Read once, after start(): before it the C player has no ability table yet.
+  let names: string[] = [];
+  const abilityNames = () => {
+    if (names.length === 0) names = Array.from({ length: abilityCount }, (_, h) => abilityName(h));
+    return names;
+  };
   const medusaLife = num("web_medusa_vida", 0);
   const medusaLifeMax = num("web_medusa_vida_max", 0);
   const reset = call("web_reset", 0);
@@ -180,7 +186,11 @@ export async function loadGameWasm(): Promise<GameWasm> {
     useAbility,
     holdAbility: (id, held) => hold(id, held ? 1 : 0),
     abilities: () =>
-      names.map((name, h) => ({ name, active: abilityActive(h) === 1, cooldownMs: abilityCooldown(h) })),
+      abilityNames().map((name, h) => ({
+        name,
+        active: abilityActive(h) === 1,
+        cooldownMs: abilityCooldown(h),
+      })),
     medusaLife,
     medusaLifeMax,
     reset,
