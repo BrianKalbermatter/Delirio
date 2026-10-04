@@ -1,0 +1,34 @@
+{
+  "frames": [
+    {
+      "filename": "libro 0",
+      "frame": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 18
+      },
+      "rotated": false,
+      "trimmed": false,
+      "spriteSourceSize": {
+        "x": 0,
+        "y": 0,
+        "w": 24,
+        "h": 18
+      },
+      "sourceSize": {
+        "w": 24,
+        "h": 18
+      },
+      "duration": 100
+    }
+  ],
+  "meta": {
+    "image": "libro.png",
+    "size": {
+      "w": 24,
+      "h": 18
+    },
+    "frameTags": []
+  }
+}

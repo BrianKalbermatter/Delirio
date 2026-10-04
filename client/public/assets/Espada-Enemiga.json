@@ -1,0 +1,25 @@
+{ "frames": [
+   {
+    "filename": "Espada-Enemiga.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 32, "h": 42 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 42 },
+    "sourceSize": { "w": 32, "h": 42 },
+    "duration": 100
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.6-x64",
+  "image": "Espada-Enemiga.png",
+  "format": "I8",
+  "size": { "w": 32, "h": 42 },
+  "scale": "1",
+  "frameTags": [
+  ],
+  "layers": [
+   { "name": "Layer 1", "opacity": 255, "blendMode": "normal" }
+  ]
+ }
+}
