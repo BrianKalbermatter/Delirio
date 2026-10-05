@@ -1,6 +1,6 @@
 """Procedural tileset for the maze: dirt floor, stone paving, mossy wall tops
-and tall wall faces. Dark, desaturated palette so the black, pink and cyan
-player always stands out.
+and tall wall faces. Saturated mid-value palette (warm earth, blue-violet
+stone, living greens) so the black, pink and cyan player always stands out.
 
 Usage: python3 maze_tiles.py <out_dir>
 Writes maze_tiles.png and maze_tiles.json (frames by name, Aseprite-like).
@@ -15,26 +15,28 @@ from PIL import Image
 T = 32  # tile size
 WALL_H = 96  # wall face height: about twice the player's height
 
-# Palette (sampled and adjusted from the reference).
-DIRT = [(66, 61, 51), (78, 72, 60), (89, 83, 69), (101, 95, 79)]
-DIRT_SPECK = (52, 48, 41)
-PEBBLE = [(58, 60, 66), (104, 106, 110)]
-GRASS = [(96, 110, 52), (138, 150, 70), (176, 180, 92)]
+# Palette: Endesga-32-style ramps. Warm earth, blue-violet stone and living
+# greens, saturated but kept in the mid values, so the black, pink and cyan
+# player still owns the brightest and most saturated pixels on screen.
+DIRT = [(104, 66, 50), (132, 86, 60), (156, 104, 70), (180, 124, 82)]
+DIRT_SPECK = (78, 48, 40)
+PEBBLE = [(90, 105, 136), (192, 203, 220)]
+GRASS = [(38, 92, 66), (62, 137, 72), (99, 199, 77)]
 
-SLAB = [(44, 46, 60), (57, 60, 76), (70, 74, 92), (86, 92, 112)]
-SLAB_GAP = (34, 32, 40)
-SLAB_MOSS = (80, 104, 82)
+SLAB = [(38, 43, 68), (58, 68, 102), (78, 92, 128), (104, 122, 158)]
+SLAB_GAP = (24, 20, 37)
+SLAB_MOSS = (62, 137, 72)
 
-CAP = [(44, 52, 42), (90, 102, 78), (118, 132, 102), (146, 160, 126), (170, 182, 146)]
-CAP_GAP = (30, 34, 30)
+CAP = [(25, 60, 62), (38, 92, 66), (58, 126, 70), (84, 168, 74), (122, 196, 94)]
+CAP_GAP = (24, 20, 37)
 
-FACE = [(24, 30, 27), (34, 43, 36), (46, 58, 46), (62, 76, 58), (78, 94, 70)]
+FACE = [(20, 24, 40), (25, 48, 56), (32, 70, 64), (44, 96, 72), (60, 124, 80)]
 
 # Gates of the central square: iron bars over darkness, wooden top beam.
-IRON = [(28, 30, 36), (52, 56, 66), (84, 90, 104), (120, 126, 140)]
-GATE_DARK = (10, 9, 14)
-WOOD = [(46, 32, 24), (66, 46, 32), (88, 62, 42), (110, 80, 54)]
-FACE_MOSS = [(78, 98, 58), (104, 124, 72)]
+IRON = [(38, 43, 68), (58, 68, 102), (90, 105, 136), (139, 155, 180)]
+GATE_DARK = (24, 20, 37)
+WOOD = [(62, 39, 49), (115, 62, 57), (184, 111, 80), (228, 166, 114)]
+FACE_MOSS = [(62, 137, 72), (99, 199, 77)]
 
 
 def put(img, x, y, color, wrap=True):

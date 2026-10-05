@@ -9,8 +9,8 @@ type Rgb = [number, number, number];
 const LEAN = 25; // px the light shifts towards the facing direction
 
 // Darkness over the screen at night and by day.
-const NIGHT = { color: [9, 7, 22] as Rgb, alpha: 0.85 };
-const DAY = { color: [20, 16, 12] as Rgb, alpha: 0.12 };
+const NIGHT = { color: [10, 10, 38] as Rgb, alpha: 0.85 }; // deep blue, not grey
+const DAY = { color: [20, 16, 12] as Rgb, alpha: 0.04 }; // barely there: keep the colors alive
 // Tint at dawn and dusk (strongest halfway through the change).
 const TWILIGHT: Rgb = [110, 50, 18];
 const TWILIGHT_ALPHA = 0.45;
