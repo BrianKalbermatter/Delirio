@@ -21,8 +21,9 @@ const TURN_STEP_MS = 60; // time shown on each intermediate direction
 // slower, so the turn reads clearly. Small steering keeps the walk cycle.
 const PIVOT_MIN_STEPS = 3;
 const PIVOT_STEP_MS = 85;
-// Standing still, the character looks at the cursor unless it is this close to
-// the body, where the angle jumps around with every pixel.
+// The character looks at the cursor, moving or not, so it can walk one way and
+// aim another. Ignored this close to the body, where the angle jumps around with
+// every pixel.
 const LOOK_DEAD_ZONE = 16; // px
 
 // Roll, in three phases that together last HAB_RODAR in src/mecanicas/jugador.c.
@@ -85,15 +86,15 @@ export class Character {
     return ROLL_PHASES[ROLL_PHASES.length - 1];
   }
 
-  // `lookAt` is a world point (the cursor) to face while standing still, measured
-  // from `lookFromY` (the body center, not the feet). Moving, it faces where it walks.
+  // `lookAt` is a world point (the cursor) to face, measured from `lookFromY`
+  // (the body center, not the feet). Without it, it faces where it walks.
   sync(core: CoreState, dtMs: number, lookAt?: { x: number; y: number }, lookFromY = core.y): void {
     this.x = core.x;
     this.y = core.y;
     this.motion = MOTION_BY_STATE[core.state] ?? "idle";
     if (this.syncRoll(core, dtMs)) return;
     let target: Direction | null = null;
-    if (this.motion === "idle" && lookAt) {
+    if (lookAt) {
       const dx = lookAt.x - core.x;
       const dy = lookAt.y - lookFromY;
       if (Math.hypot(dx, dy) > LOOK_DEAD_ZONE) target = directionFromVector(dx, dy);
