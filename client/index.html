@@ -78,6 +78,25 @@
         border-left: 1px solid var(--line);
         overflow-y: auto;
       }
+      .tabs { display: flex; gap: 4px; margin-bottom: 16px; border-bottom: 1px solid var(--line); }
+      .tab {
+        flex: 1;
+        padding: 6px 4px;
+        font: inherit;
+        font-size: 11px;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        color: var(--muted);
+        background: none;
+        border: 1px solid transparent;
+        border-bottom: none;
+        border-radius: 4px 4px 0 0;
+        margin-bottom: -1px;
+        cursor: pointer;
+      }
+      .tab:hover, .tab.is-hover { color: var(--text); }
+      .tab.is-selected { color: var(--accent); background: var(--panel); border-color: var(--line); }
+      .tab-page[hidden] { display: none; }
       #panel h2 {
         margin: 18px 0 8px;
         font-size: 11px;
@@ -85,7 +104,7 @@
         text-transform: uppercase;
         color: var(--muted);
       }
-      #panel h2:first-child { margin-top: 0; }
+      #panel h2:first-child, .tab-page > h2:first-child { margin-top: 0; }
       .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }
       .slot {
         position: relative;

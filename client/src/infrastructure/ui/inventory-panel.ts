@@ -1,15 +1,13 @@
-// Side panel, always open: inventory grid, the selected item and a log of what
-// just happened. Plain DOM next to the game canvas.
+// Inventory tab of the side panel: slot grid and the selected item.
+// Plain DOM next to the game canvas.
 import type { Inventory } from "../../domain/inventory";
 import type { SpriteSheet } from "../render/sprite-sheet";
 
 const ICON_SIZE = 32;
-const LOG_LINES = 8;
 
 export class InventoryPanel {
   private readonly slotEls: HTMLButtonElement[] = [];
   private readonly selectedEl: HTMLElement;
-  private readonly logEl: HTMLOListElement;
   private renderedVersion = -1;
 
   constructor(
@@ -22,13 +20,9 @@ export class InventoryPanel {
       <div class="slots"></div>
       <h2>Selected</h2>
       <div class="selected"></div>
-      <h2>Log</h2>
-      <ol class="log"></ol>
-      <p class="hint">Left click: move · \`: map book (left draws, right erases) · 1-9 or click a slot: select · F: clock speed · G: test gates · Esc: menu</p>
     `;
     const slotsEl = root.querySelector<HTMLElement>(".slots")!;
     this.selectedEl = root.querySelector<HTMLElement>(".selected")!;
-    this.logEl = root.querySelector<HTMLOListElement>(".log")!;
 
     inventory.slots.forEach((_, i) => {
       const button = document.createElement("button");
@@ -39,13 +33,6 @@ export class InventoryPanel {
       slotsEl.appendChild(button);
       this.slotEls.push(button);
     });
-  }
-
-  log(message: string): void {
-    const li = document.createElement("li");
-    li.textContent = message;
-    this.logEl.prepend(li);
-    while (this.logEl.children.length > LOG_LINES) this.logEl.lastElementChild!.remove();
   }
 
   // Called every frame; only touches the DOM when the inventory changed.

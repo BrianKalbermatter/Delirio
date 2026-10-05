@@ -35,6 +35,8 @@ import {
 import { AbilityPanel } from "./infrastructure/ui/ability-panel";
 import { CoreDebug } from "./infrastructure/ui/core-debug";
 import { InventoryPanel } from "./infrastructure/ui/inventory-panel";
+import { GameLog } from "./infrastructure/ui/game-log";
+import { SideTabs } from "./infrastructure/ui/side-tabs";
 import { MapBook } from "./infrastructure/ui/map-book";
 import { PauseMenu } from "./infrastructure/ui/pause-menu";
 import { ABILITY, loadGameWasm, STATE } from "./infrastructure/wasm/game-wasm";
@@ -145,11 +147,22 @@ function fitCanvas(): void {
 }
 
 const inventory = new Inventory(INVENTORY_SIZE);
-const panel = new InventoryPanel(panelEl, inventory, sheets);
-const abilityPanel = new AbilityPanel(panelEl, ABILITY_KEY_LABEL);
+const tabs = new SideTabs(
+  panelEl,
+  [
+    { id: "technical", label: "Technical" },
+    { id: "inventory", label: "Inventory" },
+    { id: "skills", label: "Skills" },
+  ],
+  "technical",
+);
+const coreDebug = new CoreDebug(tabs.page("technical"));
+const gameLog = new GameLog(tabs.page("technical"));
+showControlsHint(tabs.page("technical"));
+const panel = new InventoryPanel(tabs.page("inventory"), inventory, sheets);
+const abilityPanel = new AbilityPanel(tabs.page("skills"), ABILITY_KEY_LABEL);
 const abilityEffects = new AbilityEffects();
-const coreDebug = new CoreDebug(panelEl);
-panel.log("You wake up at the base.");
+gameLog.log("You wake up at the base.");
 
 // Mouse locked in the game; whenever it is released (Esc), the game pauses
 // and the menu shows.
@@ -206,9 +219,9 @@ function update(dtMs: number): void {
 
   // Gates: they close little by little at the end of the afternoon.
   const opening = game.maze.gateOpening();
-  if (gateOpening === 1 && opening < 1) panel.log("The gates are closing!");
-  if (gateOpening > 0 && opening === 0) panel.log("The gates are closed.");
-  if (gateOpening === 0 && opening > 0) panel.log("The gates open.");
+  if (gateOpening === 1 && opening < 1) gameLog.log("The gates are closing!");
+  if (gateOpening > 0 && opening === 0) gameLog.log("The gates are closed.");
+  if (gateOpening === 0 && opening > 0) gameLog.log("The gates open.");
   gateOpening = opening;
 
   // Death: caught in the middle of a closing gate
@@ -217,7 +230,7 @@ function update(dtMs: number): void {
     seenDeaths = stats.deaths;
     deathBannerMs = DEATH_BANNER_MS;
     target = null;
-    panel.log(`Crushed by the gate. Delirium ${stats.delirium}.`);
+    gameLog.log(`Crushed by the gate. Delirium ${stats.delirium}.`);
   }
   deathBannerMs = Math.max(0, deathBannerMs - dtMs);
 
@@ -225,11 +238,11 @@ function update(dtMs: number): void {
   if (expansions > seenExpansions) {
     seenExpansions = expansions;
     growthBannerMs = GROWTH_BANNER_MS;
-    panel.log("The maze grows.");
+    gameLog.log("The maze grows.");
   }
   growthBannerMs = Math.max(0, growthBannerMs - dtMs);
   const medusaAlive = game.medusaLife() > 0;
-  if (medusaWasAlive && !medusaAlive) panel.log("The medusa is dead.");
+  if (medusaWasAlive && !medusaAlive) gameLog.log("The medusa is dead.");
   medusaWasAlive = medusaAlive;
   const core = coreState();
   const lookAt = mouse.overGame() && !book.isOpen ? cursorInWorld() : undefined;
@@ -241,7 +254,7 @@ function update(dtMs: number): void {
   showCoreDebug(core);
   const abilities = game.abilities();
   abilityPanel.show(abilities);
-  for (const started of abilityEffects.update(abilities, dtMs)) panel.log(started.name);
+  for (const started of abilityEffects.update(abilities, dtMs)) gameLog.log(started.name);
   pickUpItems();
 
   playerAnimator.play(player.animationTag);
@@ -258,8 +271,8 @@ function pickUpItems(): void {
     if (!prop.pickup) return true;
     if (Math.hypot(prop.x - player.x, prop.y - player.y) > PICKUP_RADIUS) return true;
     if (!inventory.add(prop.pickup)) return true; // full: leave it on the floor
-    panel.log(`Picked up: ${prop.pickup.name}`);
-    if (prop.pickup.id === "map_book") panel.log("Press ` to open it and draw the maze.");
+    gameLog.log(`Picked up: ${prop.pickup.name}`);
+    if (prop.pickup.id === "map_book") gameLog.log("Press ` to open it and draw the maze.");
     return false;
   });
 }
@@ -295,6 +308,14 @@ function draw(): void {
     book.isOpen && mouse.isOver(book.element) ? (mouse.rightHeld ? "eraser" : "pencil") : "arrow",
   );
   cursor.update(mouse.locked, mouse.x, mouse.y);
+}
+
+function showControlsHint(root: HTMLElement): void {
+  const hint = document.createElement("p");
+  hint.className = "hint";
+  hint.textContent =
+    "Left click: move · `: map book (left draws, right erases) · 1-9 or click a slot: select · F: clock speed · G: test gates · Esc: menu";
+  root.appendChild(hint);
 }
 
 // The world point under the virtual cursor.
@@ -479,7 +500,7 @@ window.addEventListener("keydown", (e) => {
   if (isMapKey(e) && mouse.locked) {
     e.preventDefault();
     if (inventory.has("map_book")) book.toggle();
-    else panel.log("You have no map. Look for the book in the square.");
+    else gameLog.log("You have no map. Look for the book in the square.");
   }
   if (e.code === "KeyG") {
     game.testGates();
@@ -488,12 +509,12 @@ window.addEventListener("keydown", (e) => {
     player.sync(coreState(), 0);
     camera.x = player.x; // jump there instead of sliding across the square
     camera.y = playerCenterY();
-    panel.log("Test: the gates are about to close.");
+    gameLog.log("Test: the gates are about to close.");
   }
   if (e.code === "KeyF") {
     timeSpeed = TIME_SPEEDS[(TIME_SPEEDS.indexOf(timeSpeed) + 1) % TIME_SPEEDS.length];
     game.setTimeSpeed(timeSpeed);
-    panel.log(`Clock speed x${timeSpeed}`);
+    gameLog.log(`Clock speed x${timeSpeed}`);
   }
   const digit = /^Digit([1-9])$/.exec(e.code);
   if (digit) inventory.select(Number(digit[1]) - 1);
