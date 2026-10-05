@@ -6,6 +6,7 @@ export class Animator {
   private tag = "";
   private frameIndex = 0;
   private frameClockMs = 0;
+  private loop = true;
   // Time since the current motion started (walk, idle...), not reset when
   // only the direction changes. Effects use it to stay in step with the loop.
   motionTimeMs = 0;
@@ -16,7 +17,9 @@ export class Animator {
   // walk_down_right) the cycle keeps its phase, so turning while walking does
   // not restart the steps. A new motion (idle -> walk, roll_start -> roll)
   // starts from frame 0.
-  play(tag: string): void {
+  // `loop` false plays it once and stays on the last frame (death).
+  play(tag: string, loop = true): void {
+    this.loop = loop;
     if (tag === this.tag) return;
     if (!this.sheet.animations.has(tag)) {
       console.warn(`Missing animation tag: ${tag}`);
@@ -41,6 +44,11 @@ export class Animator {
     this.frameClockMs += dtMs;
     this.motionTimeMs += dtMs;
     while (this.frameClockMs >= frames[this.frameIndex].durationMs) {
+      const last = reverse ? this.frameIndex === 0 : this.frameIndex === frames.length - 1;
+      if (!this.loop && last) {
+        this.frameClockMs = 0;
+        break;
+      }
       this.frameClockMs -= frames[this.frameIndex].durationMs;
       this.frameIndex = (this.frameIndex + step) % frames.length;
     }

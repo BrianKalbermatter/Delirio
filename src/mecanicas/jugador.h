@@ -63,6 +63,8 @@ typedef struct jugador {
   int hay_destino;
   int muertes;
   int delirio;       // sube +1 con cada muerte (concept/Mecanicas.md)
+  float muerto_ms;   // > 0 mientras esta muerto: cuenta hasta reaparecer
+  Direccion reaparicion; // donde reaparece al terminar de morir
 } Jugador;
 
 // Tabla del personaje principal de prueba. Cada personaje nuevo define la suya.
@@ -70,6 +72,9 @@ extern const HabilidadDef HABILIDADES_BASE[HAB_CANTIDAD];
 
 #define MULTIPLICADOR_CORRER 1.6f
 #define VELOCIDAD_RODAR 230.0f // pixeles por segundo
+// Lo que dura la animacion de morir (death: 33 frames de 80 ms). Mientras
+// tanto el jugador queda MUERTO en el lugar; despues reaparece en la base.
+#define DURACION_MUERTE_MS 2640.0f
 
 void jugador_iniciar(Jugador *j, const char *nombre, const HabilidadDef *habilidades, Entity base);
 
@@ -87,8 +92,12 @@ float jugador_recarga_restante(const Jugador *j, HabilidadId h);
 // 1 si la habilidad es un ataque (para que main.c le pegue al enemigo).
 int habilidad_es_ataque(HabilidadId h);
 
-// Muere: suma delirio y reaparece en `base` con la vida llena.
+// Muere, por la causa que sea (puerta, enemigo...): suma delirio y queda
+// MUERTO DURACION_MUERTE_MS; despues reaparece en `base` con la vida llena.
+// Si ya estaba muerto no hace nada.
 void jugador_morir(Jugador *j, Direccion base);
+
+int jugador_muerto(const Jugador *j);
 
 // Un paso de juego: tiempos de las habilidades y movimiento (chocando con
 // los muros de `lab`).

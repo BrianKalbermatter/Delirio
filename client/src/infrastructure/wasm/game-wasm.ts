@@ -5,7 +5,7 @@
 import createModule from "./generated/game.js";
 
 // Same order as `enum estados` in src/entidad.h.
-export const STATE = ["QUIETO", "CAMINANDO", "ATACANDO", "CORRIENDO"] as const;
+export const STATE = ["QUIETO", "CAMINANDO", "ATACANDO", "CORRIENDO", "MUERTO"] as const;
 
 // Same order as `enum fase` in src/mecanicas/mecanica.h.
 export const PHASE = ["DIA", "TARDE", "NOCHE"] as const;

@@ -65,7 +65,7 @@ typedef struct movilidad {
 } Direccion;
 
 typedef enum estados {
-  QUIETO, CAMINANDO, ATACANDO, CORRIENDO
+  QUIETO, CAMINANDO, ATACANDO, CORRIENDO, MUERTO
 } Estado;
 
  // TODO del personaje

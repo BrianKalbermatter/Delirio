@@ -3,7 +3,7 @@
 // and the smooth turn between directions.
 import { type Direction, directionFromVector, stepToward, turnDistance, vectorOf } from "./facing";
 
-export type Motion = "idle" | "walk" | "run";
+export type Motion = "idle" | "walk" | "run" | "death";
 type Side = "left" | "right";
 
 // From the C state (enum estados in src/entidad.h) to an animation. States
@@ -13,6 +13,7 @@ const MOTION_BY_STATE: Record<string, Motion> = {
   CAMINANDO: "walk",
   ATACANDO: "idle",
   CORRIENDO: "run",
+  MUERTO: "death",
 };
 
 const TURN_STEP_MS = 60; // time shown on each intermediate direction
@@ -73,9 +74,14 @@ export class Character {
   // Animation tag for the current state, e.g. "walk_down_left". During a pivot
   // the idle pose is shown so the legs do not keep striding mid-rotation.
   get animationTag(): string {
+    if (this.isDead) return "death"; // one animation, front view, whatever killed it
     if (this.rollMs !== null) return `${this.rollPhase().tag}_${this.side}`;
     const motion = this.pivoting ? "idle" : this.motion;
     return `${motion}_${this.facing}`;
+  }
+
+  get isDead(): boolean {
+    return this.motion === "death";
   }
 
   // Playback rate for the animator: each roll phase is squeezed into its share.
@@ -111,6 +117,13 @@ export class Character {
     this.motion = MOTION_BY_STATE[core.state] ?? "idle";
     this.moveX = core.dirX;
     this.moveY = core.dirY;
+    if (this.isDead) {
+      // Comes back facing the camera, with no turn or roll half done.
+      this.facing = this.targetFacing = "front";
+      this.pivoting = false;
+      this.rollMs = null;
+      return;
+    }
     if (this.syncRoll(core, dtMs)) return;
     let target: Direction | null = null;
     if (lookAt) {

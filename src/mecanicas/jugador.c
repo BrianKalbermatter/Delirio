@@ -29,26 +29,40 @@ void jugador_iniciar(Jugador *j, const char *nombre, const HabilidadDef *habilid
   j->hay_destino = 0;
   j->muertes = 0;
   j->delirio = 0;
+  j->muerto_ms = 0;
 }
 
 void jugador_morir(Jugador *j, Direccion base){
+  if (jugador_muerto(j)) return;
   j->muertes++;
   j->delirio++;
-  j->entidad.vida = j->entidad.vidaMAX;
-  j->entidad.posicion = base;
-  j->entidad.estados = QUIETO;
+  j->muerto_ms = DURACION_MUERTE_MS;
+  j->reaparicion = base;
+  j->entidad.estados = MUERTO;
   j->hay_destino = 0;
   for (int h = 0; h < HAB_CANTIDAD; h++) j->estado[h] = (HabilidadEstado){0};
   printf("%s murio (muertes %d, delirio %d)\n", j->nombre, j->muertes, j->delirio);
 }
 
+int jugador_muerto(const Jugador *j){
+  return j->muerto_ms > 0;
+}
+
+static void reaparecer(Jugador *j){
+  j->entidad.vida = j->entidad.vidaMAX;
+  j->entidad.posicion = j->reaparicion;
+  j->entidad.estados = QUIETO;
+  printf("%s reaparece en la base\n", j->nombre);
+}
+
 void jugador_ir_a(Jugador *j, Direccion destino){
+  if (jugador_muerto(j)) return;
   j->destino = destino;
   j->hay_destino = 1;
 }
 
 int jugador_usar(Jugador *j, HabilidadId h){
-  if ((int)h < 0 || h >= HAB_CANTIDAD) return 0;
+  if ((int)h < 0 || h >= HAB_CANTIDAD || jugador_muerto(j)) return 0;
   const HabilidadDef *def = &j->habilidades[h];
   HabilidadEstado *est = &j->estado[h];
   if (def->tipo != HAB_INSTANTANEA || est->recarga_ms > 0) return 0;
@@ -86,6 +100,13 @@ static void descontar(float *ms, float dt_ms){
 }
 
 void jugador_actualizar(Jugador *j, const Laberinto *lab, float dt_ms){
+  // 0. Muerto: se queda donde cayo hasta que termina la animacion
+  if (jugador_muerto(j)){
+    descontar(&j->muerto_ms, dt_ms);
+    if (!jugador_muerto(j)) reaparecer(j);
+    return;
+  }
+
   // 1. Tiempos de las habilidades
   for (int h = 0; h < HAB_CANTIDAD; h++){
     descontar(&j->estado[h].recarga_ms, dt_ms);

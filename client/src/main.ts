@@ -230,13 +230,14 @@ function update(dtMs: number): void {
   if (gateOpening === 0 && opening > 0) gameLog.log("The gates open.");
   gateOpening = opening;
 
-  // Death: caught in the middle of a closing gate
+  // Death, whatever the cause (a closing gate, an enemy...): the C core keeps
+  // the player dead while the death animation plays, then respawns it.
   const stats = game.playerStats();
   if (stats.deaths > seenDeaths) {
     seenDeaths = stats.deaths;
     deathBannerMs = DEATH_BANNER_MS;
     target = null;
-    gameLog.log(`Crushed by the gate. Delirium ${stats.delirium}.`);
+    gameLog.log(`You died. Delirium ${stats.delirium}.`);
   }
   deathBannerMs = Math.max(0, deathBannerMs - dtMs);
 
@@ -252,7 +253,12 @@ function update(dtMs: number): void {
   medusaWasAlive = medusaAlive;
   const core = coreState();
   const lookAt = mouse.overGame() && !book.isOpen ? cursorInWorld() : undefined;
+  const wasDead = player.isDead;
   player.sync(core, dtMs, lookAt, core.y - PLAYER_BODY_HEIGHT / 2);
+  if (wasDead && !player.isDead) {
+    camera.x = player.x; // respawned at the base: jump there instead of sliding
+    camera.y = playerCenterY();
+  }
   if (target && Math.hypot(target.x - player.x, target.y - player.y) <= TARGET_REACHED) {
     target = null;
   }
@@ -263,7 +269,7 @@ function update(dtMs: number): void {
   for (const started of abilityEffects.update(abilities, dtMs)) gameLog.log(started.name);
   pickUpItems();
 
-  playerAnimator.play(player.animationTag);
+  playerAnimator.play(player.animationTag, !player.isDead);
   playerAnimator.update(dtMs, player.animationSpeed, player.animationReversed);
   for (const view of propViews) view.animator?.update(dtMs);
 
@@ -486,7 +492,7 @@ function drawTimeHud(): void {
     ctx.globalAlpha = Math.min(1, deathBannerMs / 600);
     ctx.font = "bold 18px monospace";
     ctx.fillStyle = "#d95763";
-    ctx.fillText("CRUSHED BY THE GATE", cx, Math.round(canvas.height / 2) - 40);
+    ctx.fillText("YOU DIED", cx, Math.round(canvas.height / 2) - 40);
   }
   ctx.restore();
 }
