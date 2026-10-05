@@ -42,6 +42,12 @@ export function stepToward(current: Direction, target: Direction): Direction {
   return DIRECTIONS[(from + step + RING) % RING];
 }
 
+// Number of steps `stepToward` needs to go from `current` to `target` (0..4).
+export function turnDistance(current: Direction, target: Direction): number {
+  const clockwise = (DIRECTIONS.indexOf(target) - DIRECTIONS.indexOf(current) + RING) % RING;
+  return Math.min(clockwise, RING - clockwise);
+}
+
 // Unit vector pointing where `direction` faces (screen coordinates, +y is down).
 export function vectorOf(direction: Direction): [number, number] {
   const angle = DIRECTIONS.indexOf(direction) * (Math.PI / 4);

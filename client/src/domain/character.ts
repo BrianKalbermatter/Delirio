@@ -1,7 +1,7 @@
 // The player as the client shows it. Position, direction and state come from
 // the C core every frame; this only adds presentation: which animation to play
 // and the smooth turn between directions.
-import { type Direction, directionFromVector, stepToward } from "./facing";
+import { type Direction, directionFromVector, stepToward, turnDistance } from "./facing";
 
 export type Motion = "idle" | "walk" | "run";
 
@@ -15,6 +15,11 @@ const MOTION_BY_STATE: Record<string, Motion> = {
 };
 
 const TURN_STEP_MS = 60; // time shown on each intermediate direction
+// Sharp turns (135° or more, e.g. left -> right) become a pivot: the character
+// stops its stride and rotates in place through the intermediate directions,
+// slower, so the turn reads clearly. Small steering keeps the walk cycle.
+const PIVOT_MIN_STEPS = 3;
+const PIVOT_STEP_MS = 85;
 
 export interface CoreState {
   x: number;
@@ -31,14 +36,17 @@ export class Character {
   facing: Direction = "front";
   private targetFacing: Direction = "front";
   private turnClockMs = 0;
+  private pivoting = false;
 
   get isTurning(): boolean {
     return this.facing !== this.targetFacing;
   }
 
-  // Animation tag for the current state, e.g. "walk_down_left".
+  // Animation tag for the current state, e.g. "walk_down_left". During a pivot
+  // the idle pose is shown so the legs do not keep striding mid-rotation.
   get animationTag(): string {
-    return `${this.motion}_${this.facing}`;
+    const motion = this.pivoting ? "idle" : this.motion;
+    return `${motion}_${this.facing}`;
   }
 
   sync(core: CoreState, dtMs: number): void {
@@ -47,7 +55,11 @@ export class Character {
     this.motion = MOTION_BY_STATE[core.state] ?? "idle";
     // Keep the last facing when there is no direction (standing still).
     if (core.dirX !== 0 || core.dirY !== 0) {
-      this.targetFacing = directionFromVector(core.dirX, core.dirY);
+      const target = directionFromVector(core.dirX, core.dirY);
+      if (target !== this.targetFacing) {
+        this.targetFacing = target;
+        this.pivoting ||= turnDistance(this.facing, target) >= PIVOT_MIN_STEPS;
+      }
     }
     this.advanceTurn(dtMs);
   }
@@ -55,12 +67,15 @@ export class Character {
   private advanceTurn(dtMs: number): void {
     if (!this.isTurning) {
       this.turnClockMs = 0;
+      this.pivoting = false;
       return;
     }
+    const stepMs = this.pivoting ? PIVOT_STEP_MS : TURN_STEP_MS;
     this.turnClockMs += dtMs;
-    while (this.isTurning && this.turnClockMs >= TURN_STEP_MS) {
-      this.turnClockMs -= TURN_STEP_MS;
+    while (this.isTurning && this.turnClockMs >= stepMs) {
+      this.turnClockMs -= stepMs;
       this.facing = stepToward(this.facing, this.targetFacing);
     }
+    if (!this.isTurning) this.pivoting = false;
   }
 }
