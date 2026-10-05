@@ -79,7 +79,7 @@ const BASE = import.meta.env.BASE_URL;
 const assetNames = ITEM_SPRITES;
 const [game, playerSheet, mazeTiles, ...assetSheets] = await Promise.all([
   loadGameWasm(),
-  loadSpriteSheet(`${BASE}sprites/personaje_2`),
+  loadSpriteSheet(`${BASE}sprites/personaje_2`, { pivotOnBody: true }),
   loadMazeTiles(`${BASE}assets/maze_tiles`),
   ...assetNames.map((name) => loadSpriteSheet(`${BASE}assets/${name}`)),
 ]);
@@ -360,7 +360,7 @@ function drawPlayerGlow(): void {
   const phase = (playerAnimator.motionTimeMs % BREATH_MS) / BREATH_MS;
   const breath = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2); // 0 -> 1 -> 0
   // Same spot drawFrame uses, through the same rounded camera offset.
-  const left = Math.round(player.x - frame.w / 2) + Math.round(canvas.width / 2 - camera.x);
+  const left = Math.round(player.x - frame.anchorX) + Math.round(canvas.width / 2 - camera.x);
   const top = Math.round(player.y + PLAYER_FEET_PADDING - frame.h) + Math.round(canvas.height / 2 - camera.y);
   playerGlow.draw(ctx, frame, left, top, breath);
 }
