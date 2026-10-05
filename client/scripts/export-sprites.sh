@@ -9,7 +9,7 @@ OUT_DIR="$(cd "$(dirname "$0")/.." && pwd)/public/sprites"
 
 # name -> source path relative to SRC_DIR
 declare -A SPRITES=(
-  [personaje_2]="Personaje_2/Personaje_2_Anim.aseprite"
+  [personaje_2]="PersonajePrincipales/Personaje_2_Anim.aseprite"
 )
 
 mkdir -p "$OUT_DIR"

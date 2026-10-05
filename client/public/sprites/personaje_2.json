@@ -2068,6 +2068,303 @@
     "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
     "sourceSize": { "w": 64, "h": 96 },
     "duration": 70
+   },
+   {
+    "filename": "Personaje_2_Anim 230.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 231.aseprite",
+    "frame": { "x": 256, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 232.aseprite",
+    "frame": { "x": 320, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 233.aseprite",
+    "frame": { "x": 384, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 234.aseprite",
+    "frame": { "x": 448, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 235.aseprite",
+    "frame": { "x": 512, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 236.aseprite",
+    "frame": { "x": 576, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 237.aseprite",
+    "frame": { "x": 640, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 238.aseprite",
+    "frame": { "x": 704, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 239.aseprite",
+    "frame": { "x": 768, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 240.aseprite",
+    "frame": { "x": 832, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 241.aseprite",
+    "frame": { "x": 896, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 242.aseprite",
+    "frame": { "x": 960, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 243.aseprite",
+    "frame": { "x": 0, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 244.aseprite",
+    "frame": { "x": 64, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 245.aseprite",
+    "frame": { "x": 128, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 246.aseprite",
+    "frame": { "x": 192, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 247.aseprite",
+    "frame": { "x": 256, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 248.aseprite",
+    "frame": { "x": 320, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 249.aseprite",
+    "frame": { "x": 320, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 250.aseprite",
+    "frame": { "x": 384, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 251.aseprite",
+    "frame": { "x": 448, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 252.aseprite",
+    "frame": { "x": 512, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 253.aseprite",
+    "frame": { "x": 576, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 254.aseprite",
+    "frame": { "x": 640, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 255.aseprite",
+    "frame": { "x": 640, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 256.aseprite",
+    "frame": { "x": 704, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 257.aseprite",
+    "frame": { "x": 704, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 258.aseprite",
+    "frame": { "x": 640, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 259.aseprite",
+    "frame": { "x": 768, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 260.aseprite",
+    "frame": { "x": 768, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 261.aseprite",
+    "frame": { "x": 640, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Personaje_2_Anim 262.aseprite",
+    "frame": { "x": 640, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
    }
  ],
  "meta": {
@@ -2075,7 +2372,7 @@
   "version": "1.3.18.6-x64",
   "image": "personaje_2.png",
   "format": "RGBA8888",
-  "size": { "w": 1024, "h": 1440 },
+  "size": { "w": 1024, "h": 1536 },
   "scale": "1",
   "frameTags": [
    { "name": "idle_front", "from": 0, "to": 5, "direction": "forward", "color": "#000000ff" },
@@ -2107,7 +2404,8 @@
    { "name": "roll_end_right", "from": 195, "to": 202, "direction": "forward", "color": "#000000ff" },
    { "name": "roll_start_left", "from": 203, "to": 213, "direction": "forward", "color": "#000000ff" },
    { "name": "roll_left", "from": 214, "to": 221, "direction": "forward", "color": "#000000ff" },
-   { "name": "roll_end_left", "from": 222, "to": 229, "direction": "forward", "color": "#000000ff" }
+   { "name": "roll_end_left", "from": 222, "to": 262, "direction": "forward", "color": "#000000ff" },
+   { "name": "death", "from": 230, "to": 262, "direction": "forward", "color": "#000000ff" }
   ]
  }
 }
