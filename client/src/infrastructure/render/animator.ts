@@ -31,16 +31,18 @@ export class Animator {
   }
 
   // `speed` scales playback: 2 plays the frames twice as fast as in Aseprite.
-  update(dtMs: number, speed = 1): void {
+  // `reverse` steps through the frames backwards (walking backwards).
+  update(dtMs: number, speed = 1, reverse = false): void {
     dtMs *= speed;
     const frames = this.frames();
     if (frames.length === 0) return;
+    const step = reverse ? frames.length - 1 : 1;
     this.frameIndex %= frames.length;
     this.frameClockMs += dtMs;
     this.motionTimeMs += dtMs;
     while (this.frameClockMs >= frames[this.frameIndex].durationMs) {
       this.frameClockMs -= frames[this.frameIndex].durationMs;
-      this.frameIndex = (this.frameIndex + 1) % frames.length;
+      this.frameIndex = (this.frameIndex + step) % frames.length;
     }
   }
 

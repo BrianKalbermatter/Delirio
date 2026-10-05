@@ -1,7 +1,7 @@
 // The player as the client shows it. Position, direction and state come from
 // the C core every frame; this only adds presentation: which animation to play
 // and the smooth turn between directions.
-import { type Direction, directionFromVector, stepToward, turnDistance } from "./facing";
+import { type Direction, directionFromVector, stepToward, turnDistance, vectorOf } from "./facing";
 
 export type Motion = "idle" | "walk" | "run";
 type Side = "left" | "right";
@@ -35,6 +35,11 @@ const ROLL_PHASES = [
   { tag: "roll_end", artMs: 560, ms: 260 }, // uncurl and land
 ] as const;
 
+// Walking away from where it looks (more than ~100° off) plays the walk cycle
+// backwards, so the feet push the right way instead of moonwalking. Sideways
+// steps keep it forwards.
+const BACKWARDS_DOT = -0.2;
+
 export interface CoreState {
   x: number;
   y: number;
@@ -57,6 +62,9 @@ export class Character {
   // the side the character was last turned to.
   private rollMs: number | null = null;
   private side: Side = "right";
+  // Direction the C core is moving along this frame (unit-ish, 0 when still).
+  private moveX = 0;
+  private moveY = 0;
 
   get isTurning(): boolean {
     return this.facing !== this.targetFacing;
@@ -77,6 +85,15 @@ export class Character {
     return phase.artMs / phase.ms;
   }
 
+  // True while walking or running away from where the character looks.
+  get animationReversed(): boolean {
+    if (this.rollMs !== null || this.pivoting || this.motion === "idle") return false;
+    const [fx, fy] = vectorOf(this.facing);
+    const length = Math.hypot(this.moveX, this.moveY);
+    if (length === 0) return false;
+    return (fx * this.moveX + fy * this.moveY) / length < BACKWARDS_DOT;
+  }
+
   private rollPhase(): (typeof ROLL_PHASES)[number] {
     let start = 0;
     for (const phase of ROLL_PHASES) {
@@ -92,6 +109,8 @@ export class Character {
     this.x = core.x;
     this.y = core.y;
     this.motion = MOTION_BY_STATE[core.state] ?? "idle";
+    this.moveX = core.dirX;
+    this.moveY = core.dirY;
     if (this.syncRoll(core, dtMs)) return;
     let target: Direction | null = null;
     if (lookAt) {

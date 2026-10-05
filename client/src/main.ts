@@ -264,7 +264,7 @@ function update(dtMs: number): void {
   pickUpItems();
 
   playerAnimator.play(player.animationTag);
-  playerAnimator.update(dtMs, player.animationSpeed);
+  playerAnimator.update(dtMs, player.animationSpeed, player.animationReversed);
   for (const view of propViews) view.animator?.update(dtMs);
 
   camera.follow(player.x, playerCenterY(), player.facing, dtMs);
