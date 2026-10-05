@@ -15,7 +15,7 @@ const HabilidadDef HABILIDADES_BASE[HAB_CANTIDAD] = {
   [HAB_PARRY]          = {"Parry",          HAB_INSTANTANEA,   1500.0f,   250.0f},
   [HAB_ULTI]           = {"Ulti",           HAB_INSTANTANEA,  30000.0f,  2000.0f},
   [HAB_BLOQUEAR]       = {"Bloquear",       HAB_MANTENIDA,        0.0f,     0.0f},
-  [HAB_RODAR]          = {"Rodar",          HAB_INSTANTANEA,    800.0f,   720.0f},
+  [HAB_RODAR]          = {"Rodar",          HAB_INSTANTANEA,   1200.0f,  1000.0f},
   [HAB_CORRER]         = {"Correr",         HAB_MANTENIDA,        0.0f,     0.0f},
 };
 

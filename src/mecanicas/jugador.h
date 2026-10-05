@@ -69,7 +69,7 @@ typedef struct jugador {
 extern const HabilidadDef HABILIDADES_BASE[HAB_CANTIDAD];
 
 #define MULTIPLICADOR_CORRER 1.6f
-#define VELOCIDAD_RODAR 320.0f // pixeles por segundo
+#define VELOCIDAD_RODAR 230.0f // pixeles por segundo
 
 void jugador_iniciar(Jugador *j, const char *nombre, const HabilidadDef *habilidades, Entity base);
 

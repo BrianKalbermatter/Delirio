@@ -85,6 +85,12 @@ const [game, playerSheet, mazeTiles, ...assetSheets] = await Promise.all([
   loadMazeTiles(`${BASE}assets/maze_tiles`),
   ...assetNames.map((name) => loadSpriteSheet(`${BASE}assets/${name}`)),
 ]);
+// roll_start in the sheet already rolls once and lands; the roll only uses its
+// first frames, up to curling into a ball, and the ball phase comes from "roll".
+for (const side of ["left", "right"]) {
+  const start = playerSheet.animations.get(`roll_start_${side}`);
+  if (start) playerSheet.animations.set(`roll_in_${side}`, start.slice(0, 7));
+}
 const sheets = new Map<string, SpriteSheet>(assetNames.map((name, i) => [name, assetSheets[i]]));
 
 // The maze comes from C: a random seed each game (shown in the panel, so a
@@ -258,7 +264,7 @@ function update(dtMs: number): void {
   pickUpItems();
 
   playerAnimator.play(player.animationTag);
-  playerAnimator.update(dtMs);
+  playerAnimator.update(dtMs, player.animationSpeed);
   for (const view of propViews) view.animator?.update(dtMs);
 
   camera.follow(player.x, playerCenterY(), player.facing, dtMs);
@@ -403,7 +409,11 @@ function drawProp({ prop, sheet, animator }: PropView): void {
 
 function coreState() {
   const p = game.player();
-  return { ...p, state: STATE[p.state] ?? `unknown (${p.state})` };
+  return {
+    ...p,
+    state: STATE[p.state] ?? `unknown (${p.state})`,
+    rolling: game.abilities()[ABILITY.RODAR]?.active ?? false,
+  };
 }
 
 // The camera centers on the body, not on the feet.

@@ -30,7 +30,9 @@ export class Animator {
     this.tag = tag;
   }
 
-  update(dtMs: number): void {
+  // `speed` scales playback: 2 plays the frames twice as fast as in Aseprite.
+  update(dtMs: number, speed = 1): void {
+    dtMs *= speed;
     const frames = this.frames();
     if (frames.length === 0) return;
     this.frameIndex %= frames.length;
