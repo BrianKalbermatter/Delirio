@@ -20,6 +20,9 @@ const TURN_STEP_MS = 60; // time shown on each intermediate direction
 // slower, so the turn reads clearly. Small steering keeps the walk cycle.
 const PIVOT_MIN_STEPS = 3;
 const PIVOT_STEP_MS = 85;
+// Standing still, the character looks at the cursor unless it is this close to
+// the body, where the angle jumps around with every pixel.
+const LOOK_DEAD_ZONE = 16; // px
 
 export interface CoreState {
   x: number;
@@ -49,13 +52,22 @@ export class Character {
     return `${motion}_${this.facing}`;
   }
 
-  sync(core: CoreState, dtMs: number): void {
+  // `lookAt` is a world point (the cursor) to face while standing still, measured
+  // from `lookFromY` (the body center, not the feet). Moving, it faces where it walks.
+  sync(core: CoreState, dtMs: number, lookAt?: { x: number; y: number }, lookFromY = core.y): void {
     this.x = core.x;
     this.y = core.y;
     this.motion = MOTION_BY_STATE[core.state] ?? "idle";
-    // Keep the last facing when there is no direction (standing still).
-    if (core.dirX !== 0 || core.dirY !== 0) {
-      const target = directionFromVector(core.dirX, core.dirY);
+    let target: Direction | null = null;
+    if (this.motion === "idle" && lookAt) {
+      const dx = lookAt.x - core.x;
+      const dy = lookAt.y - lookFromY;
+      if (Math.hypot(dx, dy) > LOOK_DEAD_ZONE) target = directionFromVector(dx, dy);
+    } else if (core.dirX !== 0 || core.dirY !== 0) {
+      target = directionFromVector(core.dirX, core.dirY);
+    }
+    // No target keeps the last facing.
+    if (target) {
       if (target !== this.targetFacing) {
         this.targetFacing = target;
         this.pivoting ||= turnDistance(this.facing, target) >= PIVOT_MIN_STEPS;

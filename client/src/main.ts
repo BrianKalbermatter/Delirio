@@ -232,7 +232,8 @@ function update(dtMs: number): void {
   if (medusaWasAlive && !medusaAlive) panel.log("The medusa is dead.");
   medusaWasAlive = medusaAlive;
   const core = coreState();
-  player.sync(core, dtMs);
+  const lookAt = mouse.overGame() && !book.isOpen ? cursorInWorld() : undefined;
+  player.sync(core, dtMs, lookAt, core.y - PLAYER_BODY_HEIGHT / 2);
   if (target && Math.hypot(target.x - player.x, target.y - player.y) <= TARGET_REACHED) {
     target = null;
   }
