@@ -54,6 +54,13 @@ export class Animator {
     }
   }
 
+  // The frame at the same place of the animation in `other`, a sheet exported
+  // from the same source with the same tags (a layer of it, for instance).
+  frameIn(other: SpriteSheet): Frame {
+    const frames = other.animations.get(this.tag) ?? other.frames;
+    return frames[this.frameIndex % frames.length];
+  }
+
   // Draws the current frame with its feet at (x, y).
   draw(ctx: CanvasRenderingContext2D, x: number, y: number): void {
     const frames = this.frames();

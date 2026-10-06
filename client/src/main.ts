@@ -11,11 +11,14 @@ import { Character } from "./domain/character";
 import { vectorOf } from "./domain/facing";
 import { Inventory } from "./domain/inventory";
 import { ITEM_SPRITES, placeItems, type Prop } from "./domain/level-items";
+import { Square } from "./domain/square";
+import { placeTrees, TREE_SPRITES, trunkBox } from "./domain/trees";
 import { TileMap } from "./domain/tile-map";
 import { ABILITY_KEY_LABEL, AbilityKeys } from "./infrastructure/input/ability-keys";
 import { LockedMouse } from "./infrastructure/input/locked-mouse";
 import { AbilityEffects } from "./infrastructure/render/ability-effects";
 import { Animator } from "./infrastructure/render/animator";
+import { Trees } from "./infrastructure/render/trees";
 import { Camera } from "./infrastructure/render/camera";
 import { CursorOverlay, drawTargetMarker } from "./infrastructure/render/cursor";
 import { Glow } from "./infrastructure/render/glow";
@@ -79,10 +82,18 @@ fitCanvas();
 // the site is served from ("/" locally, "/Delirio/" on GitHub Pages).
 const BASE = import.meta.env.BASE_URL;
 const assetNames = ITEM_SPRITES;
-const [game, playerSheet, mazeTiles, ...assetSheets] = await Promise.all([
+const [game, playerSheet, mazeTiles, treeSheetList, ...assetSheets] = await Promise.all([
   loadGameWasm(),
   loadSpriteSheet(`${BASE}sprites/personaje_2`, { pivotOnBody: true }),
   loadMazeTiles(`${BASE}assets/maze_tiles`),
+  Promise.all(
+    TREE_SPRITES.map(async (name) => {
+      const [whole, trunk, crown] = await Promise.all(
+        ["", "_tronco", "_copa"].map((part) => loadSpriteSheet(`${BASE}sprites/${name}${part}`)),
+      );
+      return { whole, trunk, crown };
+    }),
+  ),
   ...assetNames.map((name) => loadSpriteSheet(`${BASE}assets/${name}`)),
 ]);
 // roll_start in the sheet already rolls once and lands; the roll only uses its
@@ -114,20 +125,27 @@ interface PropView {
   animator: Animator | null;
 }
 const spawn = game.player();
-let propViews: PropView[] = placeItems(map, spawn).map((prop) => {
+const items = placeItems(map, spawn);
+let propViews: PropView[] = items.map((prop) => {
   const sheet = sheets.get(prop.sprite)!;
   if (prop.frame !== undefined) return { prop, sheet, animator: null };
   const animator = new Animator(sheet);
   animator.play(prop.animation ?? DEFAULT_ANIMATION);
   return { prop, sheet, animator };
 });
+const treeSheets = new Map(TREE_SPRITES.map((name, i) => [name, treeSheetList[i]]));
+const square = new Square(map, spawn);
+const treeList = placeTrees(map, square, spawn, items);
+// Trunks are solid: C keeps them with the walls for collisions.
+for (const tree of treeList) game.maze.addObstacle(trunkBox(tree));
+const trees = new Trees(treeList, treeSheets);
 
 const player = new Character();
 player.sync(coreState(), 0);
 const playerAnimator = new Animator(playerSheet);
 const playerGlow = new Glow(playerSheet, PLAYER_CYAN, PLAYER_GLOW);
 const camera = new Camera(player.x, playerCenterY(), canvas.width, canvas.height);
-const maze = new MazeRenderer(ctx, map, mazeTiles);
+const maze = new MazeRenderer(ctx, map, mazeTiles, square);
 const lighting = new Lighting(canvas.width, canvas.height);
 window.addEventListener("resize", () => {
   fitCanvas();
@@ -266,12 +284,18 @@ function update(dtMs: number): void {
   showCoreDebug(core);
   const abilities = game.abilities();
   abilityPanel.show(abilities);
-  for (const started of abilityEffects.update(abilities, dtMs)) gameLog.log(started.name);
+  for (const started of abilityEffects.update(abilities, dtMs)) {
+    gameLog.log(started.name);
+    if (abilities.indexOf(started) <= ABILITY.ATAQUE_CRITICO) {
+      trees.chop(player.x, player.y, vectorOf(player.facing));
+    }
+  }
   pickUpItems();
 
   playerAnimator.play(player.animationTag, !player.isDead);
   playerAnimator.update(dtMs, player.animationSpeed, player.animationReversed);
   for (const view of propViews) view.animator?.update(dtMs);
+  trees.update(dtMs);
 
   camera.follow(player.x, playerCenterY(), player.facing, dtMs);
   camera.clampTo(map.width, map.height, maze.wallHeight);
@@ -369,6 +393,7 @@ function drawSortedByDepth(view: View): void {
     ...maze.wallDrawables(view, playerBody()).map((w) => ({ y: w.depthY, draw: w.draw })),
     ...maze.gateDrawables(game.maze.gateLeaves(), playerBody()).map((g) => ({ y: g.depthY, draw: g.draw })),
     ...propViews.map((v) => ({ y: v.prop.y, draw: () => drawProp(v) })),
+    ...trees.drawables(ctx, view, playerBody()),
     { y: player.y, draw: drawPlayer },
   ];
   drawables.sort((a, b) => a.y - b.y);

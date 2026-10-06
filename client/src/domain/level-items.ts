@@ -23,7 +23,7 @@ const CHEST_MIN_DISTANCE = 64;
 const POTION_MIN_DISTANCE = 96;
 const POTION_SPACING = 48;
 
-interface Spot {
+export interface Spot {
   x: number;
   y: number;
   distance: number;
@@ -58,7 +58,7 @@ export function placeItems(map: TileMap, spawn: { x: number; y: number }): Prop[
 
 // Centers of floor tiles whose 3x3 neighbourhood is all floor (the item fits
 // without touching a wall), nearest to the spawn first.
-function openSpots(map: TileMap, spawn: { x: number; y: number }): Spot[] {
+export function openSpots(map: TileMap, spawn: { x: number; y: number }): Spot[] {
   const t = map.tileSize;
   const spots: Spot[] = [];
   for (let row = 1; row < map.rows - 1; row++) {

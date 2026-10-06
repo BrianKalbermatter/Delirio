@@ -5,6 +5,7 @@
 // the wall height, and its front face fills the space between the top and the
 // floor. Anything standing behind (north of) a wall is therefore hidden by it,
 // which is why walls are depth-sorted together with characters and props.
+import type { Square } from "../../domain/square";
 import type { TileMap } from "../../domain/tile-map";
 import type { Rect } from "../wasm/game-wasm";
 
@@ -38,6 +39,11 @@ const EDGE_COLOR = "rgba(12, 10, 18, 0.85)";
 const WALL_MIN_ALPHA = 0.3;
 const WALL_FADE_DISTANCE = 48; // px between wall and body where fading starts
 const FLOOR_SHADOW = 14; // px of shadow cast on the floor at the foot of a wall
+const FOREST_BLEND = 8; // tiles over which the forest floor fades into grass
+// Share of forest floor in each grass-to-forest transition tile, and how many
+// different transition tiles there are per share.
+const BLEND_SHARES = [0.2, 0.4, 0.6, 0.8];
+const BLEND_VARIANTS = 4;
 
 export async function loadMazeTiles(basePath: string): Promise<MazeTiles> {
   const [data, image] = await Promise.all([
@@ -61,14 +67,22 @@ export async function loadMazeTiles(basePath: string): Promise<MazeTiles> {
 
 export class MazeRenderer {
   private readonly floorVariants: string[];
+  private readonly grassVariants: string[];
+  private readonly forestVariants: string[];
+  // Grass-to-forest transition tiles, built once from the tileset.
+  private readonly blendImage: HTMLCanvasElement;
 
   constructor(
     private readonly ctx: CanvasRenderingContext2D,
     private readonly map: TileMap,
     private readonly tiles: MazeTiles,
+    private readonly square: Square,
   ) {
     const names = Object.keys(tiles.frames);
     this.floorVariants = names.filter((n) => n.startsWith("floor_"));
+    this.grassVariants = names.filter((n) => n.startsWith("grass_"));
+    this.forestVariants = names.filter((n) => n.startsWith("forest_"));
+    this.blendImage = this.buildBlendTiles();
   }
 
   get wallHeight(): number {
@@ -223,13 +237,63 @@ export class MazeRenderer {
     this.ctx.fillRect(x, y, this.map.tileSize, FLOOR_SHADOW);
   }
 
-  // Dirt everywhere, with irregular patches of old stone paving. An open gate
+  // The square is grass, with a dark mossy floor under its forest. Out in the
+  // maze: dirt, with irregular patches of old stone paving. An open gate
   // leaves a paved threshold.
   private floorTile(col: number, row: number): string {
     if (this.map.isDoor(col, row)) return `paving_${hash(col, row) % 4}`;
+    if (this.square.has(col, row)) return this.squareTile(col, row);
     const paving = valueNoise(col / 6, row / 6) > 0.62;
     if (paving && hash(col, row) % 100 < 85) return `paving_${hash(col, row) % 4}`;
     return this.pick(this.floorVariants, col, row);
+  }
+
+  // Grass tiles picked by position, so no repeating pattern shows. The forest
+  // floor thins out into the grass over a band of FOREST_BLEND tiles, through
+  // dithered transition tiles; ragged noise moves the edge.
+  private squareTile(col: number, row: number): string {
+    const t = this.map.tileSize;
+    const ragged = (valueNoise(col / 4, row / 4) - 0.5) * 3 * t;
+    const depth = this.square.forestDepth(col * t + t / 2, row * t + t / 2) + ragged;
+    const share = Math.min(1, Math.max(0, 0.5 + depth / (FOREST_BLEND * t)));
+    const step = Math.round(share * (BLEND_SHARES.length + 1));
+    if (step <= 0) return this.pick(this.grassVariants, col, row);
+    if (step > BLEND_SHARES.length) return this.pick(this.forestVariants, col, row);
+    return `blend_${step - 1}_${hash(col, row) % BLEND_VARIANTS}`;
+  }
+
+  // One row per forest share: forest floor over grass, kept only where a
+  // per-pixel noise value is below the share. The noise works in 2x2 blocks,
+  // like the floor tiles, so the mix reads as pixel art.
+  private buildBlendTiles(): HTMLCanvasElement {
+    const t = this.map.tileSize;
+    const canvas = document.createElement("canvas");
+    canvas.width = t * BLEND_VARIANTS;
+    canvas.height = t * BLEND_SHARES.length;
+    const out = canvas.getContext("2d")!;
+    const scratch = document.createElement("canvas");
+    scratch.width = scratch.height = t;
+    const forest = scratch.getContext("2d", { willReadFrequently: true })!;
+    const frame = (name: string) => this.tiles.frames[name];
+    BLEND_SHARES.forEach((share, level) => {
+      for (let i = 0; i < BLEND_VARIANTS; i++) {
+        const g = frame(this.grassVariants[i % this.grassVariants.length]);
+        const f = frame(this.forestVariants[(i + level) % this.forestVariants.length]);
+        out.drawImage(this.tiles.image, g.x, g.y, t, t, i * t, level * t, t, t);
+        forest.clearRect(0, 0, t, t);
+        forest.drawImage(this.tiles.image, f.x, f.y, t, t, 0, 0, t, t);
+        const pixels = forest.getImageData(0, 0, t, t);
+        for (let y = 0; y < t; y++) {
+          for (let x = 0; x < t; x++) {
+            const noise = (hash((x >> 1) + i * 97, (y >> 1) + level * 89) % 1000) / 1000;
+            if (noise >= share) pixels.data[(y * t + x) * 4 + 3] = 0;
+          }
+        }
+        forest.putImageData(pixels, 0, 0);
+        out.drawImage(scratch, i * t, level * t);
+      }
+    });
+    return canvas;
   }
 
   private pick(variants: string[], col: number, row: number): string {
@@ -237,6 +301,12 @@ export class MazeRenderer {
   }
 
   private blit(name: string, x: number, y: number): void {
+    if (name.startsWith("blend_")) {
+      const t = this.map.tileSize;
+      const [, level, i] = name.split("_").map(Number);
+      this.ctx.drawImage(this.blendImage, i * t, level * t, t, t, x, y, t, t);
+      return;
+    }
     const f = this.tiles.frames[name];
     this.ctx.drawImage(this.tiles.image, f.x, f.y, f.w, f.h, x, y, f.w, f.h);
   }
