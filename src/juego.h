@@ -30,6 +30,10 @@ Direccion juego_destino(void);
 const Reloj *juego_reloj(void);
 const Laberinto *juego_laberinto(void);
 
+// Una caja solida sobre el piso (un tronco), en pixeles del mundo.
+// Devuelve 0 si ya no entran mas.
+int juego_agregar_obstaculo(float x, float y, float ancho, float alto);
+
 // Para probar: multiplica la velocidad del reloj (1 = normal). No acelera el
 // movimiento, solo el paso de los dias.
 void juego_velocidad_tiempo(float factor);

@@ -170,6 +170,7 @@ void laberinto_iniciar(Laberinto *lab, unsigned int semilla){
   memset(lab->abierta, 0, sizeof lab->abierta);
   lab->azar = semilla ? semilla : 1; // xorshift no puede arrancar en 0
   lab->version = 0;
+  lab->cant_obstaculos = 0;
 
   lab->c_min = lab->f_min = LAB_MAX_CELDAS / 2 - LAB_INICIAL / 2;
   lab->c_max = lab->f_max = lab->c_min + LAB_INICIAL - 1;
@@ -296,9 +297,25 @@ static int caja_toca_muro(const Laberinto *lab, float izq, float arriba, float d
   return 0;
 }
 
+int laberinto_agregar_obstaculo(Laberinto *lab, RectPx caja){
+  if (lab->cant_obstaculos >= LAB_MAX_OBSTACULOS) return 0;
+  lab->obstaculos[lab->cant_obstaculos++] = caja;
+  return 1;
+}
+
+// 1 si una caja (en pixeles) se superpone con algun obstaculo
+static int caja_toca_obstaculo(const Laberinto *lab, float izq, float arriba, float der, float abajo){
+  for (int i = 0; i < lab->cant_obstaculos; i++){
+    RectPx o = lab->obstaculos[i];
+    if (izq < o.x + o.ancho && der > o.x && arriba < o.y + o.alto && abajo > o.y) return 1;
+  }
+  return 0;
+}
+
 static int pies_chocan(const Laberinto *lab, float x, float y){
   float izq = x - PIES_MEDIO_ANCHO, arriba = y - PIES_ALTO, der = x + PIES_MEDIO_ANCHO;
-  return caja_toca_muro(lab, izq, arriba, der, y) || caja_toca_hoja(lab, izq, arriba, der, y);
+  return caja_toca_muro(lab, izq, arriba, der, y) || caja_toca_hoja(lab, izq, arriba, der, y) ||
+         caja_toca_obstaculo(lab, izq, arriba, der, y);
 }
 
 Direccion laberinto_frente_a_puerta(const Laberinto *lab, int i, float distancia){

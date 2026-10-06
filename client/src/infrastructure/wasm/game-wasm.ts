@@ -64,6 +64,9 @@ export interface MazeInfo {
   gateOpening(): number; // 1 = fully open, 0 = closed
   // The 8 gate leaves (2 per gate) in world pixels; a fully open leaf is 0 wide.
   gateLeaves(): Rect[];
+  // A solid box on the floor (a tree trunk) in world pixels: feet collide with
+  // it like with a wall. False when C has no room for more.
+  addObstacle(box: Rect): boolean;
 }
 
 export interface Rect {
@@ -110,6 +113,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const mazeDoor = num("web_lab_puerta", 2);
   const gateOpening = num("web_lab_apertura", 0);
   const leaf = num("web_lab_hoja", 3);
+  const obstacle = num("web_lab_obstaculo", 4);
   const deaths = num("web_jugador_muertes", 0);
   const delirium = num("web_jugador_delirio", 0);
   const gatesChange = num("web_reloj_cambio_compuertas_ms", 0);
@@ -165,6 +169,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
         }
         return leaves;
       },
+      addObstacle: ({ x, y, w, h }) => obstacle(x, y, w, h) === 1,
     },
     setTarget,
     update,

@@ -38,6 +38,7 @@
 #define LAB_INICIAL (LAB_PLAZA + 2 * LAB_ANILLO_INICIAL) // celdas por lado al empezar
 #define LAB_MAX_CELDAS (LAB_INICIAL + 2 * LAB_ANILLO * LAB_EXPANSIONES) // tamanio final
 #define LAB_TILES (LAB_MAX_CELDAS * LAB_CELDA + LAB_MURO) // tiles por lado del mundo
+#define LAB_MAX_OBSTACULOS 512 // cajas solidas sobre el piso (troncos de arboles)
 
 // Rectangulo de tiles (el hueco de una puerta).
 typedef struct rect_tiles {
@@ -55,6 +56,8 @@ typedef struct laberinto {
   int c_min, c_max, f_min, f_max;                            // celdas activas (inclusive)
   unsigned int azar;                                         // estado del generador aleatorio
   RectTiles puertas[4];                                      // arriba, abajo, izquierda, derecha
+  RectPx obstaculos[LAB_MAX_OBSTACULOS];                     // chocan como muros
+  int cant_obstaculos;
   float apertura;                                            // 1 = abiertas, 0 = cerradas
   int version;                                               // sube en cada cambio
 } Laberinto;
@@ -69,6 +72,10 @@ int laberinto_es_muro(const Laberinto *lab, int col, int fila);
 
 // Cuanto estan abiertas las 4 puertas: 1 = del todo, 0 = cerradas.
 void laberinto_apertura(Laberinto *lab, float apertura);
+
+// Agrega una caja solida en pixeles (un tronco): los pies chocan con ella
+// como con un muro. Devuelve 0 si ya no hay lugar para otra.
+int laberinto_agregar_obstaculo(Laberinto *lab, RectPx caja);
 
 // 1 si el tile es parte del hueco de una puerta.
 int laberinto_es_puerta(const Laberinto *lab, int col, int fila);

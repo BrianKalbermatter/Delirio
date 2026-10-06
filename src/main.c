@@ -97,6 +97,10 @@ Direccion juego_destino(void){ return jugador.destino; }
 const Reloj *juego_reloj(void){ return &reloj; }
 const Laberinto *juego_laberinto(void){ return &laberinto; }
 
+int juego_agregar_obstaculo(float x, float y, float ancho, float alto){
+  return laberinto_agregar_obstaculo(&laberinto, (RectPx){x, y, ancho, alto});
+}
+
 void juego_velocidad_tiempo(float factor){ velocidad_tiempo = factor; }
 
 void juego_prueba_puertas(void){

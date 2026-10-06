@@ -53,6 +53,10 @@ EMSCRIPTEN_KEEPALIVE int web_lab_tile(void) { return LAB_TILE; }
 EMSCRIPTEN_KEEPALIVE int web_lab_muro(int col, int fila) { return laberinto_es_muro(juego_laberinto(), col, fila); }
 EMSCRIPTEN_KEEPALIVE int web_lab_puerta(int col, int fila) { return laberinto_es_puerta(juego_laberinto(), col, fila); }
 EMSCRIPTEN_KEEPALIVE float web_lab_apertura(void) { return juego_laberinto()->apertura; }
+// Caja solida (un tronco) en pixeles del mundo; 0 si ya no entran mas
+EMSCRIPTEN_KEEPALIVE int web_lab_obstaculo(float x, float y, float ancho, float alto) {
+  return juego_agregar_obstaculo(x, y, ancho, alto);
+}
 // Hoja `hoja` (0..1) de la puerta `i` (0..3): dato 0 = x, 1 = y, 2 = ancho, 3 = alto (pixeles)
 EMSCRIPTEN_KEEPALIVE float web_lab_hoja(int i, int hoja, int dato) {
   RectPx hojas[2];
