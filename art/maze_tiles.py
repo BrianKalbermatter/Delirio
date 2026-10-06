@@ -80,6 +80,62 @@ def floor_dirt(rng, grass):
     return img
 
 
+# The square is a grassy meadow; its forest corner has a dark mossy floor.
+MEADOW = [(25, 60, 62), (38, 92, 66), (62, 137, 72), (99, 199, 77)]
+FLOWERS = [(254, 231, 97), (246, 117, 122), (192, 203, 220)]
+FOREST_FLOOR = [(20, 24, 40), (25, 48, 56), (32, 70, 64), (44, 96, 72)]
+DEAD_LEAVES = [(62, 39, 49), (115, 62, 57), (184, 111, 80)]
+
+
+def grass(rng, flowers):
+    img = Image.new("RGBA", (T, T))
+    # Mid greens in 2x2 clusters, like the dirt, so it reads as pixel art.
+    for cy in range(0, T, 2):
+        for cx in range(0, T, 2):
+            roll = rng.random()
+            tone = MEADOW[2] if roll < 0.72 else MEADOW[1] if roll < 0.96 else MEADOW[3]
+            for dy in range(2):
+                for dx in range(2):
+                    put(img, cx + dx, cy + dy, tone)
+    # Blades: a lit tip over a dark root, leaning a bit.
+    for _ in range(12):
+        x, y = rng.randrange(T), rng.randrange(T)
+        lean = rng.choice((-1, 0, 0, 1))
+        put(img, x, y + 1, MEADOW[0])
+        put(img, x, y, MEADOW[1])
+        put(img, x + lean, y - 1, MEADOW[3])
+    if flowers:
+        for _ in range(rng.randint(2, 4)):
+            x, y = rng.randrange(T), rng.randrange(T)
+            c = rng.choice(FLOWERS)
+            put(img, x, y, c)
+            put(img, x + 1, y, c)
+            put(img, x, y + 1, MEADOW[0])
+    return img
+
+
+def forest_floor(rng):
+    img = Image.new("RGBA", (T, T))
+    for cy in range(0, T, 2):
+        for cx in range(0, T, 2):
+            tone = FOREST_FLOOR[min(3, max(0, int(rng.gauss(1.2, 0.8))))]
+            for dy in range(2):
+                for dx in range(2):
+                    put(img, cx + dx, cy + dy, tone)
+    # Fallen leaves and a few moss tufts.
+    for _ in range(rng.randint(3, 7)):
+        x, y = rng.randrange(T), rng.randrange(T)
+        c = rng.choice(DEAD_LEAVES)
+        put(img, x, y, c)
+        put(img, x + 1, y, c)
+        put(img, x + 1, y + 1, FOREST_FLOOR[0])
+    for _ in range(rng.randint(2, 5)):
+        x, y = rng.randrange(T), rng.randrange(T)
+        put(img, x, y, FOREST_FLOOR[3])
+        put(img, x, y - 1, (62, 137, 72))
+    return img
+
+
 def paving(rng):
     img = floor_dirt(rng, grass=False)
     # Two rows of slabs, the second one offset half a slab.
@@ -290,6 +346,12 @@ def build(out_dir):
     for i in range(FACE_GRID):
         tiles[f"wall_face_{i}"] = face.crop((i * T, 0, (i + 1) * T, WALL_H))
     tiles["gate_top_0"] = gate_top(rng)
+    # Own generator, so adding square tiles never changes the maze tiles.
+    square_rng = random.Random(11)
+    for i in range(6):
+        tiles[f"grass_{i}"] = grass(square_rng, flowers=(i == 5))
+    for i in range(4):
+        tiles[f"forest_{i}"] = forest_floor(square_rng)
     gate = gate_face()
     for i in range(FACE_GRID):
         tiles[f"gate_face_{i}"] = gate.crop((i * T, 0, (i + 1) * T, WALL_H))
