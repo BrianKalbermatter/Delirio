@@ -8,13 +8,7 @@ cd "$(dirname "$0")"
 OUT_DIR="../client/src/infrastructure/wasm/generated"
 mkdir -p "$OUT_DIR"
 
-# Old drafts that are not part of the game.
-IGNORE=(personaje.c)
-
-SOURCES=()
-while IFS= read -r file; do
-  [[ " ${IGNORE[*]} " == *" ${file#./} "* ]] || SOURCES+=("$file")
-done < <(find . -name '*.c' | sort)
+mapfile -t SOURCES < <(find . -name '*.c' | sort)
 
 emcc "${SOURCES[@]}" \
   -O1 \

@@ -5,7 +5,7 @@ set -euo pipefail
 
 cd "$(dirname "$0")"
 
-IGNORE=(personaje.c web.c)
+IGNORE=(web.c)
 
 SOURCES=()
 while IFS= read -r file; do
