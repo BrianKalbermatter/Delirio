@@ -1,6 +1,7 @@
-// Plays the animations of a sprite sheet on a 2D canvas.
+// Plays the animations of a sprite sheet: keeps the time and says which frame
+// to show. Drawing it is up to whoever owns the sprite (see placeFrame).
 import { DIRECTIONS } from "../../domain/facing";
-import { drawFrame, type Frame, type SpriteSheet } from "./sprite-sheet";
+import type { Frame, SpriteSheet } from "./sprite-sheet";
 
 export class Animator {
   private tag = "";
@@ -59,13 +60,6 @@ export class Animator {
   frameIn(other: SpriteSheet): Frame {
     const frames = other.animations.get(this.tag) ?? other.frames;
     return frames[this.frameIndex % frames.length];
-  }
-
-  // Draws the current frame with its feet at (x, y).
-  draw(ctx: CanvasRenderingContext2D, x: number, y: number): void {
-    const frames = this.frames();
-    if (frames.length === 0) return;
-    drawFrame(ctx, this.sheet, frames[this.frameIndex % frames.length], x, y);
   }
 
   currentFrame(): Frame | null {

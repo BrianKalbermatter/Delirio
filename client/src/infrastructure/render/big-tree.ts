@@ -4,19 +4,21 @@
 // drops leaves (the "chop" tag), then it goes back to idle.
 // While the player is behind it, only the crown turns see-through; the trunk
 // stays solid, drawn from its own sheet.
+import { Container, Rectangle, Sprite, Texture } from "pixi.js";
 import type { SampleTree } from "../../domain/sample-tree";
 import type { Box } from "./maze-renderer";
 import { Animator } from "./animator";
-import { animationDurationMs, drawFrame, type SpriteSheet } from "./sprite-sheet";
+import { DEPTH, depthOf } from "./depth";
+import { animationDurationMs, placeFrame, type SpriteSheet } from "./sprite-sheet";
 
 export interface BigTreeArt {
   whole: SpriteSheet;
   trunk: SpriteSheet;
   crown: SpriteSheet;
-  grassBack: HTMLImageElement; // drawn before the tree
-  grassFront: HTMLImageElement; // drawn after it, over the roots
-  sticks: HTMLImageElement; // strip of STICK_SIZE loose sticks
-  shadow: HTMLImageElement; // the crown's shadow on the ground (art/sombra_arbol.py)
+  grassBack: Texture; // drawn before the tree
+  grassFront: Texture; // drawn after it, over the roots
+  sticks: Texture; // strip of STICK_SIZE loose sticks
+  shadow: Texture; // the crown's shadow on the ground (art/sombra_arbol.py)
 }
 
 // Where the trunk's foot is on the drawing canvas (Arbol1, 540x540). The
@@ -40,8 +42,18 @@ const STICK_SIZE = 16;
 const SHADOW_SHIFT = { x: 12, y: -8 };
 
 export class BigTree {
+  // The shadow and the loose sticks lie flat on the ground, under everything
+  // that stands. The owner adds it to the ground layer.
+  readonly ground = new Container();
+  // Grass, tree and grass again, sorted by depth with everything else at the
+  // trunk's foot. The owner adds it to the depth-sorted layer.
+  readonly view = new Container();
   private readonly animator: Animator;
   private choppingMs = 0; // time left of the current chop, 0 when idle
+  private readonly whole = new Sprite();
+  // While the player is behind the tree: the trunk and the faded crown.
+  private readonly trunk = new Sprite();
+  private readonly crown = new Sprite();
 
   constructor(
     private readonly tree: SampleTree,
@@ -49,6 +61,24 @@ export class BigTree {
   ) {
     this.animator = new Animator(art.whole);
     this.animator.play("idle");
+
+    const { shadow } = art;
+    const shadowSprite = new Sprite(shadow);
+    shadowSprite.position.set(
+      Math.round(tree.x + SHADOW_SHIFT.x - shadow.width / 2),
+      Math.round(tree.y + SHADOW_SHIFT.y - shadow.height / 2),
+    );
+    this.ground.addChild(shadowSprite);
+    for (const s of tree.sticks) {
+      const frame = new Rectangle(s.kind * STICK_SIZE, 0, STICK_SIZE, STICK_SIZE);
+      const stick = new Sprite(new Texture({ source: art.sticks.source, frame }));
+      stick.position.set(Math.round(s.x - STICK_SIZE / 2), Math.round(s.y - STICK_SIZE / 2));
+      this.ground.addChild(stick);
+    }
+
+    this.crown.alpha = SEE_THROUGH;
+    this.view.addChild(this.grass(art.grassBack), this.whole, this.trunk, this.crown, this.grass(art.grassFront));
+    this.view.zIndex = depthOf(tree.y, DEPTH.tree);
   }
 
   // Shakes the tree if the hit, thrown from the feet towards `dir`, reaches it.
@@ -70,45 +100,30 @@ export class BigTree {
     }
   }
 
-  // The shadow and the loose sticks lie flat on the ground, under everything
-  // that stands.
-  drawGround(ctx: CanvasRenderingContext2D): void {
-    const { shadow } = this.art;
-    ctx.drawImage(
-      shadow,
-      Math.round(this.tree.x + SHADOW_SHIFT.x - shadow.width / 2),
-      Math.round(this.tree.y + SHADOW_SHIFT.y - shadow.height / 2),
-    );
-    for (const s of this.tree.sticks) {
-      const x = Math.round(s.x - STICK_SIZE / 2);
-      const y = Math.round(s.y - STICK_SIZE / 2);
-      ctx.drawImage(this.art.sticks, s.kind * STICK_SIZE, 0, STICK_SIZE, STICK_SIZE, x, y, STICK_SIZE, STICK_SIZE);
-    }
-  }
-
-  // Sorted by depth with everything else, at the trunk's foot.
-  draw(ctx: CanvasRenderingContext2D, player: Box): void {
+  // Shows the current frame: whole, or trunk and see-through crown when the
+  // player is behind it.
+  show(player: Box): void {
     const { x, y } = this.tree;
-    this.drawGrass(ctx, this.art.grassBack);
-    // drawFrame puts a frame's bottom centre at the point given.
     const frame = this.animator.currentFrame();
-    if (frame) {
-      const fx = x + frame.w / 2 - (FOOT_IN_CANVAS.x - frame.sourceX);
-      const fy = y + frame.h - (FOOT_IN_CANVAS.y - frame.sourceY);
-      if (this.hides(player)) {
-        drawFrame(ctx, this.art.trunk, this.animator.frameIn(this.art.trunk), fx, fy);
-        ctx.globalAlpha = SEE_THROUGH;
-        drawFrame(ctx, this.art.crown, this.animator.frameIn(this.art.crown), fx, fy);
-        ctx.globalAlpha = 1;
-      } else {
-        this.animator.draw(ctx, fx, fy);
-      }
+    const behind = this.hides(player);
+    this.whole.visible = frame !== null && !behind;
+    this.trunk.visible = this.crown.visible = frame !== null && behind;
+    if (!frame) return;
+    // placeFrame puts a frame's bottom centre at the point given.
+    const fx = x + frame.w / 2 - (FOOT_IN_CANVAS.x - frame.sourceX);
+    const fy = y + frame.h - (FOOT_IN_CANVAS.y - frame.sourceY);
+    if (behind) {
+      placeFrame(this.trunk, this.animator.frameIn(this.art.trunk), fx, fy);
+      placeFrame(this.crown, this.animator.frameIn(this.art.crown), fx, fy);
+    } else {
+      placeFrame(this.whole, frame, fx, fy);
     }
-    this.drawGrass(ctx, this.art.grassFront);
   }
 
-  private drawGrass(ctx: CanvasRenderingContext2D, image: HTMLImageElement): void {
-    ctx.drawImage(image, this.tree.x - FOOT_IN_GRASS.x, this.tree.y - FOOT_IN_GRASS.y);
+  private grass(texture: Texture): Sprite {
+    const sprite = new Sprite(texture);
+    sprite.position.set(this.tree.x - FOOT_IN_GRASS.x, this.tree.y - FOOT_IN_GRASS.y);
+    return sprite;
   }
 
   // True when the player stands behind the tree, under its crown.

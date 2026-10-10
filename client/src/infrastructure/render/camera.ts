@@ -1,5 +1,6 @@
 // Top-down camera that follows a target and leads towards where it is facing,
 // so the player sees more of the space in front of the character.
+import type { Container } from "pixi.js";
 import { type Direction, vectorOf } from "../../domain/facing";
 
 // How far ahead the camera looks. The screen is wider than tall, so it leads
@@ -51,13 +52,10 @@ export class Camera {
     this.y = clamp(this.y, this.viewHeight / 2 - topOverhang, worldHeight - this.viewHeight / 2);
   }
 
-  // Applies the world -> screen transform. Rounded so pixel art does not shimmer.
-  apply(ctx: CanvasRenderingContext2D): void {
-    ctx.setTransform(
-      1, 0, 0, 1,
-      Math.round(this.viewWidth / 2 - this.x),
-      Math.round(this.viewHeight / 2 - this.y),
-    );
+  // Moves the world container so this camera's point is at the center of the
+  // screen. Rounded so pixel art does not shimmer.
+  apply(world: Container): void {
+    world.position.set(Math.round(this.viewWidth / 2 - this.x), Math.round(this.viewHeight / 2 - this.y));
   }
 }
 

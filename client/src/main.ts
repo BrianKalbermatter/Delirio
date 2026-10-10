@@ -7,6 +7,9 @@
 // its grid to draw it.
 // The mouse is locked inside the whole window (game and inventory panel) until
 // Esc, which opens the pause menu.
+// The game view is drawn with PixiJS (WebGL): one stage with the world (ground
+// and a depth-sorted layer) under the light and the HUD.
+import { Application, Container, Sprite, Texture, TextureStyle } from "pixi.js";
 import { Character } from "./domain/character";
 import { vectorOf } from "./domain/facing";
 import { Inventory } from "./domain/inventory";
@@ -22,8 +25,10 @@ import { Animator } from "./infrastructure/render/animator";
 import { BigTree, type BigTreeArt } from "./infrastructure/render/big-tree";
 import { PlazaDeco } from "./infrastructure/render/plaza-deco";
 import { Camera } from "./infrastructure/render/camera";
-import { CursorOverlay, drawTargetMarker } from "./infrastructure/render/cursor";
+import { CursorOverlay, TargetMarker } from "./infrastructure/render/cursor";
+import { DEPTH, depthOf } from "./infrastructure/render/depth";
 import { Glow } from "./infrastructure/render/glow";
+import { createKeyPrompt, formatMs, Hud, KEY_PROMPT_SIZE } from "./infrastructure/render/hud";
 import { Lighting } from "./infrastructure/render/lighting";
 import {
   type Box,
@@ -33,9 +38,9 @@ import {
 } from "./infrastructure/render/maze-renderer";
 import {
   DEFAULT_ANIMATION,
-  drawFrame,
   loadImage,
   loadSpriteSheet,
+  placeFrame,
   type SpriteSheet,
 } from "./infrastructure/render/sprite-sheet";
 import { AbilityPanel } from "./infrastructure/ui/ability-panel";
@@ -63,7 +68,6 @@ const SIGHT_AHEAD = 140; // px the walls also clear ahead of the player
 // Items picked up with E (branches): reach from the feet, and the key prompt
 // shown above the head while one is in reach.
 const KEY_PICKUP_RADIUS = 26;
-const PROMPT_SIZE = 13;
 const PROMPT_ABOVE_HEAD = 6;
 // A dropped item lands this far ahead of the feet (past PICKUP_RADIUS), after
 // a short hop out of the hand.
@@ -86,9 +90,23 @@ const TIME_SPEEDS = [1, 60, 600];
 const gameEl = document.getElementById("game")!;
 const panelEl = document.getElementById("panel")!;
 
-const canvas = document.createElement("canvas");
+// Pixel art: nearest-neighbour sampling for every texture, no antialiasing,
+// one texture pixel per canvas pixel, positions snapped to whole pixels. The
+// game loop below renders by hand, so the app's own ticker never starts.
+TextureStyle.defaultOptions.scaleMode = "nearest";
+const app = new Application();
+await app.init({
+  preference: "webgl",
+  background: "#0d0b12",
+  antialias: false,
+  resolution: 1,
+  roundPixels: true,
+  autoStart: false,
+  sharedTicker: false,
+  useBackBuffer: true, // the twilight tint blends with soft-light
+});
+const canvas = app.canvas;
 gameEl.appendChild(canvas);
-const ctx = canvas.getContext("2d")!;
 let screenScale = 1; // CSS pixels per canvas pixel
 fitCanvas();
 
@@ -127,11 +145,21 @@ let deathBannerMs = 0;
 let timeSpeed = 1;
 syncMaze();
 
+// The stage, back to front. The world moves with the camera: the ground lies
+// flat under everything, and whatever stands sorts by depth (see depth.ts).
+// Over it, in screen space: the light, the player's glow and the HUD.
+const world = new Container();
+const ground = new Container();
+const standing = new Container({ sortableChildren: true });
+world.addChild(ground, standing);
+app.stage.addChild(world);
+
 // A prop is drawn either as a looping animation or as one fixed frame.
 interface PropView {
   prop: Prop;
   sheet: SpriteSheet;
   animator: Animator | null;
+  sprite: Sprite; // in the depth-sorted layer while the prop is on the floor
   // A dropped item is not picked up again until the player has walked away.
   waitForLeave?: boolean;
   // While it falls from the hand: where it was thrown from and time left.
@@ -139,35 +167,36 @@ interface PropView {
 }
 const spawn = game.player();
 const items = placeItems(map, spawn);
-let propViews: PropView[] = items.map((prop) => {
-  const sheet = sheets.get(prop.sprite)!;
-  if (prop.frame !== undefined) return { prop, sheet, animator: null };
-  const animator = new Animator(sheet);
-  animator.play(prop.animation ?? DEFAULT_ANIMATION);
-  return { prop, sheet, animator };
-});
+let propViews: PropView[] = items.map((prop) => addProp(prop, prop.frame === undefined));
 const square = new Square(map, spawn);
 // The big tree: its trunk is solid, C keeps it with the walls.
 const tree = placeSampleTree(spawn);
 game.maze.addObstacle(sampleTrunkBox(tree));
 const bigTree = new BigTree(tree, treeArt);
-const plazaDeco = new PlazaDeco(tree.flowers, [flowerSheet, tallFlowerSheet]);
+standing.addChild(bigTree.view);
+const plazaDeco = new PlazaDeco(tree.flowers, [flowerSheet, tallFlowerSheet], standing);
 // Fallen branches lie around the tree, each drawn with its own variant.
 propViews.push(
-  ...tree.branches.map((b) => ({
-    prop: { sprite: ITEMS.branch.sprite, frame: b.kind, x: b.x, y: b.y, pickup: ITEMS.branch },
-    sheet: sheets.get(ITEMS.branch.sprite)!,
-    animator: null,
-  })),
+  ...tree.branches.map((b) =>
+    addProp({ sprite: ITEMS.branch.sprite, frame: b.kind, x: b.x, y: b.y, pickup: ITEMS.branch }, false),
+  ),
 );
 
 const player = new Character();
 player.sync(coreState(), 0);
 const playerAnimator = new Animator(playerSheet);
+const playerSprite = new Sprite();
+standing.addChild(playerSprite);
 const playerGlow = new Glow(playerSheet, PLAYER_CYAN, PLAYER_GLOW);
 const camera = new Camera(player.x, playerCenterY(), canvas.width, canvas.height);
-const maze = new MazeRenderer(ctx, map, mazeTiles, square);
+const maze = new MazeRenderer(app.renderer, standing, map, mazeTiles, square);
+const targetMarker = new TargetMarker();
+ground.addChild(maze.floor, bigTree.ground, targetMarker.view);
 const lighting = new Lighting(canvas.width, canvas.height);
+const keyPrompt = createKeyPrompt();
+const abilityEffects = new AbilityEffects();
+const hud = new Hud();
+app.stage.addChild(lighting.view, playerGlow.view, keyPrompt, abilityEffects.view, hud.view);
 window.addEventListener("resize", () => {
   fitCanvas();
   camera.viewWidth = canvas.width;
@@ -183,12 +212,11 @@ function fitCanvas(): void {
   const scale = Math.max(1, Math.round(areaHeight / TARGET_VIEW_HEIGHT));
   screenScale = scale;
   // Round up and let the last partial pixel overflow (clipped by the area).
-  canvas.width = Math.ceil(areaWidth / scale);
-  canvas.height = Math.ceil(areaHeight / scale);
-  canvas.style.width = `${canvas.width * scale}px`;
-  canvas.style.height = `${canvas.height * scale}px`;
-  // Resizing a canvas resets its context state.
-  ctx.imageSmoothingEnabled = false;
+  const width = Math.ceil(areaWidth / scale);
+  const height = Math.ceil(areaHeight / scale);
+  app.renderer.resize(width, height);
+  canvas.style.width = `${width * scale}px`;
+  canvas.style.height = `${height * scale}px`;
 }
 
 const inventory = new Inventory(INVENTORY_SIZE);
@@ -206,7 +234,6 @@ const gameLog = new GameLog(tabs.page("technical"));
 showControlsHint(tabs.page("technical"));
 const panel = new InventoryPanel(tabs.page("inventory"), inventory, sheets, (i) => dropItem(i));
 const abilityPanel = new AbilityPanel(tabs.page("skills"), ABILITY_KEY_LABEL);
-const abilityEffects = new AbilityEffects();
 gameLog.log("You wake up at the base.");
 
 // Mouse locked in the game; whenever it is released (Esc), the game pauses
@@ -264,7 +291,7 @@ function update(dtMs: number): void {
     game.holdAbility(ABILITY.BLOQUEAR, blocking);
   }
   game.update(dtMs); // the C core moves the game one step
-  if (syncMaze()) maze.invalidateFloor();
+  if (syncMaze()) maze.invalidate();
 
   // Gates: they close little by little at the end of the afternoon.
   const opening = game.maze.gateOpening();
@@ -347,6 +374,7 @@ function pickUpItems(): void {
     if (!inventory.add(prop.pickup)) return true; // full: leave it on the floor
     gameLog.log(`Picked up: ${prop.pickup.name}`);
     if (prop.pickup.id === "map_book") gameLog.log("Press ` to open it and draw the maze.");
+    view.sprite.destroy();
     return false;
   });
 }
@@ -376,32 +404,19 @@ function pickUpWithKey(): boolean {
     return true;
   }
   propViews = propViews.filter((v) => v !== view);
+  view.sprite.destroy();
   gameLog.log(`Picked up: ${item.name}`);
   return true;
 }
 
 // A key cap with an "E" above the player's head while an item to pick up
 // with E is in reach. Screen space, after the darkness, so it shows at night.
-function drawKeyPrompt(): void {
-  if (!keyPickupInReach()) return;
+function showKeyPrompt(): void {
+  keyPrompt.visible = keyPickupInReach() !== undefined;
+  if (!keyPrompt.visible) return;
   const [sx, sy] = worldToScreen(player.x, player.y - PLAYER_BODY_HEIGHT - PROMPT_ABOVE_HEAD);
   const bob = Math.round(Math.sin(performance.now() / 250)); // 1 px up and down
-  const left = Math.round(sx - PROMPT_SIZE / 2);
-  const top = Math.round(sy - PROMPT_SIZE) + bob;
-  ctx.fillStyle = "#1a1622";
-  ctx.fillRect(left, top, PROMPT_SIZE, PROMPT_SIZE);
-  ctx.fillStyle = "#e8e0c8";
-  ctx.fillRect(left + 1, top + 1, PROMPT_SIZE - 2, PROMPT_SIZE - 3); // key face
-  ctx.fillStyle = "#a89a7c";
-  ctx.fillRect(left + 1, top + PROMPT_SIZE - 2, PROMPT_SIZE - 2, 1); // key side
-  // The letter E, drawn in pixels so it stays sharp: a stem and three bars.
-  ctx.fillStyle = "#1a1622";
-  const lx = left + 4;
-  const ly = top + 3;
-  ctx.fillRect(lx, ly, 1, 6);
-  ctx.fillRect(lx, ly, 5, 1);
-  ctx.fillRect(lx, ly + 2, 4, 1);
-  ctx.fillRect(lx, ly + 5, 5, 1);
+  keyPrompt.position.set(Math.round(sx - KEY_PROMPT_SIZE / 2), Math.round(sy - KEY_PROMPT_SIZE) + bob);
 }
 
 // Takes one item out of an inventory slot and throws it on the floor ahead of
@@ -423,50 +438,45 @@ function dropItem(index: number): void {
     y = Math.round(player.y);
   }
   const prop: Prop = { sprite: item.sprite, frame: item.frame, x, y, pickup: item };
-  propViews.push({
-    prop,
-    sheet: sheets.get(item.sprite)!,
-    animator: null,
-    waitForLeave: true,
-    fall: { fromX: player.x, fromY: player.y, ms: DROP_FALL_MS },
-  });
+  propViews.push(
+    addProp(prop, false, { waitForLeave: true, fall: { fromX: player.x, fromY: player.y, ms: DROP_FALL_MS } }),
+  );
   gameLog.log(`Dropped: ${item.name}`);
   if (item.id === "map_book" && book.isOpen && !inventory.has("map_book")) book.toggle();
 }
 
+// Updates what the stage shows from the game state, then renders it.
 function draw(): void {
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = "#0d0b12";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
   // World space.
-  camera.apply(ctx);
+  camera.apply(world);
   const view: View = {
     left: camera.x - canvas.width / 2,
     top: camera.y - canvas.height / 2,
     width: canvas.width,
     height: canvas.height,
   };
-  maze.drawFloor(view);
-  bigTree.drawGround(ctx);
-  if (target) drawTargetMarker(ctx, target.x, target.y, performance.now());
-  drawSortedByDepth(view);
+  maze.show(view, playerBody(), playerSight(), game.maze.gateLeaves());
+  bigTree.show(playerBody());
+  targetMarker.show(target, performance.now());
+  for (const v of propViews) showProp(v);
+  showPlayer();
 
   // Screen space.
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
   const [dirX, dirY] = vectorOf(player.facing);
   const [lightX, lightY] = worldToScreen(player.x, playerCenterY());
   lighting.setDaylight(game.clock().daylight);
-  lighting.draw(ctx, lightX, lightY, dirX, dirY);
-  drawPlayerGlow(); // after the darkness: it is the player's own light
-  drawKeyPrompt();
-  drawAbilityEffects();
-  drawMedusaHud();
-  drawTimeHud();
+  lighting.update(lightX, lightY, dirX, dirY);
+  showPlayerGlow(); // over the darkness: it is the player's own light
+  showKeyPrompt();
+  showAbilityEffects();
+  hud.showMedusa(game.medusaLife(), game.medusaLifeMax());
+  hud.showClock(game.clock(), gateOpening, timeSpeed, canvas.width, performance.now());
+  hud.showBanners(growthBannerMs, deathBannerMs, DEATH_BANNER_MS, canvas.width, canvas.height);
   cursor.setShape(
     book.isOpen && mouse.isOver(book.element) ? (mouse.rightHeld ? "eraser" : "pencil") : "arrow",
   );
   cursor.update(mouse.locked, mouse.x, mouse.y);
+  app.render();
 }
 
 function showControlsHint(root: HTMLElement): void {
@@ -509,24 +519,6 @@ function showCoreDebug(core: ReturnType<typeof coreState>): void {
   ]);
 }
 
-// Top-down depth: whatever stands lower on screen is drawn on top. Walls take
-// part too, so they hide whatever is behind them.
-function drawSortedByDepth(view: View): void {
-  const drawables = [
-    ...maze.wallDrawables(view, playerBody(), playerSight()).map((w) => ({ y: w.depthY, draw: w.draw })),
-    ...maze.gateDrawables(game.maze.gateLeaves(), playerBody(), playerSight()).map((g) => ({
-      y: g.depthY,
-      draw: g.draw,
-    })),
-    ...propViews.map((v) => ({ y: v.prop.y, draw: () => drawProp(v) })),
-    { y: tree.y, draw: () => bigTree.draw(ctx, playerBody()) },
-    ...plazaDeco.drawables(ctx),
-    { y: player.y, draw: drawPlayer },
-  ];
-  drawables.sort((a, b) => a.y - b.y);
-  for (const d of drawables) d.draw();
-}
-
 // The big tree's sheets (whole, trunk, crown) and the grass around its foot.
 async function loadBigTreeArt(): Promise<BigTreeArt> {
   const [whole, trunk, crown, grassBack, grassFront, sticks, shadow] = await Promise.all([
@@ -538,30 +530,44 @@ async function loadBigTreeArt(): Promise<BigTreeArt> {
     loadImage(`${BASE}sprites/palitos.png`),
     loadImage(`${BASE}sprites/sombra_arbol.png`),
   ]);
-  return { whole, trunk, crown, grassBack, grassFront, sticks, shadow };
+  return {
+    whole,
+    trunk,
+    crown,
+    grassBack: Texture.from(grassBack),
+    grassFront: Texture.from(grassFront),
+    sticks: Texture.from(sticks),
+    shadow: Texture.from(shadow),
+  };
 }
 
-function drawPlayer(): void {
-  playerAnimator.draw(ctx, player.x, player.y + PLAYER_FEET_PADDING);
+function showPlayer(): void {
+  const frame = playerAnimator.currentFrame();
+  playerSprite.visible = frame !== null;
+  if (frame) placeFrame(playerSprite, frame, player.x, player.y + PLAYER_FEET_PADDING);
+  playerSprite.zIndex = depthOf(player.y, DEPTH.player);
 }
 
-function drawAbilityEffects(): void {
+function showAbilityEffects(): void {
   const [dirX, dirY] = vectorOf(player.facing);
   const x = player.x + Math.round(canvas.width / 2 - camera.x);
   const feetY = player.y + Math.round(canvas.height / 2 - camera.y);
-  abilityEffects.draw(ctx, x, feetY, PLAYER_BODY_HEIGHT, dirX, dirY, performance.now());
+  abilityEffects.show(x, feetY, PLAYER_BODY_HEIGHT, dirX, dirY, performance.now());
 }
 
 // Slow breath: dim -> bright -> dim, starting with the idle loop.
-function drawPlayerGlow(): void {
+function showPlayerGlow(): void {
   const frame = playerAnimator.currentFrame();
-  if (!frame) return;
+  if (!frame) {
+    playerGlow.show(null, 0, 0, 0);
+    return;
+  }
   const phase = (playerAnimator.motionTimeMs % BREATH_MS) / BREATH_MS;
   const breath = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2); // 0 -> 1 -> 0
-  // Same spot drawFrame uses, through the same rounded camera offset.
+  // Same spot placeFrame uses, through the same rounded camera offset.
   const left = Math.round(player.x - frame.anchorX) + Math.round(canvas.width / 2 - camera.x);
   const top = Math.round(player.y + PLAYER_FEET_PADDING - frame.h) + Math.round(canvas.height / 2 - camera.y);
-  playerGlow.draw(ctx, frame, left, top, breath);
+  playerGlow.show(frame, left, top, breath);
 }
 
 // Where the player's body is drawn, in world pixels.
@@ -589,7 +595,21 @@ function playerBody(): Box {
   };
 }
 
-function drawProp({ prop, sheet, animator, fall }: PropView): void {
+// Puts a prop on the floor, as a looping animation or as one fixed frame.
+function addProp(prop: Prop, animated: boolean, extra: Pick<PropView, "waitForLeave" | "fall"> = {}): PropView {
+  const sheet = sheets.get(prop.sprite)!;
+  let animator: Animator | null = null;
+  if (animated) {
+    animator = new Animator(sheet);
+    animator.play(prop.animation ?? DEFAULT_ANIMATION);
+  }
+  const sprite = new Sprite();
+  sprite.zIndex = depthOf(prop.y, DEPTH.prop);
+  standing.addChild(sprite);
+  return { prop, sheet, animator, sprite, ...extra };
+}
+
+function showProp({ prop, sheet, animator, sprite, fall }: PropView): void {
   let { x, y } = prop;
   if (fall) {
     // From the hand to the floor in a hop: p goes 0 -> 1 while it falls.
@@ -597,8 +617,9 @@ function drawProp({ prop, sheet, animator, fall }: PropView): void {
     x = fall.fromX + (prop.x - fall.fromX) * p;
     y = fall.fromY + (prop.y - fall.fromY) * p - Math.sin(Math.PI * p) * DROP_HOP;
   }
-  if (animator) animator.draw(ctx, x, y);
-  else drawFrame(ctx, sheet, sheet.frames[prop.frame ?? 0], x, y);
+  const frame = animator ? animator.currentFrame() : sheet.frames[prop.frame ?? 0];
+  sprite.visible = frame !== null;
+  if (frame) placeFrame(sprite, frame, x, y);
 }
 
 function coreState() {
@@ -617,86 +638,6 @@ function playerCenterY(): number {
 
 function worldToScreen(x: number, y: number): [number, number] {
   return [x - camera.x + canvas.width / 2, y - camera.y + canvas.height / 2];
-}
-
-// m:ss
-function formatMs(ms: number): string {
-  const total = Math.max(0, Math.ceil(ms / 1000));
-  return `${Math.floor(total / 60)}:${String(total % 60).padStart(2, "0")}`;
-}
-
-// Top center: day and time left of the current phase, and when the maze grows
-// next. Plus a warning when it does.
-function drawTimeHud(): void {
-  const clock = game.clock();
-  const phase = { DIA: "DAY", TARDE: "DUSK", NOCHE: "NIGHT" }[clock.phase];
-  const line1 = `DAY ${clock.day}  ·  ${phase} ${formatMs(clock.phaseLeftMs)}${timeSpeed > 1 ? `  ·  x${timeSpeed}` : ""}`;
-  const next = clock.nextExpansionMs;
-  const line2 =
-    next < 0 ? "THE MAZE IS FULL SIZE"
-    : clock.expansions === 0 ? `MAZE GROWS IN ${formatMs(next)}`
-    : `MAZE GROWS AT NIGHTFALL  ${formatMs(next)}`;
-  const urgent = next >= 0 && next <= 10000;
-  const closing = clock.gatesOpen && gateOpening < 1 && clock.phase === "TARDE";
-  const gates = !clock.gatesOpen
-    ? `GATES CLOSED · OPEN IN ${formatMs(clock.gatesChangeMs)}`
-    : closing
-      ? `GATES CLOSING! ${formatMs(clock.gatesChangeMs)}`
-      : `GATES OPEN · CLOSE IN ${formatMs(clock.gatesChangeMs)}`;
-  const gatesUrgent = closing;
-
-  ctx.save();
-  ctx.textAlign = "center";
-  const cx = Math.round(canvas.width / 2);
-  ctx.font = "bold 12px monospace";
-  const width = Math.max(...[line1, line2, gates].map((t) => ctx.measureText(t).width)) + 20;
-  ctx.fillStyle = "rgba(9, 7, 16, 0.72)";
-  ctx.fillRect(Math.round(cx - width / 2), 6, Math.round(width), 50);
-
-  const phaseColor = { DIA: "#d8cfb8", TARDE: "#e0a458", NOCHE: "#8f86c9" }[clock.phase];
-  ctx.fillStyle = phaseColor;
-  ctx.fillText(line1, cx, 20);
-  ctx.font = "11px monospace";
-  ctx.fillStyle = urgent && Math.floor(performance.now() / 250) % 2 === 0 ? "#d95763" : "#b9b3a6";
-  ctx.fillText(line2, cx, 35);
-  // Last minute before the gates close: red, blinking
-  const blink = Math.floor(performance.now() / 300) % 2 === 0;
-  ctx.fillStyle = gatesUrgent && blink ? "#d95763" : clock.gatesOpen ? "#7ccf7a" : "#8f86c9";
-  ctx.fillText(gates, cx, 49);
-
-  if (growthBannerMs > 0) {
-    ctx.globalAlpha = Math.min(1, growthBannerMs / 600);
-    ctx.font = "bold 16px monospace";
-    ctx.fillStyle = "#e0a458";
-    ctx.fillText("THE MAZE GROWS", cx, 80);
-  }
-
-  // Death: red flash fading out, and the message
-  if (deathBannerMs > 0) {
-    const t = deathBannerMs / DEATH_BANNER_MS;
-    ctx.globalAlpha = 0.45 * t * t;
-    ctx.fillStyle = "#7a0f18";
-    ctx.fillRect(0, 0, canvas.width, canvas.height);
-    ctx.globalAlpha = Math.min(1, deathBannerMs / 600);
-    ctx.font = "bold 18px monospace";
-    ctx.fillStyle = "#d95763";
-    ctx.fillText("YOU DIED", cx, Math.round(canvas.height / 2) - 40);
-  }
-  ctx.restore();
-}
-
-function drawMedusaHud(): void {
-  const life = game.medusaLife();
-  const max = game.medusaLifeMax();
-  const ratio = life / max;
-
-  ctx.fillStyle = "#5fcde4";
-  ctx.font = "10px monospace";
-  ctx.fillText(`MEDUSA ${life} / ${max}${life === 0 ? "  DEAD - T reset" : ""}`, 12, 18);
-  ctx.strokeStyle = "#3a3445";
-  ctx.strokeRect(12, 24, 120, 8);
-  ctx.fillStyle = ratio > 0.3 ? "#6a8a4a" : "#d95763";
-  ctx.fillRect(13, 25, 118 * ratio, 6);
 }
 
 window.addEventListener("keydown", (e) => {

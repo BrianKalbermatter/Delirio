@@ -1,5 +1,6 @@
 // The game's own mouse pointer (the system one is hidden while the mouse is
 // locked) and the marker on the floor where the player was sent.
+import { Graphics } from "pixi.js";
 
 // Pixel-art pointers. Each has its own palette (index -> color, " " = empty)
 // and its hot spot: the pixel that points, draws or erases.
@@ -87,7 +88,7 @@ const SHAPES = {
 
 export type CursorShape = keyof typeof SHAPES;
 
-const MARKER = "rgba(216, 207, 184, 0.8)";
+const MARKER = { width: 1, color: "#d8cfb8", alpha: 0.8 };
 
 // Pointer drawn over the whole page (game and panel), as a DOM element so it
 // can move above the side panel too. It never catches clicks.
@@ -147,17 +148,19 @@ export class CursorOverlay {
   }
 }
 
-// Flattened ring on the floor (world coordinates), pulsing with `timeMs`.
-export function drawTargetMarker(
-  ctx: CanvasRenderingContext2D,
-  x: number,
-  y: number,
-  timeMs: number,
-): void {
-  const pulse = 1 + 0.15 * Math.sin(timeMs / 120);
-  ctx.strokeStyle = MARKER;
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.ellipse(Math.round(x), Math.round(y), 7 * pulse, 3.5 * pulse, 0, 0, Math.PI * 2);
-  ctx.stroke();
+// Flattened ring on the floor where the player was sent, pulsing. Lives in
+// the world, on the ground layer.
+export class TargetMarker {
+  readonly view = new Graphics();
+
+  // (x, y) in world pixels, or null to hide it.
+  show(target: { x: number; y: number } | null, timeMs: number): void {
+    this.view.visible = target !== null;
+    if (!target) return;
+    const pulse = 1 + 0.15 * Math.sin(timeMs / 120);
+    this.view
+      .clear()
+      .ellipse(Math.round(target.x), Math.round(target.y), 7 * pulse, 3.5 * pulse)
+      .stroke(MARKER);
+  }
 }

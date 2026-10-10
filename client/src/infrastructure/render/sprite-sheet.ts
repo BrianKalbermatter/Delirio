@@ -1,6 +1,8 @@
 // Loads an Aseprite sprite sheet export (json-array + --list-tags) and groups
 // its frames by animation tag. A sheet without tags gets a single "default"
-// animation with all its frames.
+// animation with all its frames. Every frame gets its own Pixi texture, a
+// sub-rectangle of the sheet's single source texture.
+import { Rectangle, type Sprite, Texture } from "pixi.js";
 
 export interface Frame {
   x: number;
@@ -15,10 +17,11 @@ export interface Frame {
   // (--trim-sprite): add it to frame coordinates to get canvas coordinates.
   sourceX: number;
   sourceY: number;
+  texture: Texture;
 }
 
 export interface SpriteSheet {
-  image: HTMLImageElement;
+  image: HTMLImageElement; // kept for the DOM panels (inventory icons) and pixel scans
   frameWidth: number;
   frameHeight: number;
   frames: Frame[];
@@ -51,12 +54,14 @@ export async function loadSpriteSheet(basePath: string, options: LoadOptions = {
     loadImage(`${basePath}.png`),
   ]);
 
+  const { source } = Texture.from(image);
   const frames: Frame[] = data.frames.map((f) => ({
     ...f.frame,
     durationMs: f.duration,
     anchorX: f.frame.w / 2,
     sourceX: f.spriteSourceSize?.x ?? 0,
     sourceY: f.spriteSourceSize?.y ?? 0,
+    texture: new Texture({ source, frame: new Rectangle(f.frame.x, f.frame.y, f.frame.w, f.frame.h) }),
   }));
   const animations = new Map<string, Frame[]>();
   for (const tag of data.meta.frameTags) {
@@ -81,17 +86,10 @@ export function animationDurationMs(sheet: SpriteSheet, tag: string): number {
   return frames.reduce((total, f) => total + f.durationMs, 0);
 }
 
-// Draws one frame with its feet (bottom center) at (x, y).
-export function drawFrame(
-  ctx: CanvasRenderingContext2D,
-  sheet: SpriteSheet,
-  frame: Frame,
-  x: number,
-  y: number,
-): void {
-  const dx = Math.round(x - frame.anchorX);
-  const dy = Math.round(y - frame.h);
-  ctx.drawImage(sheet.image, frame.x, frame.y, frame.w, frame.h, dx, dy, frame.w, frame.h);
+// Shows one frame on `sprite` with its feet (bottom center) at (x, y).
+export function placeFrame(sprite: Sprite, frame: Frame, x: number, y: number): void {
+  sprite.texture = frame.texture;
+  sprite.position.set(Math.round(x - frame.anchorX), Math.round(y - frame.h));
 }
 
 // Sets each animation's pivot to the average horizontal center of mass of its
