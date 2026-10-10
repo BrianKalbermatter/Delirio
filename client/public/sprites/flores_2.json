@@ -1,0 +1,104 @@
+{ "frames": [
+   {
+    "filename": "Flores2_viento 0.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   },
+   {
+    "filename": "Flores2_viento 1.aseprite",
+    "frame": { "x": 32, "y": 0, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   },
+   {
+    "filename": "Flores2_viento 2.aseprite",
+    "frame": { "x": 64, "y": 0, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   },
+   {
+    "filename": "Flores2_viento 3.aseprite",
+    "frame": { "x": 0, "y": 49, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   },
+   {
+    "filename": "Flores2_viento 4.aseprite",
+    "frame": { "x": 32, "y": 49, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   },
+   {
+    "filename": "Flores2_viento 5.aseprite",
+    "frame": { "x": 64, "y": 49, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   },
+   {
+    "filename": "Flores2_viento 6.aseprite",
+    "frame": { "x": 0, "y": 98, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   },
+   {
+    "filename": "Flores2_viento 7.aseprite",
+    "frame": { "x": 32, "y": 98, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   },
+   {
+    "filename": "Flores2_viento 8.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   },
+   {
+    "filename": "Flores2_viento 9.aseprite",
+    "frame": { "x": 64, "y": 98, "w": 32, "h": 49 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 32, "h": 49 },
+    "sourceSize": { "w": 32, "h": 49 },
+    "duration": 120
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.6-x64",
+  "image": "flores_2.png",
+  "format": "RGBA8888",
+  "size": { "w": 96, "h": 147 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "viento", "from": 0, "to": 9, "direction": "forward", "color": "#000000ff" }
+  ]
+ }
+}

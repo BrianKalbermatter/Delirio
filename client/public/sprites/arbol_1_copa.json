@@ -1,0 +1,222 @@
+{ "frames": [
+   {
+    "filename": "Arbol1_pintado 0.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 1.aseprite",
+    "frame": { "x": 303, "y": 0, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 2.aseprite",
+    "frame": { "x": 606, "y": 0, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 3.aseprite",
+    "frame": { "x": 909, "y": 0, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 4.aseprite",
+    "frame": { "x": 1212, "y": 0, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 5.aseprite",
+    "frame": { "x": 0, "y": 242, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 6.aseprite",
+    "frame": { "x": 303, "y": 242, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 7.aseprite",
+    "frame": { "x": 606, "y": 242, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 8.aseprite",
+    "frame": { "x": 606, "y": 242, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 9.aseprite",
+    "frame": { "x": 303, "y": 242, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 10.aseprite",
+    "frame": { "x": 909, "y": 242, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 11.aseprite",
+    "frame": { "x": 909, "y": 0, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 12.aseprite",
+    "frame": { "x": 1212, "y": 242, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 13.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 14.aseprite",
+    "frame": { "x": 0, "y": 484, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 15.aseprite",
+    "frame": { "x": 0, "y": 484, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 150
+   },
+   {
+    "filename": "Arbol1_pintado 16.aseprite",
+    "frame": { "x": 303, "y": 484, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 70
+   },
+   {
+    "filename": "Arbol1_pintado 17.aseprite",
+    "frame": { "x": 606, "y": 484, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 70
+   },
+   {
+    "filename": "Arbol1_pintado 18.aseprite",
+    "frame": { "x": 909, "y": 484, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 70
+   },
+   {
+    "filename": "Arbol1_pintado 19.aseprite",
+    "frame": { "x": 1212, "y": 484, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 70
+   },
+   {
+    "filename": "Arbol1_pintado 20.aseprite",
+    "frame": { "x": 0, "y": 726, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 70
+   },
+   {
+    "filename": "Arbol1_pintado 21.aseprite",
+    "frame": { "x": 303, "y": 726, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 70
+   },
+   {
+    "filename": "Arbol1_pintado 22.aseprite",
+    "frame": { "x": 606, "y": 726, "w": 303, "h": 242 },
+    "rotated": false,
+    "trimmed": true,
+    "spriteSourceSize": { "x": 16, "y": 100, "w": 303, "h": 242 },
+    "sourceSize": { "w": 540, "h": 540 },
+    "duration": 70
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.6-x64",
+  "image": "arbol_1_copa.png",
+  "format": "RGBA8888",
+  "size": { "w": 1515, "h": 968 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "idle", "from": 0, "to": 15, "direction": "forward", "color": "#000000ff" },
+   { "name": "chop", "from": 16, "to": 22, "direction": "forward", "color": "#000000ff" }
+  ]
+ }
+}
