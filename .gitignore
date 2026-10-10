@@ -15,3 +15,6 @@ src/main
 
 # Local editor flags (machine-specific paths)
 src/compile_flags.txt
+
+# Python bytecode
+__pycache__/
