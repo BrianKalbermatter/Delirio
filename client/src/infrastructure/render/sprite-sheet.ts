@@ -11,6 +11,10 @@ export interface Frame {
   // Horizontal pivot inside the frame, in px from its left edge. Drawing puts
   // this column on the entity position. Defaults to the frame center.
   anchorX: number;
+  // Where the frame was in the source canvas, when the export trimmed it
+  // (--trim-sprite): add it to frame coordinates to get canvas coordinates.
+  sourceX: number;
+  sourceY: number;
 }
 
 export interface SpriteSheet {
@@ -26,6 +30,7 @@ export const DEFAULT_ANIMATION = "default";
 interface AsepriteExport {
   frames: {
     frame: { x: number; y: number; w: number; h: number };
+    spriteSourceSize?: { x: number; y: number };
     duration: number;
   }[];
   meta: {
@@ -50,6 +55,8 @@ export async function loadSpriteSheet(basePath: string, options: LoadOptions = {
     ...f.frame,
     durationMs: f.duration,
     anchorX: f.frame.w / 2,
+    sourceX: f.spriteSourceSize?.x ?? 0,
+    sourceY: f.spriteSourceSize?.y ?? 0,
   }));
   const animations = new Map<string, Frame[]>();
   for (const tag of data.meta.frameTags) {
@@ -116,7 +123,7 @@ function pivotOnBody(image: HTMLImageElement, animations: Map<string, Frame[]>):
   }
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
+export function loadImage(src: string): Promise<HTMLImageElement> {
   return new Promise((resolve, reject) => {
     const image = new Image();
     image.onload = () => resolve(image);

@@ -10,15 +10,17 @@
 import { Character } from "./domain/character";
 import { vectorOf } from "./domain/facing";
 import { Inventory } from "./domain/inventory";
+import { ITEMS } from "./domain/items";
 import { ITEM_SPRITES, placeItems, type Prop } from "./domain/level-items";
 import { Square } from "./domain/square";
-import { placeTrees, TREE_SPRITES, trunkBox } from "./domain/trees";
+import { placeSampleTree, sampleTrunkBox } from "./domain/sample-tree";
 import { TileMap } from "./domain/tile-map";
 import { ABILITY_KEY_LABEL, AbilityKeys } from "./infrastructure/input/ability-keys";
 import { LockedMouse } from "./infrastructure/input/locked-mouse";
 import { AbilityEffects } from "./infrastructure/render/ability-effects";
 import { Animator } from "./infrastructure/render/animator";
-import { Trees } from "./infrastructure/render/trees";
+import { BigTree, type BigTreeArt } from "./infrastructure/render/big-tree";
+import { PlazaDeco } from "./infrastructure/render/plaza-deco";
 import { Camera } from "./infrastructure/render/camera";
 import { CursorOverlay, drawTargetMarker } from "./infrastructure/render/cursor";
 import { Glow } from "./infrastructure/render/glow";
@@ -32,6 +34,7 @@ import {
 import {
   DEFAULT_ANIMATION,
   drawFrame,
+  loadImage,
   loadSpriteSheet,
   type SpriteSheet,
 } from "./infrastructure/render/sprite-sheet";
@@ -56,6 +59,17 @@ const PLAYER_FEET_PADDING = 13;
 const PLAYER_BODY_WIDTH = 34;
 const PLAYER_BODY_HEIGHT = 46;
 const PICKUP_RADIUS = 22;
+const SIGHT_AHEAD = 140; // px the walls also clear ahead of the player
+// Items picked up with E (branches): reach from the feet, and the key prompt
+// shown above the head while one is in reach.
+const KEY_PICKUP_RADIUS = 26;
+const PROMPT_SIZE = 13;
+const PROMPT_ABOVE_HEAD = 6;
+// A dropped item lands this far ahead of the feet (past PICKUP_RADIUS), after
+// a short hop out of the hand.
+const DROP_AHEAD = 32;
+const DROP_FALL_MS = 280;
+const DROP_HOP = 16; // px of the hop's peak
 const TARGET_REACHED = 4; // px: the floor marker hides when the player gets this close
 // The player's cyan "breathes": one slow pulse every two idle loops
 // (idle = 6 frames x 150 ms), in step with the idle movement.
@@ -82,18 +96,13 @@ fitCanvas();
 // the site is served from ("/" locally, "/Delirio/" on GitHub Pages).
 const BASE = import.meta.env.BASE_URL;
 const assetNames = ITEM_SPRITES;
-const [game, playerSheet, mazeTiles, treeSheetList, ...assetSheets] = await Promise.all([
+const [game, playerSheet, mazeTiles, treeArt, flowerSheet, tallFlowerSheet, ...assetSheets] = await Promise.all([
   loadGameWasm(),
   loadSpriteSheet(`${BASE}sprites/personaje_2`, { pivotOnBody: true }),
   loadMazeTiles(`${BASE}assets/maze_tiles`),
-  Promise.all(
-    TREE_SPRITES.map(async (name) => {
-      const [whole, trunk, crown] = await Promise.all(
-        ["", "_tronco", "_copa"].map((part) => loadSpriteSheet(`${BASE}sprites/${name}${part}`)),
-      );
-      return { whole, trunk, crown };
-    }),
-  ),
+  loadBigTreeArt(),
+  loadSpriteSheet(`${BASE}sprites/flores`),
+  loadSpriteSheet(`${BASE}sprites/flores_2`),
   ...assetNames.map((name) => loadSpriteSheet(`${BASE}assets/${name}`)),
 ]);
 // roll_start in the sheet already rolls once and lands; the roll only uses its
@@ -123,6 +132,10 @@ interface PropView {
   prop: Prop;
   sheet: SpriteSheet;
   animator: Animator | null;
+  // A dropped item is not picked up again until the player has walked away.
+  waitForLeave?: boolean;
+  // While it falls from the hand: where it was thrown from and time left.
+  fall?: { fromX: number; fromY: number; ms: number };
 }
 const spawn = game.player();
 const items = placeItems(map, spawn);
@@ -133,12 +146,20 @@ let propViews: PropView[] = items.map((prop) => {
   animator.play(prop.animation ?? DEFAULT_ANIMATION);
   return { prop, sheet, animator };
 });
-const treeSheets = new Map(TREE_SPRITES.map((name, i) => [name, treeSheetList[i]]));
 const square = new Square(map, spawn);
-const treeList = placeTrees(map, square, spawn, items);
-// Trunks are solid: C keeps them with the walls for collisions.
-for (const tree of treeList) game.maze.addObstacle(trunkBox(tree));
-const trees = new Trees(treeList, treeSheets);
+// The big tree: its trunk is solid, C keeps it with the walls.
+const tree = placeSampleTree(spawn);
+game.maze.addObstacle(sampleTrunkBox(tree));
+const bigTree = new BigTree(tree, treeArt);
+const plazaDeco = new PlazaDeco(tree.flowers, [flowerSheet, tallFlowerSheet]);
+// Fallen branches lie around the tree, each drawn with its own variant.
+propViews.push(
+  ...tree.branches.map((b) => ({
+    prop: { sprite: ITEMS.branch.sprite, frame: b.kind, x: b.x, y: b.y, pickup: ITEMS.branch },
+    sheet: sheets.get(ITEMS.branch.sprite)!,
+    animator: null,
+  })),
+);
 
 const player = new Character();
 player.sync(coreState(), 0);
@@ -183,7 +204,7 @@ const tabs = new SideTabs(
 const coreDebug = new CoreDebug(tabs.page("technical"));
 const gameLog = new GameLog(tabs.page("technical"));
 showControlsHint(tabs.page("technical"));
-const panel = new InventoryPanel(tabs.page("inventory"), inventory, sheets);
+const panel = new InventoryPanel(tabs.page("inventory"), inventory, sheets, (i) => dropItem(i));
 const abilityPanel = new AbilityPanel(tabs.page("skills"), ABILITY_KEY_LABEL);
 const abilityEffects = new AbilityEffects();
 gameLog.log("You wake up at the base.");
@@ -209,7 +230,11 @@ mouse.addPressSurface(book.element);
 new AbilityKeys(
   window,
   () => mouse.locked,
-  (ability) => game.useAbility(ability),
+  (ability) => {
+    // E over a branch picks it up instead of attacking.
+    if (ability === ABILITY.ATAQUE_LARGO && pickUpWithKey()) return;
+    game.useAbility(ability);
+  },
   (ability, held) => game.holdAbility(ability, held),
 );
 let blocking = false;
@@ -239,7 +264,7 @@ function update(dtMs: number): void {
     game.holdAbility(ABILITY.BLOQUEAR, blocking);
   }
   game.update(dtMs); // the C core moves the game one step
-  syncMaze();
+  if (syncMaze()) maze.invalidateFloor();
 
   // Gates: they close little by little at the end of the afternoon.
   const opening = game.maze.gateOpening();
@@ -287,15 +312,22 @@ function update(dtMs: number): void {
   for (const started of abilityEffects.update(abilities, dtMs)) {
     gameLog.log(started.name);
     if (abilities.indexOf(started) <= ABILITY.ATAQUE_CRITICO) {
-      trees.chop(player.x, player.y, vectorOf(player.facing));
+      bigTree.chop(player.x, player.y, vectorOf(player.facing));
     }
   }
   pickUpItems();
 
   playerAnimator.play(player.animationTag, !player.isDead);
   playerAnimator.update(dtMs, player.animationSpeed, player.animationReversed);
-  for (const view of propViews) view.animator?.update(dtMs);
-  trees.update(dtMs);
+  for (const view of propViews) {
+    view.animator?.update(dtMs);
+    if (view.fall) {
+      view.fall.ms -= dtMs;
+      if (view.fall.ms <= 0) view.fall = undefined;
+    }
+  }
+  bigTree.update(dtMs);
+  plazaDeco.update(dtMs);
 
   camera.follow(player.x, playerCenterY(), player.facing, dtMs);
   camera.clampTo(map.width, map.height, maze.wallHeight);
@@ -303,14 +335,103 @@ function update(dtMs: number): void {
 }
 
 function pickUpItems(): void {
-  propViews = propViews.filter(({ prop }) => {
-    if (!prop.pickup) return true;
-    if (Math.hypot(prop.x - player.x, prop.y - player.y) > PICKUP_RADIUS) return true;
+  propViews = propViews.filter((view) => {
+    const { prop } = view;
+    if (!prop.pickup || prop.pickup.pickupWithKey || view.fall) return true;
+    const near = Math.hypot(prop.x - player.x, prop.y - player.y) <= PICKUP_RADIUS;
+    if (view.waitForLeave) {
+      if (!near) view.waitForLeave = false;
+      return true;
+    }
+    if (!near) return true;
     if (!inventory.add(prop.pickup)) return true; // full: leave it on the floor
     gameLog.log(`Picked up: ${prop.pickup.name}`);
     if (prop.pickup.id === "map_book") gameLog.log("Press ` to open it and draw the maze.");
     return false;
   });
+}
+
+// The nearest item on the floor that is picked up with E, if one is in reach.
+function keyPickupInReach(): PropView | undefined {
+  let nearest: PropView | undefined;
+  let nearestDistance = KEY_PICKUP_RADIUS;
+  for (const view of propViews) {
+    if (!view.prop.pickup?.pickupWithKey || view.fall) continue;
+    const d = Math.hypot(view.prop.x - player.x, view.prop.y - player.y);
+    if (d <= nearestDistance) {
+      nearest = view;
+      nearestDistance = d;
+    }
+  }
+  return nearest;
+}
+
+// E: picks up the item in reach. False when there is none, so E attacks.
+function pickUpWithKey(): boolean {
+  const view = keyPickupInReach();
+  if (!view) return false;
+  const item = view.prop.pickup!;
+  if (!inventory.add(item)) {
+    gameLog.log("The inventory is full.");
+    return true;
+  }
+  propViews = propViews.filter((v) => v !== view);
+  gameLog.log(`Picked up: ${item.name}`);
+  return true;
+}
+
+// A key cap with an "E" above the player's head while an item to pick up
+// with E is in reach. Screen space, after the darkness, so it shows at night.
+function drawKeyPrompt(): void {
+  if (!keyPickupInReach()) return;
+  const [sx, sy] = worldToScreen(player.x, player.y - PLAYER_BODY_HEIGHT - PROMPT_ABOVE_HEAD);
+  const bob = Math.round(Math.sin(performance.now() / 250)); // 1 px up and down
+  const left = Math.round(sx - PROMPT_SIZE / 2);
+  const top = Math.round(sy - PROMPT_SIZE) + bob;
+  ctx.fillStyle = "#1a1622";
+  ctx.fillRect(left, top, PROMPT_SIZE, PROMPT_SIZE);
+  ctx.fillStyle = "#e8e0c8";
+  ctx.fillRect(left + 1, top + 1, PROMPT_SIZE - 2, PROMPT_SIZE - 3); // key face
+  ctx.fillStyle = "#a89a7c";
+  ctx.fillRect(left + 1, top + PROMPT_SIZE - 2, PROMPT_SIZE - 2, 1); // key side
+  // The letter E, drawn in pixels so it stays sharp: a stem and three bars.
+  ctx.fillStyle = "#1a1622";
+  const lx = left + 4;
+  const ly = top + 3;
+  ctx.fillRect(lx, ly, 1, 6);
+  ctx.fillRect(lx, ly, 5, 1);
+  ctx.fillRect(lx, ly + 2, 4, 1);
+  ctx.fillRect(lx, ly + 5, 5, 1);
+}
+
+// Takes one item out of an inventory slot and throws it on the floor ahead of
+// the player. Where that is a wall or the tree's trunk, it falls at the feet.
+function dropItem(index: number): void {
+  const item = inventory.removeOne(index);
+  if (!item) {
+    gameLog.log("Nothing to drop in that slot.");
+    return;
+  }
+  const [dirX, dirY] = vectorOf(player.facing);
+  let x = Math.round(player.x + dirX * DROP_AHEAD);
+  let y = Math.round(player.y + dirY * DROP_AHEAD);
+  const t = map.tileSize;
+  const trunk = sampleTrunkBox(tree);
+  const inTrunk = x >= trunk.x && x <= trunk.x + trunk.w && y >= trunk.y && y <= trunk.y + trunk.h;
+  if (map.isWall(Math.floor(x / t), Math.floor(y / t)) || inTrunk) {
+    x = Math.round(player.x);
+    y = Math.round(player.y);
+  }
+  const prop: Prop = { sprite: item.sprite, frame: item.frame, x, y, pickup: item };
+  propViews.push({
+    prop,
+    sheet: sheets.get(item.sprite)!,
+    animator: null,
+    waitForLeave: true,
+    fall: { fromX: player.x, fromY: player.y, ms: DROP_FALL_MS },
+  });
+  gameLog.log(`Dropped: ${item.name}`);
+  if (item.id === "map_book" && book.isOpen && !inventory.has("map_book")) book.toggle();
 }
 
 function draw(): void {
@@ -327,6 +448,7 @@ function draw(): void {
     height: canvas.height,
   };
   maze.drawFloor(view);
+  bigTree.drawGround(ctx);
   if (target) drawTargetMarker(ctx, target.x, target.y, performance.now());
   drawSortedByDepth(view);
 
@@ -337,6 +459,7 @@ function draw(): void {
   lighting.setDaylight(game.clock().daylight);
   lighting.draw(ctx, lightX, lightY, dirX, dirY);
   drawPlayerGlow(); // after the darkness: it is the player's own light
+  drawKeyPrompt();
   drawAbilityEffects();
   drawMedusaHud();
   drawTimeHud();
@@ -350,7 +473,7 @@ function showControlsHint(root: HTMLElement): void {
   const hint = document.createElement("p");
   hint.className = "hint";
   hint.textContent =
-    "Left click: move · `: map book (left draws, right erases) · 1-9 or click a slot: select · F: clock speed · G: test gates · Esc: menu";
+    "Left click: move · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch: pick it up · F: clock speed · G: test gates · Esc: menu";
   root.appendChild(hint);
 }
 
@@ -390,14 +513,32 @@ function showCoreDebug(core: ReturnType<typeof coreState>): void {
 // part too, so they hide whatever is behind them.
 function drawSortedByDepth(view: View): void {
   const drawables = [
-    ...maze.wallDrawables(view, playerBody()).map((w) => ({ y: w.depthY, draw: w.draw })),
-    ...maze.gateDrawables(game.maze.gateLeaves(), playerBody()).map((g) => ({ y: g.depthY, draw: g.draw })),
+    ...maze.wallDrawables(view, playerBody(), playerSight()).map((w) => ({ y: w.depthY, draw: w.draw })),
+    ...maze.gateDrawables(game.maze.gateLeaves(), playerBody(), playerSight()).map((g) => ({
+      y: g.depthY,
+      draw: g.draw,
+    })),
     ...propViews.map((v) => ({ y: v.prop.y, draw: () => drawProp(v) })),
-    ...trees.drawables(ctx, view, playerBody()),
+    { y: tree.y, draw: () => bigTree.draw(ctx, playerBody()) },
+    ...plazaDeco.drawables(ctx),
     { y: player.y, draw: drawPlayer },
   ];
   drawables.sort((a, b) => a.y - b.y);
   for (const d of drawables) d.draw();
+}
+
+// The big tree's sheets (whole, trunk, crown) and the grass around its foot.
+async function loadBigTreeArt(): Promise<BigTreeArt> {
+  const [whole, trunk, crown, grassBack, grassFront, sticks, shadow] = await Promise.all([
+    loadSpriteSheet(`${BASE}sprites/arbol_1`),
+    loadSpriteSheet(`${BASE}sprites/arbol_1_tronco`),
+    loadSpriteSheet(`${BASE}sprites/arbol_1_copa`),
+    loadImage(`${BASE}sprites/pasto_arbol_atras.png`),
+    loadImage(`${BASE}sprites/pasto_arbol_frente.png`),
+    loadImage(`${BASE}sprites/palitos.png`),
+    loadImage(`${BASE}sprites/sombra_arbol.png`),
+  ]);
+  return { whole, trunk, crown, grassBack, grassFront, sticks, shadow };
 }
 
 function drawPlayer(): void {
@@ -424,6 +565,21 @@ function drawPlayerGlow(): void {
 }
 
 // Where the player's body is drawn, in world pixels.
+// The area the walls clear for the player: the body, stretched SIGHT_AHEAD px
+// towards where the player faces, so the way ahead (a gate, a dead end) shows.
+function playerSight(): Box {
+  const body = playerBody();
+  const [dirX, dirY] = vectorOf(player.facing);
+  const ax = dirX * SIGHT_AHEAD;
+  const ay = dirY * SIGHT_AHEAD;
+  return {
+    left: Math.min(body.left, body.left + ax),
+    right: Math.max(body.right, body.right + ax),
+    top: Math.min(body.top, body.top + ay),
+    bottom: Math.max(body.bottom, body.bottom + ay),
+  };
+}
+
 function playerBody(): Box {
   return {
     left: player.x - PLAYER_BODY_WIDTH / 2,
@@ -433,9 +589,16 @@ function playerBody(): Box {
   };
 }
 
-function drawProp({ prop, sheet, animator }: PropView): void {
-  if (animator) animator.draw(ctx, prop.x, prop.y);
-  else drawFrame(ctx, sheet, sheet.frames[prop.frame ?? 0], prop.x, prop.y);
+function drawProp({ prop, sheet, animator, fall }: PropView): void {
+  let { x, y } = prop;
+  if (fall) {
+    // From the hand to the floor in a hop: p goes 0 -> 1 while it falls.
+    const p = 1 - fall.ms / DROP_FALL_MS;
+    x = fall.fromX + (prop.x - fall.fromX) * p;
+    y = fall.fromY + (prop.y - fall.fromY) * p - Math.sin(Math.PI * p) * DROP_HOP;
+  }
+  if (animator) animator.draw(ctx, x, y);
+  else drawFrame(ctx, sheet, sheet.frames[prop.frame ?? 0], x, y);
 }
 
 function coreState() {
@@ -557,6 +720,7 @@ window.addEventListener("keydown", (e) => {
     game.setTimeSpeed(timeSpeed);
     gameLog.log(`Clock speed x${timeSpeed}`);
   }
+  if (e.code === "KeyX" && mouse.locked) dropItem(inventory.selected);
   const digit = /^Digit([1-9])$/.exec(e.code);
   if (digit) inventory.select(Number(digit[1]) - 1);
 });

@@ -14,6 +14,8 @@ export class InventoryPanel {
     root: HTMLElement,
     private readonly inventory: Inventory,
     private readonly sheets: Map<string, SpriteSheet>,
+    // Right click on a slot: drop one item of it.
+    onDrop: (index: number) => void,
   ) {
     root.innerHTML = `
       <h2>Inventory</h2>
@@ -28,6 +30,10 @@ export class InventoryPanel {
       const button = document.createElement("button");
       button.className = "slot";
       button.addEventListener("click", () => inventory.select(i));
+      button.addEventListener("contextmenu", (e) => {
+        e.preventDefault();
+        onDrop(i);
+      });
       // Keep focus on the game: a focused button would also react to Space.
       button.addEventListener("mousedown", (e) => e.preventDefault());
       slotsEl.appendChild(button);
@@ -45,7 +51,7 @@ export class InventoryPanel {
       el.classList.toggle("is-selected", i === this.inventory.selected);
       el.replaceChildren();
       if (!slot) return;
-      el.title = slot.item.name;
+      el.title = `${slot.item.name} (right click: drop)`;
       el.appendChild(this.icon(slot.item.sprite, slot.item.frame));
       if (slot.count > 1) {
         const count = document.createElement("span");

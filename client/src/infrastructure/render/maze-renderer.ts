@@ -35,15 +35,20 @@ export interface WallDrawable {
 
 const EDGE_COLOR = "rgba(12, 10, 18, 0.85)";
 // Walls in front of the focus (the player) fade out as they get closer to it,
-// down to WALL_MIN_ALPHA when they cover it, so the player is never lost.
-const WALL_MIN_ALPHA = 0.3;
-const WALL_FADE_DISTANCE = 48; // px between wall and body where fading starts
+// down to WALL_MIN_ALPHA when they cover it, so the player is never lost and
+// can see the floor ahead and to the sides (a gate or a dead end). The walls
+// are tall, so the see-through range is wide.
+const WALL_MIN_ALPHA = 0.12;
+const WALL_FADE_DISTANCE = 200; // px between wall and sight area where fading starts
 const FLOOR_SHADOW = 14; // px of shadow cast on the floor at the foot of a wall
 const FOREST_BLEND = 8; // tiles over which the forest floor fades into grass
 // Share of forest floor in each grass-to-forest transition tile, and how many
 // different transition tiles there are per share.
 const BLEND_SHARES = [0.2, 0.4, 0.6, 0.8];
 const BLEND_VARIANTS = 4;
+// The floor never changes between maze growths, so it is drawn once into
+// chunks of this many tiles a side and reused every frame.
+const FLOOR_CHUNK = 16;
 
 export async function loadMazeTiles(basePath: string): Promise<MazeTiles> {
   const [data, image] = await Promise.all([
@@ -71,6 +76,8 @@ export class MazeRenderer {
   private readonly forestVariants: string[];
   // Grass-to-forest transition tiles, built once from the tileset.
   private readonly blendImage: HTMLCanvasElement;
+  // Floor chunks already drawn, by chunk index (row * chunk cols + col).
+  private readonly floorChunks = new Map<number, HTMLCanvasElement>();
 
   constructor(
     private readonly ctx: CanvasRenderingContext2D,
@@ -89,23 +96,57 @@ export class MazeRenderer {
     return this.tiles.wallHeight;
   }
 
-  // Floor of every visible cell, plus the shadow walls cast on it.
+  // Floor of every visible cell, plus the shadow walls cast on it: a few
+  // cached chunks instead of hundreds of tiles per frame.
   drawFloor(view: View): void {
-    const t = this.map.tileSize;
-    const { c0, c1, r0, r1 } = this.visibleCells(view, 0);
-    for (let row = r0; row <= r1; row++) {
-      for (let col = c0; col <= c1; col++) {
-        if (this.map.isWall(col, row)) continue;
-        this.blit(this.floorTile(col, row), col * t, row * t);
-        if (this.map.isWall(col, row - 1)) this.drawWallShadow(col * t, row * t);
+    const size = FLOOR_CHUNK * this.map.tileSize;
+    const chunkCols = Math.ceil(this.map.cols / FLOOR_CHUNK);
+    const chunkRows = Math.ceil(this.map.rows / FLOOR_CHUNK);
+    const cx0 = Math.max(0, Math.floor(view.left / size));
+    const cx1 = Math.min(chunkCols - 1, Math.floor((view.left + view.width) / size));
+    const cy0 = Math.max(0, Math.floor(view.top / size));
+    const cy1 = Math.min(chunkRows - 1, Math.floor((view.top + view.height) / size));
+    for (let cy = cy0; cy <= cy1; cy++) {
+      for (let cx = cx0; cx <= cx1; cx++) {
+        const key = cy * chunkCols + cx;
+        let chunk = this.floorChunks.get(key);
+        if (!chunk) {
+          chunk = this.buildFloorChunk(cx, cy);
+          this.floorChunks.set(key, chunk);
+        }
+        this.ctx.drawImage(chunk, cx * size, cy * size);
       }
     }
   }
 
+  // Call when the maze changed (it grew): the floor is drawn again lazily.
+  invalidateFloor(): void {
+    this.floorChunks.clear();
+  }
+
+  private buildFloorChunk(cx: number, cy: number): HTMLCanvasElement {
+    const t = this.map.tileSize;
+    const size = FLOOR_CHUNK * t;
+    const chunk = document.createElement("canvas");
+    chunk.width = chunk.height = size;
+    const ctx = chunk.getContext("2d")!;
+    ctx.imageSmoothingEnabled = false;
+    ctx.translate(-cx * size, -cy * size); // draw in world px
+    for (let row = cy * FLOOR_CHUNK; row < Math.min(this.map.rows, (cy + 1) * FLOOR_CHUNK); row++) {
+      for (let col = cx * FLOOR_CHUNK; col < Math.min(this.map.cols, (cx + 1) * FLOOR_CHUNK); col++) {
+        if (this.map.isWall(col, row)) continue;
+        this.blit(this.floorTile(col, row), col * t, row * t, ctx);
+        if (this.map.isWall(col, row - 1)) this.drawWallShadow(col * t, row * t, ctx);
+      }
+    }
+    return chunk;
+  }
+
   // Wall cells in view. Includes rows below the screen, whose raised tops reach
   // up into it. Walls in front of `focus` (world pixels, feet at the bottom)
-  // fade so it stays visible.
-  wallDrawables(view: View, focus: Box): WallDrawable[] {
+  // fade so it stays visible, and so does the floor around `sight`: the body
+  // stretched towards where the player goes.
+  wallDrawables(view: View, focus: Box, sight: Box = focus): WallDrawable[] {
     const t = this.map.tileSize;
     const { c0, c1, r0, r1 } = this.visibleCells(view, Math.ceil(this.wallHeight / t));
     const result: WallDrawable[] = [];
@@ -113,7 +154,7 @@ export class MazeRenderer {
       for (let col = c0; col <= c1; col++) {
         if (!this.map.isWall(col, row)) continue;
         const depthY = (row + 1) * t;
-        const alpha = depthY > focus.bottom ? this.fadeAlpha(col, row, focus) : 1;
+        const alpha = this.fades(depthY, focus, sight) ? this.fadeAlpha(col, row, sight) : 1;
         result.push({ depthY, draw: () => this.drawWall(col, row, alpha) });
       }
     }
@@ -123,16 +164,23 @@ export class MazeRenderer {
   // The leaves of the gates of the central square, as solid blocks of their
   // exact size (they slide, so they are not whole tiles): iron bars in front,
   // wood on top. They fade in front of `focus` like the walls.
-  gateDrawables(leaves: Rect[], focus: Box): WallDrawable[] {
+  gateDrawables(leaves: Rect[], focus: Box, sight: Box = focus): WallDrawable[] {
     return leaves
       .filter((leaf) => leaf.w > 0.5 && leaf.h > 0.5)
       .map((leaf) => {
         const depthY = leaf.y + leaf.h;
         const top = leaf.y - this.wallHeight;
-        const alpha =
-          depthY > focus.bottom ? this.fadeAlphaRect(leaf.x, top, leaf.x + leaf.w, depthY, focus) : 1;
+        const alpha = this.fades(depthY, focus, sight)
+          ? this.fadeAlphaRect(leaf.x, top, leaf.x + leaf.w, depthY, sight)
+          : 1;
         return { depthY, draw: () => this.drawGateLeaf(leaf, alpha) };
       });
+  }
+
+  // Walls in front of the body fade. Behind it (further up) they only hide
+  // the floor beyond, so they fade only while the player heads up there.
+  private fades(depthY: number, focus: Box, sight: Box): boolean {
+    return depthY > focus.bottom || sight.top < focus.top;
   }
 
   // 1 when the wall is far from the box, WALL_MIN_ALPHA when it overlaps it.
@@ -148,7 +196,9 @@ export class MazeRenderer {
   private fadeAlphaRect(left: number, top: number, right: number, bottom: number, box: Box): number {
     const dx = Math.max(left - box.right, box.left - right, 0);
     const dy = Math.max(top - box.bottom, box.top - bottom, 0);
-    const closeness = Math.min(1, Math.hypot(dx, dy) / WALL_FADE_DISTANCE);
+    const t = Math.min(1, Math.hypot(dx, dy) / WALL_FADE_DISTANCE);
+    // Smoothstep: stays see-through near the body, turns solid near the edge.
+    const closeness = t * t * (3 - 2 * t);
     return WALL_MIN_ALPHA + (1 - WALL_MIN_ALPHA) * closeness;
   }
 
@@ -229,12 +279,12 @@ export class MazeRenderer {
     return below < this.map.rows && !this.map.isWall(col, below);
   }
 
-  private drawWallShadow(x: number, y: number): void {
-    const gradient = this.ctx.createLinearGradient(0, y, 0, y + FLOOR_SHADOW);
+  private drawWallShadow(x: number, y: number, ctx: CanvasRenderingContext2D): void {
+    const gradient = ctx.createLinearGradient(0, y, 0, y + FLOOR_SHADOW);
     gradient.addColorStop(0, "rgba(8, 6, 12, 0.6)");
     gradient.addColorStop(1, "rgba(8, 6, 12, 0)");
-    this.ctx.fillStyle = gradient;
-    this.ctx.fillRect(x, y, this.map.tileSize, FLOOR_SHADOW);
+    ctx.fillStyle = gradient;
+    ctx.fillRect(x, y, this.map.tileSize, FLOOR_SHADOW);
   }
 
   // The square is grass, with a dark mossy floor under its forest. Out in the
@@ -300,15 +350,15 @@ export class MazeRenderer {
     return variants[hash(col, row) % variants.length];
   }
 
-  private blit(name: string, x: number, y: number): void {
+  private blit(name: string, x: number, y: number, ctx = this.ctx): void {
     if (name.startsWith("blend_")) {
       const t = this.map.tileSize;
       const [, level, i] = name.split("_").map(Number);
-      this.ctx.drawImage(this.blendImage, i * t, level * t, t, t, x, y, t, t);
+      ctx.drawImage(this.blendImage, i * t, level * t, t, t, x, y, t, t);
       return;
     }
     const f = this.tiles.frames[name];
-    this.ctx.drawImage(this.tiles.image, f.x, f.y, f.w, f.h, x, y, f.w, f.h);
+    ctx.drawImage(this.tiles.image, f.x, f.y, f.w, f.h, x, y, f.w, f.h);
   }
 
   private visibleCells(view: View, extraRowsBelow: number) {

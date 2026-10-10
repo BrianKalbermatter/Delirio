@@ -31,6 +31,17 @@ export class Inventory {
     return true;
   }
 
+  // Takes one item out of a slot (emptying it with the last one) and returns
+  // it, or null when the slot is empty.
+  removeOne(index: number): ItemKind | null {
+    const slot = this.slots[index];
+    if (!slot) return null;
+    slot.count--;
+    if (slot.count === 0) this.slots[index] = null;
+    this.version++;
+    return slot.item;
+  }
+
   select(index: number): void {
     if (index < 0 || index >= this.slots.length || index === this.selected) return;
     this.selected = index;

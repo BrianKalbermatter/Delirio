@@ -5,6 +5,9 @@ export interface ItemKind {
   name: string;
   sprite: string; // asset name in public/assets
   frame: number; // frame of the sprite used as icon
+  // Picked up only with the E key while standing on it, instead of by just
+  // walking over it.
+  pickupWithKey?: boolean;
 }
 
 const POTION_NAMES = ["rombo", "frasco", "tubo_u", "retorta", "cono", "cubo"];
@@ -19,6 +22,8 @@ export const ITEMS: Record<string, ItemKind> = {
   enemy_sword: { id: "enemy_sword", name: "Enemy sword", sprite: "Espada-Enemiga", frame: 0 },
   // The maze map: a book to draw the maze in (opened with M).
   map_book: { id: "map_book", name: "Map book", sprite: "libro", frame: 0 },
+  // Fallen branches around the big tree (sprites/Plaza/Ramas.aseprite).
+  branch: { id: "branch", name: "Branch", sprite: "ramas", frame: 0, pickupWithKey: true },
 };
 
 export const POTION_IDS = POTION_NAMES.map((shape) => `potion_${shape}`);

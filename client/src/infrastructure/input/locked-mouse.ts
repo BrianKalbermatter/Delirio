@@ -43,6 +43,11 @@ export class LockedMouse {
       if (!this.locked) return;
       if (e.button === 2) {
         this.rightHeld = true;
+        // Over the panel, a right click goes to the button under the cursor
+        // (drop an inventory item), like the left click does.
+        if (!this.overGame() && !this.pressSurfaces.has(this.elementUnderCursor()!)) {
+          this.buttonUnderCursor()?.dispatchEvent(new MouseEvent("contextmenu", { bubbles: true, cancelable: true }));
+        }
         return;
       }
       if (e.button !== 0) return;
