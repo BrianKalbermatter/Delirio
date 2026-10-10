@@ -13,7 +13,7 @@ import sys
 from PIL import Image
 
 T = 32  # tile size
-WALL_H = 96  # wall face height: about twice the player's height
+WALL_H = 288  # wall face height: towering, about six times the player's height
 
 # Palette: Endesga-32-style ramps. Warm earth, blue-violet stone and living
 # greens, saturated but kept in the mid values, so the black, pink and cyan
@@ -81,37 +81,56 @@ def floor_dirt(rng, grass):
 
 
 # The square is a grassy meadow; its forest corner has a dark mossy floor.
-MEADOW = [(25, 60, 62), (38, 92, 66), (62, 137, 72), (99, 199, 77)]
-FLOWERS = [(254, 231, 97), (246, 117, 122), (192, 203, 220)]
 FOREST_FLOOR = [(20, 24, 40), (25, 48, 56), (32, 70, 64), (44, 96, 72)]
 DEAD_LEAVES = [(62, 39, 49), (115, 62, 57), (184, 111, 80)]
 
 
-def grass(rng, flowers):
-    img = Image.new("RGBA", (T, T))
-    # Mid greens in 2x2 clusters, like the dirt, so it reads as pixel art.
-    for cy in range(0, T, 2):
-        for cx in range(0, T, 2):
-            roll = rng.random()
-            tone = MEADOW[2] if roll < 0.72 else MEADOW[1] if roll < 0.96 else MEADOW[3]
-            for dy in range(2):
-                for dx in range(2):
-                    put(img, cx + dx, cy + dy, tone)
-    # Blades: a lit tip over a dark root, leaning a bit.
-    for _ in range(12):
-        x, y = rng.randrange(T), rng.randrange(T)
-        lean = rng.choice((-1, 0, 0, 1))
-        put(img, x, y + 1, MEADOW[0])
-        put(img, x, y, MEADOW[1])
-        put(img, x + lean, y - 1, MEADOW[3])
-    if flowers:
-        for _ in range(rng.randint(2, 4)):
-            x, y = rng.randrange(T), rng.randrange(T)
-            c = rng.choice(FLOWERS)
-            put(img, x, y, c)
-            put(img, x + 1, y, c)
-            put(img, x, y + 1, MEADOW[0])
-    return img
+# Bright meadow: one flat lime green. TUFT_COLORS and SMALL_TUFTS are the
+# grass tufts drawn around trees (art/pasto_arbol.py): darker blades, a soft
+# shadow under them and lit tips.
+LIME = (164, 210, 62)
+TUFT_COLORS = {
+    "s": (142, 188, 56),  # shadow on the ground
+    "d": (84, 132, 42),  # deep blades
+    "m": (116, 164, 48),  # blades
+    "l": (196, 230, 98),  # lit tips
+}
+# Small grass tufts.
+SMALL_TUFTS = [
+    [
+        "l.....l.",
+        "ml...lm.",
+        ".mm.mm..",
+        "l.mdm..l",
+        "mm.dm.mm",
+        ".mdddmm.",
+        "sdddddds",
+        ".ssssss.",
+    ],
+    [
+        "...l...",
+        ".l.m.l.",
+        ".mlmlm.",
+        "l.mdm.l",
+        "mmddmmm",
+        "sdddddd",
+        ".sssss.",
+    ],
+    [
+        "l......l",
+        ".m.l..m.",
+        ".mm.mmm.",
+        "..mdmm..",
+        ".mdddm..",
+        "sddddds.",
+        ".sssss..",
+    ],
+]
+
+
+def grass():
+    """Flat lime meadow."""
+    return Image.new("RGBA", (T, T), LIME + (255,))
 
 
 def forest_floor(rng):
@@ -293,7 +312,7 @@ def gate_face():
             tone = {3: 2, 4: 1, 5: 0}[u]
             for y in range(WALL_H):
                 put(img, x, y, IRON[tone], wrap=False)
-    for y0 in (14, 54):  # cross bars
+    for y0 in range(14, WALL_H - 20, 40):  # cross bars, every 40 px down the gate
         for y in range(y0, y0 + 5):
             tone = 3 if y == y0 else 0 if y == y0 + 4 else 1
             for x in range(width_px):
@@ -348,8 +367,7 @@ def build(out_dir):
     tiles["gate_top_0"] = gate_top(rng)
     # Own generator, so adding square tiles never changes the maze tiles.
     square_rng = random.Random(11)
-    for i in range(6):
-        tiles[f"grass_{i}"] = grass(square_rng, flowers=(i == 5))
+    tiles["grass_0"] = grass()  # flat: one variant is enough
     for i in range(4):
         tiles[f"forest_{i}"] = forest_floor(square_rng)
     gate = gate_face()
