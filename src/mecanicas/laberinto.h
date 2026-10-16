@@ -27,7 +27,7 @@
 #include "../entidad.h"
 
 #define LAB_TILE 32          // pixeles por tile (igual que el arte)
-#define LAB_PASILLO 6        // ancho de los pasillos, en tiles
+#define LAB_PASILLO 8        // ancho de los pasillos, en tiles (256 px)
 #define LAB_MURO 3           // grosor de los muros, en tiles
 #define LAB_CELDA (LAB_PASILLO + LAB_MURO)
 #define LAB_PLAZA 10         // celdas por lado de la plaza central

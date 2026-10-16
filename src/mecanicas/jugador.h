@@ -10,10 +10,10 @@
 //                   3 => Habilidad de parri
 //                   4 => Ulti, habilidad especial
 //   P_habilidades:  ataque_critico, ataque_largo, ataque_rapido, correr
-//   teclas:         mouse -> Atacar y bloquear, SPACE -> Rol adelante, SHIFT -> Correr
+//   teclas:         mouse -> Atacar y bloquear, SPACE -> Saltar adelante, SHIFT -> Correr
 //
 // Por ahora no tienen sprites ni animaciones: solo tiempos (recarga y duracion)
-// y los efectos que no necesitan dibujo (correr, rodar, bloquear).
+// y los efectos que no necesitan dibujo (correr, saltar, bloquear).
 #ifndef JUGADOR_H
 #define JUGADOR_H
 
@@ -29,13 +29,13 @@ typedef enum habilidad_id {
   HAB_PARRY,
   HAB_ULTI,
   HAB_BLOQUEAR,
-  HAB_RODAR,
+  HAB_SALTAR,
   HAB_CORRER,
   HAB_CANTIDAD // siempre al final: cuantas habilidades hay
 } HabilidadId;
 
 typedef enum tipo_habilidad {
-  HAB_INSTANTANEA, // se usa una vez y entra en recarga (atacar, rodar, ulti...)
+  HAB_INSTANTANEA, // se usa una vez y entra en recarga (atacar, saltar, ulti...)
   HAB_MANTENIDA    // activa mientras se mantiene apretada (correr, bloquear)
 } TipoHabilidad;
 
@@ -71,7 +71,7 @@ typedef struct jugador {
 extern const HabilidadDef HABILIDADES_BASE[HAB_CANTIDAD];
 
 #define MULTIPLICADOR_CORRER 1.6f
-#define VELOCIDAD_RODAR 230.0f // pixeles por segundo
+#define VELOCIDAD_SALTO 170.0f // pixeles por segundo, hacia adelante en el aire
 // Lo que dura la animacion de morir (death: 33 frames de 80 ms). Mientras
 // tanto el jugador queda MUERTO en el lugar; despues reaparece en la base.
 #define DURACION_MUERTE_MS 2640.0f

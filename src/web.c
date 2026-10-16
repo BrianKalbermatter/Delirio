@@ -72,6 +72,7 @@ EMSCRIPTEN_KEEPALIVE float web_reloj_restante_ms(void) { return reloj_restante_f
 EMSCRIPTEN_KEEPALIVE int web_reloj_expansiones(void) { return juego_reloj()->expansiones; }
 EMSCRIPTEN_KEEPALIVE float web_reloj_proxima_expansion_ms(void) { return reloj_proxima_expansion(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE float web_reloj_luz(void) { return reloj_luz(juego_reloj()); }
+EMSCRIPTEN_KEEPALIVE float web_reloj_sol(void) { return reloj_sol(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE void web_velocidad_tiempo(float factor) { juego_velocidad_tiempo(factor); }
 EMSCRIPTEN_KEEPALIVE void web_prueba_puertas(void) { juego_prueba_puertas(); }
 EMSCRIPTEN_KEEPALIVE int web_reloj_compuertas(void) { return reloj_compuertas_abiertas(juego_reloj()); }

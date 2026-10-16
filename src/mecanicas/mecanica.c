@@ -96,6 +96,16 @@ float reloj_luz(const Reloj *r){
   return 1.0f;
 }
 
+float reloj_sol(const Reloj *r){
+  float con_luz = DURACION_DIA_MS + DURACION_TARDE_MS;
+  switch (r->fase){
+    case FASE_DIA:   return r->ms_en_fase / con_luz;
+    case FASE_TARDE: return (DURACION_DIA_MS + r->ms_en_fase) / con_luz;
+    case FASE_NOCHE: return -1.0f;
+  }
+  return 0.5f;
+}
+
 int reloj_compuertas_abiertas(const Reloj *r){
   return r->fase != FASE_NOCHE;
 }

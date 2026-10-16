@@ -13,9 +13,9 @@ const HabilidadDef HABILIDADES_BASE[HAB_CANTIDAD] = {
   [HAB_ATAQUE_CRITICO] = {"Ataque critico", HAB_INSTANTANEA,   3000.0f,   300.0f},
   [HAB_APOYO]          = {"Apoyo",          HAB_INSTANTANEA,  10000.0f,  3000.0f},
   [HAB_PARRY]          = {"Parry",          HAB_INSTANTANEA,   1500.0f,   250.0f},
-  [HAB_ULTI]           = {"Ulti",           HAB_INSTANTANEA,  30000.0f,  2000.0f},
+  [HAB_ULTI]           = {"Ulti",           HAB_INSTANTANEA,  30000.0f,   900.0f}, // golpe al suelo
   [HAB_BLOQUEAR]       = {"Bloquear",       HAB_MANTENIDA,        0.0f,     0.0f},
-  [HAB_RODAR]          = {"Rodar",          HAB_INSTANTANEA,   1200.0f,  1000.0f},
+  [HAB_SALTAR]         = {"Saltar",         HAB_INSTANTANEA,    800.0f,   600.0f},
   [HAB_CORRER]         = {"Correr",         HAB_MANTENIDA,        0.0f,     0.0f},
 };
 
@@ -71,8 +71,8 @@ int jugador_usar(Jugador *j, HabilidadId h){
   est->activa_ms = def->duracion_ms;
   printf("%s usa %s\n", j->nombre, def->nombre);
 
-  // Rodar adelante: hacia donde mira, y deja de ir al destino del mouse
-  if (h == HAB_RODAR) j->hay_destino = 0;
+  // Saltar adelante: hacia donde mira, y deja de ir al destino del mouse
+  if (h == HAB_SALTAR) j->hay_destino = 0;
   return 1;
 }
 
@@ -115,16 +115,16 @@ void jugador_actualizar(Jugador *j, const Laberinto *lab, float dt_ms){
 
   Entity *e = &j->entidad;
 
-  // 2. Rodando: avanza rapido hacia donde mira, sin control
-  if (jugador_activa(j, HAB_RODAR)){
-    float paso = VELOCIDAD_RODAR * dt_ms / 1000.0f;
+  // 2. Saltando: avanza hacia donde mira, sin control hasta caer
+  if (jugador_activa(j, HAB_SALTAR)){
+    float paso = VELOCIDAD_SALTO * dt_ms / 1000.0f;
     laberinto_mover(lab, &e->posicion, e->dir.x * paso, e->dir.y * paso);
     e->estados = CORRIENDO;
     return;
   }
 
-  // 3. Bloqueando: se planta en el lugar
-  if (jugador_activa(j, HAB_BLOQUEAR)){
+  // 3. Bloqueando o golpeando el suelo (ulti): se planta en el lugar
+  if (jugador_activa(j, HAB_BLOQUEAR) || jugador_activa(j, HAB_ULTI)){
     e->estados = QUIETO;
     return;
   }
