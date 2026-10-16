@@ -4,6 +4,7 @@
 #define JUEGO_H
 
 #include "entidad.h"
+#include "mecanicas/enemigos.h"
 #include "mecanicas/jugador.h"
 #include "mecanicas/laberinto.h"
 #include "mecanicas/mecanica.h"
@@ -45,6 +46,12 @@ void juego_prueba_puertas(void);
 
 // Medusa de prueba (los ataques del jugador le pegan)
 const Entity *juego_medusa(void);
+
+// Enemigos de nivel 1 (mecanicas/enemigos.h)
+const Enemigos *juego_enemigos(void);
+
+// Le devuelve vida al jugador (una pocion), sin pasarse del maximo.
+void juego_curar(int vida);
 void juego_reiniciar(void);
 
 #endif

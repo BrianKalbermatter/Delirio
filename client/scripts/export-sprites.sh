@@ -11,6 +11,7 @@ PUBLIC="$(cd "$(dirname "$0")/.." && pwd)/public"
 # name -> source path relative to SRC_DIR
 declare -A SPRITES=(
   [personaje_2]="PersonajePrincipales/Personaje_2_Anim.aseprite"
+  [enemigo_1]="Enemigos/Enemigo1/Enemigo1_Anim.aseprite"
   [arbol_1]="Arboles/Arbol1_pintado.aseprite"
   [flores]="Laberinto/Terreno/Flores_viento.aseprite"
   [flores_2]="Laberinto/Terreno/Flores2_viento.aseprite"

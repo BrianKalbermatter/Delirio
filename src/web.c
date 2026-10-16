@@ -40,6 +40,25 @@ EMSCRIPTEN_KEEPALIVE float web_jugador_dir_y(void) { return juego_jugador()->dir
 EMSCRIPTEN_KEEPALIVE int web_jugador_estado(void) { return juego_jugador()->estados; }
 EMSCRIPTEN_KEEPALIVE int web_jugador_muertes(void) { return juego_jugador_completo()->muertes; }
 EMSCRIPTEN_KEEPALIVE int web_jugador_delirio(void) { return juego_jugador_completo()->delirio; }
+EMSCRIPTEN_KEEPALIVE int web_jugador_vida(void) { return juego_jugador()->vida; }
+EMSCRIPTEN_KEEPALIVE int web_jugador_vida_max(void) { return juego_jugador()->vidaMAX; }
+EMSCRIPTEN_KEEPALIVE void web_curar(int vida) { juego_curar(vida); }
+
+// Enemigos: el navegador recorre los ENEMIGOS_MAX huecos y dibuja los activos
+EMSCRIPTEN_KEEPALIVE int web_enemigos_max(void) { return ENEMIGOS_MAX; }
+static const Enemigo *enemigo(int i) { return &juego_enemigos()->lista[i]; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_activo(int i) { return enemigo(i)->activo; }
+EMSCRIPTEN_KEEPALIVE float web_enemigo_x(int i) { return enemigo(i)->entidad.posicion.x; }
+EMSCRIPTEN_KEEPALIVE float web_enemigo_y(int i) { return enemigo(i)->entidad.posicion.y; }
+EMSCRIPTEN_KEEPALIVE float web_enemigo_mira_x(int i) { return enemigo(i)->mira.x; }
+EMSCRIPTEN_KEEPALIVE float web_enemigo_mira_y(int i) { return enemigo(i)->mira.y; }
+EMSCRIPTEN_KEEPALIVE float web_enemigo_dir_x(int i) { return enemigo(i)->entidad.dir.x; }
+EMSCRIPTEN_KEEPALIVE float web_enemigo_dir_y(int i) { return enemigo(i)->entidad.dir.y; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_estado(int i) { return enemigo(i)->entidad.estados; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_animo(int i) { return enemigo(i)->animo; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_vida(int i) { return enemigo(i)->entidad.vida; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_vida_max(int i) { return enemigo(i)->entidad.vidaMAX; }
+EMSCRIPTEN_KEEPALIVE float web_enemigo_golpeado(int i) { return enemigo(i)->golpeado_ms; }
 
 // Destino (para verificar desde el navegador que el click llego a C)
 EMSCRIPTEN_KEEPALIVE int web_hay_destino(void) { return juego_hay_destino(); }

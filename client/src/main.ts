@@ -28,6 +28,7 @@ import { PlazaDeco } from "./infrastructure/render/plaza-deco";
 import { Camera } from "./infrastructure/render/camera";
 import { CursorOverlay, TargetMarker } from "./infrastructure/render/cursor";
 import { DEPTH, depthOf } from "./infrastructure/render/depth";
+import { EnemyViews } from "./infrastructure/render/enemies";
 import { FlameGlow } from "./infrastructure/render/flame-glow";
 import { Glow } from "./infrastructure/render/glow";
 import { createKeyPrompt, formatMs, Hud, KEY_PROMPT_SIZE } from "./infrastructure/render/hud";
@@ -113,9 +114,13 @@ const FLAME_COLORS: [number, number, number][] = [
 const FLAME_GLOW: [number, number, number] = [255, 150, 60];
 // The fire's base (art/antorcha_fuego.py BASE_Y) goes this far below the
 // center of the torch's flame, so the fire covers it.
-const FIRE_BASE_Y = 24;
-const FIRE_BELOW_CENTER = 4;
+const FIRE_BASE_Y = 17;
+const FIRE_BELOW_CENTER = 3;
 const INVENTORY_SIZE = 16;
+const POTION_HEAL = 30;
+// An enemy's hit shakes the view, softer than the slam.
+const HURT_SHAKE_MS = 180;
+const HURT_SHAKE_PX = 2;
 type Hand = "rightHand" | "leftHand";
 const HANDS: Hand[] = ["rightHand", "leftHand"];
 const GROWTH_BANNER_MS = 2500; // "the maze grows" message on screen
@@ -161,6 +166,7 @@ const [
   dirtBehindSheet,
   mazeTiles,
   fireSheet,
+  enemySheet,
   treeArt,
   flowerSheet,
   tallFlowerSheet,
@@ -181,6 +187,8 @@ const [
   loadMazeTiles(`${BASE}assets/maze_tiles`),
   // The torch's fire (art/antorcha_fuego.py), drawn on its flame.
   loadSpriteSheet(`${BASE}sprites/antorcha_fuego`),
+  // Brian's Enemigo1, the level 1 enemy (sprites/Enemigos/Enemigo1).
+  loadSpriteSheet(`${BASE}sprites/enemigo_1`),
   loadBigTreeArt(),
   loadSpriteSheet(`${BASE}sprites/flores`),
   loadSpriteSheet(`${BASE}sprites/flores_2`),
@@ -220,6 +228,8 @@ let growthBannerMs = 0;
 let gateOpening = 1;
 let seenExpansions = 0;
 let seenDeaths = 0;
+let lastLife = -1;
+let enemyAnimMs = 0; // game time the enemies' animations have to catch up on
 let deathBannerMs = 0;
 let timeSpeed = 1;
 syncMaze();
@@ -310,6 +320,7 @@ const torchGlows: Record<Hand, FlameGlow> = {
 };
 const camera = new Camera(player.x, playerCenterY(), canvas.width, canvas.height);
 const maze = new MazeRenderer(app.renderer, standing, map, mazeTiles, square);
+const enemyViews = new EnemyViews(standing, enemySheet);
 const targetMarker = new TargetMarker();
 const sunShadow = new Sprite({ tint: 0x000000 });
 ground.addChild(maze.floor, bigTree.ground, targetMarker.view, sunShadow, jumpShadow);
@@ -437,6 +448,7 @@ function update(dtMs: number): void {
   }
   game.update(dtMs); // the C core moves the game one step
   if (syncMaze()) maze.invalidate();
+  enemyAnimMs += dtMs; // drawn in draw(), also while paused
 
   // Gates: they close little by little at the end of the afternoon.
   const opening = game.maze.gateOpening();
@@ -455,6 +467,13 @@ function update(dtMs: number): void {
     gameLog.log(`You died. Delirium ${stats.delirium}.`);
   }
   deathBannerMs = Math.max(0, deathBannerMs - dtMs);
+  // Hit by an enemy: a red flash and a jolt.
+  if (lastLife >= 0 && stats.life < lastLife && !player.isDead) {
+    hud.hurt();
+    camera.shake(HURT_SHAKE_MS, HURT_SHAKE_PX);
+    gameLog.log(`An enemy hits you: -${lastLife - stats.life} life.`);
+  }
+  lastLife = stats.life;
 
   const expansions = game.clock().expansions;
   if (expansions > seenExpansions) {
@@ -596,7 +615,8 @@ function useItem(index: number): void {
   if (!item) return;
   if (item.id.startsWith("potion_")) {
     inventory.removeOne(index);
-    gameLog.log(`You drink the ${item.name.toLowerCase()}. Nothing happens... yet.`);
+    game.heal(POTION_HEAL);
+    gameLog.log(`You drink the ${item.name.toLowerCase()}: +${POTION_HEAL} life.`);
     return;
   }
   if (item.id === "map_book") {
@@ -757,6 +777,8 @@ function draw(): void {
     height: canvas.height,
   };
   maze.show(view, playerBody(), game.maze.gateLeaves());
+  enemyViews.show(game.enemies(), enemyAnimMs);
+  enemyAnimMs = 0;
   bigTree.show(playerBody());
   targetMarker.show(target, performance.now());
   for (const v of propViews) showProp(v);
@@ -779,6 +801,8 @@ function draw(): void {
   showKeyPrompt();
   showAbilityEffects();
   hud.showMedusa(game.medusaLife(), game.medusaLifeMax());
+  const { life, lifeMax } = game.playerStats();
+  hud.showLife(life, lifeMax);
   hud.showClock(game.clock(), gateOpening, timeSpeed, canvas.width, performance.now());
   hud.showBanners(growthBannerMs, deathBannerMs, DEATH_BANNER_MS, canvas.width, canvas.height);
   cursor.setShape(book.isOpen && mouse.isOver(book.element) ? (mouse.rightHeld ? "eraser" : "pencil") : "arrow");

@@ -8,7 +8,8 @@
 //   movimiento_mouse.c   -> caminar hacia donde se hizo click
 //   movimiento_teclado.c -> WASD (sin usar por ahora)
 //   combate.c            -> atacar
-//   ia_enemigos.c        -> IA de enemigos nivel 1
+//   ia_enemigos.c        -> IA de enemigos nivel 1 (el paso al azar)
+//   enemigos.c           -> enemigos nivel 1 en el laberinto: miedo y coraje
 //
 // Los tipos compartidos (Entity, Direccion, Estado...) estan en entidad.h.
 // E => Enemigo
@@ -20,6 +21,7 @@
 
 #include "juego.h"
 #include "mecanicas/combate.h"
+#include "mecanicas/enemigos.h"
 #include "mecanicas/ia_enemigos.h"
 #include "mecanicas/jugador.h"
 #include "mecanicas/laberinto.h"
@@ -30,8 +32,13 @@
 static Laberinto laberinto;
 static Jugador jugador;
 static Entity medusa;
+static Enemigos enemigos;
 static Reloj reloj;
 static float velocidad_tiempo = 1.0f; // para probar: acelera solo el reloj
+
+#define ALCANCE_GOLPE 46.0f     // hasta donde llega un golpe del jugador (pixeles)
+#define RADIO_GOLPE_SUELO 70.0f
+#define DANIO_GOLPE_SUELO 25
 
 // ########################################################
 // Llamadas a las mecanicas
@@ -45,6 +52,7 @@ void juego_iniciar(unsigned int semilla){
   base.estados = QUIETO;
   jugador_iniciar(&jugador, "Personaje_2", HABILIDADES_BASE, base);
   medusa = (Entity){.vidaMAX = 40, .vida = 40, .danio = 8};
+  enemigos_iniciar(&enemigos, &laberinto, base.posicion, semilla);
   reloj_iniciar(&reloj);
 }
 
@@ -54,8 +62,13 @@ void juego_ir_a(float x, float y){
 
 void juego_usar_habilidad(int habilidad){
   if (!jugador_usar(&jugador, habilidad)) return; // recargando
-  // Los ataques le pegan a la medusa de prueba
-  if (habilidad_es_ataque(habilidad)) atacar(&jugador.entidad, &medusa);
+  // Los ataques le pegan a la medusa de prueba y a los enemigos de adelante
+  if (habilidad_es_ataque(habilidad)){
+    atacar(&jugador.entidad, &medusa);
+    enemigos_golpe_jugador(&enemigos, &jugador, ALCANCE_GOLPE, jugador.entidad.danio + jugador.entidad.items.damage);
+  }
+  // El golpe al suelo les pega a todos los de alrededor y asusta al resto
+  if (habilidad == HAB_ULTI) enemigos_golpe_suelo(&enemigos, jugador.entidad.posicion, RADIO_GOLPE_SUELO, DANIO_GOLPE_SUELO);
 }
 
 void juego_mantener_habilidad(int habilidad, int apretada){
@@ -88,6 +101,12 @@ void juego_actualizar(float dt_ms){
 
   // 3. El jugador: habilidades y movimiento, chocando con el laberinto
   jugador_actualizar(&jugador, &laberinto, dt_ms);
+
+  // 4. Los enemigos: rodean al jugador y, cuando se animan, le pegan
+  if (enemigos_actualizar(&enemigos, &laberinto, &jugador, dt_ms) > 0 && jugador.entidad.vida <= 0){
+    printf("Te mataron los enemigos\n");
+    jugador_morir(&jugador, laberinto_aparicion(&laberinto));
+  }
 }
 
 const Entity *juego_jugador(void){ return &jugador.entidad; }
@@ -116,6 +135,13 @@ void juego_prueba_puertas(void){
 }
 
 const Entity *juego_medusa(void){ return &medusa; }
+const Enemigos *juego_enemigos(void){ return &enemigos; }
+
+void juego_curar(int vida){
+  if (jugador_muerto(&jugador)) return;
+  jugador.entidad.vida += vida;
+  if (jugador.entidad.vida > jugador.entidad.vidaMAX) jugador.entidad.vida = jugador.entidad.vidaMAX;
+}
 
 void juego_reiniciar(void){
   medusa.vida = medusa.vidaMAX;

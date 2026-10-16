@@ -17,6 +17,8 @@ const CLOCK_FONT: TextStyleOptions = { fontFamily: "monospace", fontSize: 12, fo
 const SMALL_FONT: TextStyleOptions = { fontFamily: "monospace", fontSize: 11 };
 const MEDUSA_FONT: TextStyleOptions = { fontFamily: "monospace", fontSize: 10, fill: "#5fcde4" };
 const RED = "#d95763";
+const HURT_FLASH_MS = 300;
+const HURT_FLASH_ALPHA = 0.3;
 const PHASE_NAME = { DIA: "DAY", TARDE: "DUSK", NOCHE: "NIGHT" };
 const PHASE_COLOR = { DIA: "#d8cfb8", TARDE: "#e0a458", NOCHE: "#8f86c9" };
 export const KEY_PROMPT_SIZE = 13;
@@ -84,6 +86,13 @@ export class Hud {
   // of the two pixels it straddles.
   private readonly medusaFrame = new Graphics().rect(12, 24, 120, 8).stroke({ width: 2, color: "#3a3445", alpha: 0.5 });
   private readonly medusaBar = solidRect(0x6a8a4a);
+  // Under it: the player's own life.
+  private readonly lifeLabel = pixelText(MEDUSA_FONT);
+  private readonly lifeFrame = new Graphics().rect(12, 46, 120, 8).stroke({ width: 2, color: "#3a3445", alpha: 0.5 });
+  private readonly lifeBar = solidRect(0xd95763);
+  // A red flash over the screen when an enemy hits the player.
+  private readonly hurtFlash = solidRect(0xb01a28);
+  private hurtAt = -Infinity;
   // Top center: day and time left of the current phase, when the maze grows
   // next, and the gates.
   private readonly clockBox = solidRect(0x090710, 0.72);
@@ -97,10 +106,16 @@ export class Hud {
 
   constructor() {
     this.medusaBar.position.set(13, 25);
+    this.lifeBar.position.set(13, 47);
+    this.hurtFlash.alpha = 0;
     this.view.addChild(
+      this.hurtFlash,
       this.medusaLabel,
       this.medusaFrame,
       this.medusaBar,
+      this.lifeLabel,
+      this.lifeFrame,
+      this.lifeBar,
       this.clockBox,
       this.clockLine,
       this.growthLine,
@@ -117,6 +132,21 @@ export class Hud {
     placeText(this.medusaLabel, 12, 18);
     this.medusaBar.tint = ratio > 0.3 ? 0x6a8a4a : 0xd95763;
     this.medusaBar.setSize(118 * ratio, 6);
+  }
+
+  showLife(life: number, max: number): void {
+    const ratio = Math.max(0, life) / max;
+    this.lifeLabel.text = `LIFE ${Math.max(0, life)} / ${max}`;
+    placeText(this.lifeLabel, 12, 40);
+    this.lifeBar.setSize(118 * ratio, 6);
+    // The hurt flash fades out over HURT_FLASH_MS.
+    const t = (performance.now() - this.hurtAt) / HURT_FLASH_MS;
+    this.hurtFlash.alpha = t < 1 ? HURT_FLASH_ALPHA * (1 - t) : 0;
+  }
+
+  // An enemy hit the player: flash the screen red.
+  hurt(): void {
+    this.hurtAt = performance.now();
   }
 
   // `gateOpening`: 1 open, 0 closed. A warning when the maze is about to grow
@@ -162,6 +192,7 @@ export class Hud {
     this.growthBanner.alpha = Math.min(1, growthMs / 600);
     placeText(this.growthBanner, cx, 80, "center");
 
+    this.hurtFlash.setSize(width, height);
     const dying = deathMs > 0;
     this.deathFlash.visible = this.deathBanner.visible = dying;
     if (!dying) return;

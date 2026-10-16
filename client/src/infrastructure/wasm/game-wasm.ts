@@ -45,6 +45,27 @@ export interface ClockState {
 export interface PlayerStats {
   deaths: number;
   delirium: number; // +1 per death
+  life: number;
+  lifeMax: number;
+}
+
+// Same order as `enum animo` in src/mecanicas/enemigos.h.
+export const MOOD = ["DEAMBULA", "ACECHA", "ATACA", "HUYE"] as const;
+
+// A level 1 enemy (src/mecanicas/enemigos.c), by its slot in C's list.
+export interface EnemyState {
+  slot: number;
+  x: number; // feet
+  y: number;
+  lookX: number; // where it looks (at the player while stalking)
+  lookY: number;
+  dirX: number; // where it moves
+  dirY: number;
+  state: number; // index into STATE
+  mood: (typeof MOOD)[number];
+  life: number;
+  lifeMax: number;
+  hitMs: number; // > 0 right after being hit
 }
 
 export interface PlayerState {
@@ -96,6 +117,10 @@ export interface GameWasm {
   // The target as C stored it (null if none yet), to check it arrived.
   targetInC(): { x: number; y: number } | null;
   clock(): ClockState;
+  // Level 1 enemies in play (dying ones included, MUERTO).
+  enemies(): EnemyState[];
+  // Gives the player life back (a potion), up to the maximum.
+  heal(life: number): void;
   medusaLife(): number;
   medusaLifeMax(): number;
   reset(): void;
@@ -151,6 +176,14 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const medusaLife = num("web_medusa_vida", 0);
   const medusaLifeMax = num("web_medusa_vida_max", 0);
   const reset = call("web_reset", 0);
+  const life = num("web_jugador_vida", 0);
+  const lifeMax = num("web_jugador_vida_max", 0);
+  const enemyMax = num("web_enemigos_max", 0)();
+  const enemy = Object.fromEntries(
+    ["activo", "x", "y", "mira_x", "mira_y", "dir_x", "dir_y", "estado", "animo", "vida", "vida_max", "golpeado"].map(
+      (field) => [field, num(`web_enemigo_${field}`, 1)],
+    ),
+  );
 
   return {
     start,
@@ -178,7 +211,29 @@ export async function loadGameWasm(): Promise<GameWasm> {
     setTimeSpeed: call("web_velocidad_tiempo", 1),
     testGates: call("web_prueba_puertas", 0),
     player: () => ({ x: x(), y: y(), dirX: dirX(), dirY: dirY(), state: state() }),
-    playerStats: () => ({ deaths: deaths(), delirium: delirium() }),
+    playerStats: () => ({ deaths: deaths(), delirium: delirium(), life: life(), lifeMax: lifeMax() }),
+    enemies: () => {
+      const list: EnemyState[] = [];
+      for (let i = 0; i < enemyMax; i++) {
+        if (!enemy.activo(i)) continue;
+        list.push({
+          slot: i,
+          x: enemy.x(i),
+          y: enemy.y(i),
+          lookX: enemy.mira_x(i),
+          lookY: enemy.mira_y(i),
+          dirX: enemy.dir_x(i),
+          dirY: enemy.dir_y(i),
+          state: enemy.estado(i),
+          mood: MOOD[enemy.animo(i)] ?? "DEAMBULA",
+          life: enemy.vida(i),
+          lifeMax: enemy.vida_max(i),
+          hitMs: enemy.golpeado(i),
+        });
+      }
+      return list;
+    },
+    heal: call("web_curar", 1),
     targetInC: () => (hasTarget() ? { x: targetX(), y: targetY() } : null),
     clock: () => ({
       day: day(),
