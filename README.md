@@ -10,7 +10,7 @@ Link: **https://briankalbermatter.github.io/Delirio/**
 Nothing to download: one click and you are in. Click **Play**, then left click
 to walk (controls below). The build is updated on every push to `main`; if you
 still see the old one, reload with **Ctrl + Shift + R**.
-It runs with the testing clock for now: 10 s days and 10 s nights.
+Days last 6 real minutes and nights 16 (press **F** to speed up the clock).
 
 ## Controls
 
@@ -59,7 +59,19 @@ an **axe** and a **torch**. Pick them up with **E**: they go to the
 inventory (16 slots, in the **Inventory** tab of the side panel). Double click
 one, or drag it onto a hand, to hold it. The right hand swings, the left one
 carries. The torch burns with an animated flame and lights up much more
-around you, by night and by day.
+around you, by night and by day. Potions give back 30 life.
+
+## Enemies
+
+Out in the maze roam the level 1 enemies (Brian's Enemigo1): dumb and
+scared, but they want you dead. Without seeing you they wander at random.
+Once they see you they keep their distance and circle you the long way
+round, running off if you come close, while they work up the nerve. Turn
+your back on them or get busy swinging and they gather courage faster. When
+they have enough they rush in, hit once and flee again. Hit them back (Q · W
+· E · R), or punch the ground (D) to hurt every one around you and scare
+the rest. Blocking or jumping dodges their hit. Your life is the red bar at
+the top left.
 
 ## Art
 

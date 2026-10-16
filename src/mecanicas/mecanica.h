@@ -1,7 +1,7 @@
 // Mecanica del tiempo: el reloj del juego.
 //
 // El tiempo mueve todo lo demas (ver concept/Mecanicas.md):
-//   - Ciclo de DIA -> TARDE -> NOCHE. Dia (con su tarde) 34 min, noche 26 min.
+//   - Ciclo de DIA -> TARDE -> NOCHE. Dia (con su tarde) 6 min, noche 16 min, reales.
 //   - Las puertas de la plaza estan abiertas de dia (y a la tarde) y cerradas
 //     de noche. Ese es el patron siempre, desde el principio. Se cierran de a
 //     poco en los ultimos CIERRE_PUERTAS_MS de la tarde y se abren de a poco
@@ -19,8 +19,8 @@
 #define SEGUNDO_MS 1000.0f
 
 // 1 = tiempos de prueba: dia de 10 s y noche de 10 s, para ver el mecanismo.
-// 0 = tiempos del juego: dia de 34 min (con su tarde) y noche de 26 min.
-#define TIEMPO_DE_PRUEBA 1
+// 0 = tiempos del juego: dia de 6 min (con su tarde) y noche de 16 min.
+#define TIEMPO_DE_PRUEBA 0
 
 // Duracion de cada fase, en milisegundos de juego (la pausa no cuenta).
 #if TIEMPO_DE_PRUEBA
@@ -32,12 +32,12 @@
 #define APERTURA_PUERTAS_MS  (2 * SEGUNDO_MS)  // y 2 s en abrirse
 #define PRIMERA_EXPANSION_MS (5 * SEGUNDO_MS)  // el laberinto crece a los 5 s de empezar
 #else
-#define DURACION_DIA_MS      (28 * MINUTO_MS)
-#define DURACION_TARDE_MS    (6 * MINUTO_MS)
-#define DURACION_NOCHE_MS    (26 * MINUTO_MS)
-#define DURACION_AMANECER_MS (4 * MINUTO_MS)
-#define CIERRE_PUERTAS_MS    (90 * SEGUNDO_MS)
-#define APERTURA_PUERTAS_MS  (30 * SEGUNDO_MS)
+#define DURACION_DIA_MS      (5 * MINUTO_MS)    // dia pleno...
+#define DURACION_TARDE_MS    (1 * MINUTO_MS)    // ...y la tarde: 6 min de luz
+#define DURACION_NOCHE_MS    (16 * MINUTO_MS)
+#define DURACION_AMANECER_MS (40 * SEGUNDO_MS)  // primeros segundos del dia: va aclarando
+#define CIERRE_PUERTAS_MS    (40 * SEGUNDO_MS)  // en la tarde, antes de la noche
+#define APERTURA_PUERTAS_MS  (20 * SEGUNDO_MS)
 #define PRIMERA_EXPANSION_MS (30 * SEGUNDO_MS) // el laberinto crece a los 30 segundos de empezar
 #endif
 #define DIAS_DE_CRECIMIENTO 6          // despues crece cada anochecer, hasta el dia 6
