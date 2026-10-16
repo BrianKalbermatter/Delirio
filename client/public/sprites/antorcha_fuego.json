@@ -5,174 +5,174 @@
    "frame": {
     "x": 0,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "sourceSize": {
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "duration": 80
   },
   {
    "filename": "antorcha_fuego 1",
    "frame": {
-    "x": 20,
+    "x": 14,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "sourceSize": {
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "duration": 80
   },
   {
    "filename": "antorcha_fuego 2",
    "frame": {
-    "x": 40,
+    "x": 28,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "sourceSize": {
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "duration": 80
   },
   {
    "filename": "antorcha_fuego 3",
    "frame": {
-    "x": 60,
+    "x": 42,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "sourceSize": {
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "duration": 80
   },
   {
    "filename": "antorcha_fuego 4",
    "frame": {
-    "x": 80,
+    "x": 56,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "sourceSize": {
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "duration": 80
   },
   {
    "filename": "antorcha_fuego 5",
    "frame": {
-    "x": 100,
+    "x": 70,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "sourceSize": {
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "duration": 80
   },
   {
    "filename": "antorcha_fuego 6",
    "frame": {
-    "x": 120,
+    "x": 84,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "sourceSize": {
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "duration": 80
   },
   {
    "filename": "antorcha_fuego 7",
    "frame": {
-    "x": 140,
+    "x": 98,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "sourceSize": {
-    "w": 20,
-    "h": 30
+    "w": 14,
+    "h": 22
    },
    "duration": 80
   }
@@ -182,8 +182,8 @@
   "image": "antorcha_fuego.png",
   "format": "RGBA8888",
   "size": {
-   "w": 160,
-   "h": 30
+   "w": 112,
+   "h": 22
   },
   "scale": "1",
   "frameTags": [

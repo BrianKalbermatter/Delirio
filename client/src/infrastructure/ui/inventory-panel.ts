@@ -5,8 +5,9 @@
 // Plain DOM next to the game canvas.
 import { EQUIP_SLOT_NAMES, EQUIP_SLOTS, type EquipSlot, type Equipment } from "../../domain/equipment";
 import type { Inventory } from "../../domain/inventory";
+import type { ItemKind } from "../../domain/items";
 import { VIRTUAL_MOUSEUP } from "../input/locked-mouse";
-import type { SpriteSheet } from "../render/sprite-sheet";
+import type { Frame, SpriteSheet } from "../render/sprite-sheet";
 
 const ICON_SIZE = 32;
 // The player's figure, at three times the size of its sprite (64x96).
@@ -39,6 +40,7 @@ export class InventoryPanel {
   private readonly ghost = document.createElement("canvas");
   readonly doll: HTMLCanvasElement;
   private renderedVersion = "";
+  private readonly boxes = new Map<string, { x: number; y: number; w: number; h: number }>();
   private lastClick = { index: -1, ms: 0 };
   // The slot being dragged and where the cursor was when it was grabbed.
   private drag: { index: number; x: number; y: number; moved: boolean } | null = null;
@@ -130,7 +132,7 @@ export class InventoryPanel {
       el.title = item
         ? `${EQUIP_SLOT_NAMES[slot]}: ${item.name} (click or right click: take off)`
         : `${EQUIP_SLOT_NAMES[slot]} (drag an item here)`;
-      if (item) el.appendChild(this.icon(item.sprite, item.frame));
+      if (item) el.appendChild(this.icon(item));
     }
 
     this.inventory.slots.forEach((slot, i) => {
@@ -140,7 +142,7 @@ export class InventoryPanel {
       el.title = "";
       if (!slot) return;
       el.title = `${slot.item.name} (double click: use · right click: drop)`;
-      el.appendChild(this.icon(slot.item.sprite, slot.item.frame));
+      el.appendChild(this.icon(slot.item));
       if (slot.count > 1) {
         const count = document.createElement("span");
         count.className = "count";
@@ -165,7 +167,7 @@ export class InventoryPanel {
     if (!drag.moved && Math.hypot(this.cursor.x - drag.x, this.cursor.y - drag.y) < DRAG_START) return;
     if (!drag.moved) {
       drag.moved = true;
-      const icon = this.icon(item.sprite, item.frame);
+      const icon = this.icon(item);
       this.ghost.width = icon.width;
       this.ghost.height = icon.height;
       this.ghost.getContext("2d")!.drawImage(icon, 0, 0);
@@ -174,19 +176,48 @@ export class InventoryPanel {
     this.ghost.style.transform = `translate(${this.cursor.x - ICON_SIZE / 2}px, ${this.cursor.y - ICON_SIZE / 2}px)`;
   }
 
-  // Item icon cut from its sprite sheet, centered in a 32x32 canvas.
-  private icon(sprite: string, frameIndex: number): HTMLCanvasElement {
-    const sheet = this.sheets.get(sprite)!;
-    const f = sheet.frames[frameIndex];
+  // Item icon cut from its sprite sheet: only its drawn pixels, as big as
+  // fits (whole times bigger, so pixels stay square), centered in 32x32.
+  private icon(item: ItemKind): HTMLCanvasElement {
+    const sheet = this.sheets.get(item.sprite)!;
+    const f = sheet.frames[item.icon ?? item.frame];
+    const box = this.drawnBox(sheet, f);
     const canvas = document.createElement("canvas");
     canvas.width = ICON_SIZE;
     canvas.height = ICON_SIZE;
-    const scale = Math.min(1, ICON_SIZE / Math.max(f.w, f.h));
-    const w = f.w * scale;
-    const h = f.h * scale;
+    const fit = ICON_SIZE / Math.max(box.w, box.h);
+    const scale = fit >= 1 ? Math.floor(fit) : fit;
+    const w = box.w * scale;
+    const h = box.h * scale;
     const ctx = canvas.getContext("2d")!;
     ctx.imageSmoothingEnabled = false;
-    ctx.drawImage(sheet.image, f.x, f.y, f.w, f.h, (ICON_SIZE - w) / 2, (ICON_SIZE - h) / 2, w, h);
+    ctx.drawImage(sheet.image, f.x + box.x, f.y + box.y, box.w, box.h, (ICON_SIZE - w) / 2, (ICON_SIZE - h) / 2, w, h);
     return canvas;
+  }
+
+  // The part of frame `f` with pixels drawn (the whole frame if empty).
+  private drawnBox(sheet: SpriteSheet, f: Frame): { x: number; y: number; w: number; h: number } {
+    const key = `${sheet.image.src}#${f.x},${f.y}`;
+    const cached = this.boxes.get(key);
+    if (cached) return cached;
+    const canvas = document.createElement("canvas");
+    canvas.width = f.w;
+    canvas.height = f.h;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true })!;
+    ctx.drawImage(sheet.image, f.x, f.y, f.w, f.h, 0, 0, f.w, f.h);
+    const pixels = ctx.getImageData(0, 0, f.w, f.h).data;
+    let [x0, y0, x1, y1] = [f.w, f.h, -1, -1];
+    for (let y = 0; y < f.h; y++) {
+      for (let x = 0; x < f.w; x++) {
+        if (pixels[(y * f.w + x) * 4 + 3] === 0) continue;
+        x0 = Math.min(x0, x);
+        y0 = Math.min(y0, y);
+        x1 = Math.max(x1, x);
+        y1 = Math.max(y1, y);
+      }
+    }
+    const box = x1 < 0 ? { x: 0, y: 0, w: f.w, h: f.h } : { x: x0, y: y0, w: x1 - x0 + 1, h: y1 - y0 + 1 };
+    this.boxes.set(key, box);
+    return box;
   }
 }

@@ -4,7 +4,8 @@ export interface ItemKind {
   id: string;
   name: string;
   sprite: string; // asset name in public/assets
-  frame: number; // frame of the sprite used as icon
+  frame: number; // frame of the sprite lying on the floor (and the icon, unless `icon`)
+  icon?: number; // frame shown in the inventory, when it is not `frame`
   // Picked up only with the E key while standing on it, instead of by just
   // walking over it.
   pickupWithKey?: boolean;
@@ -18,8 +19,10 @@ export interface ItemKind {
   light?: { inner: number; outer: number };
 }
 
-// Frames of a weapon's sprite: lying on the floor (and icon), and as carried.
+// Frames of a weapon's sprite (art/armas.py item_sheet): lying on the floor,
+// as carried, and big on a diagonal for the inventory.
 export const WEAPON_HELD_FRAME = 1;
+export const WEAPON_ICON_FRAME = 2;
 
 const POTION_NAMES = ["rombo", "frasco", "tubo_u", "retorta", "cono", "cubo"];
 
@@ -57,6 +60,7 @@ export const ITEMS: Record<string, ItemKind> = {
     name: "Axe",
     sprite: "hacha",
     frame: 0,
+    icon: WEAPON_ICON_FRAME,
     pickupWithKey: true,
     weapon: { grip: { x: 30, y: 40 } },
   },
@@ -67,6 +71,7 @@ export const ITEMS: Record<string, ItemKind> = {
     name: "Torch",
     sprite: "antorcha",
     frame: 0,
+    icon: WEAPON_ICON_FRAME,
     pickupWithKey: true,
     weapon: { grip: { x: 23, y: 40 } },
     light: { inner: 90, outer: 300 },

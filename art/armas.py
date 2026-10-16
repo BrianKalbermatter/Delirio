@@ -406,19 +406,37 @@ def write_sheet(path, cells, cell_w, cell_h, columns, durations, tags, name):
         json.dump({"frames": frames, "meta": meta}, f, indent=1)
 
 
-def item_sheet(weapon, path):
-    """Frame 0: lying on the floor (also the icon). Frame 1: as drawn, to carry."""
+def inventory_icon(weapon, angle_deg, spec_angle):
+    """The weapon at full size, its head pointing `angle_deg` (clockwise from
+    up), cropped to its pixels: the inventory shows it big and on a diagonal.
+    Rotated at 8x and sampled back down, so the pixels stay clean."""
+    big = Weapon.upscale(weapon.img)
+    turned = big.rotate(spec_angle - angle_deg, resample=Image.NEAREST, expand=True)
+    small = turned.resize((turned.width // 8, turned.height // 8), Image.NEAREST)
+    return small.crop(small.getchannel("A").getbbox())
+
+
+ICON_ANGLE = 45  # head up and to the right
+
+
+def item_sheet(weapon, path, spec_angle):
+    """Frame 0: lying on the floor. Frame 1: as drawn, to carry. Frame 2: the
+    inventory icon, big and on a diagonal."""
     size = 96
     lying = Image.new("RGBA", (size, size))
     weapon.paste(lying, (size // 2 + 12, size // 2), -90)
     lying = lying.crop(lying.getchannel("A").getbbox())
     held = weapon.img
-    w, h = max(lying.width, held.width), max(lying.height, held.height)
+    diagonal = inventory_icon(weapon, ICON_ANGLE, spec_angle)
+    w = max(lying.width, held.width, diagonal.width)
+    h = max(lying.height, held.height, diagonal.height)
     floor = Image.new("RGBA", (w, h))
     floor.alpha_composite(lying, ((w - lying.width) // 2, h - lying.height))  # rests on the floor
     carried = Image.new("RGBA", (w, h))
     carried.alpha_composite(held, (0, 0))  # as drawn: the grip stays where it was drawn
-    write_sheet(path, [floor, carried], w, h, 2, [100, 100], [], weapon.id)
+    icon = Image.new("RGBA", (w, h))
+    icon.alpha_composite(diagonal, ((w - diagonal.width) // 2, (h - diagonal.height) // 2))
+    write_sheet(path, [floor, carried, icon], w, h, 3, [100, 100, 100], [], weapon.id)
 
 
 def view_of(tag):
@@ -498,7 +516,7 @@ def main(exports, public):
             backs += b
         write_sheet(f"{public}/sprites/{weapon.id}_fx", fronts, FX, FX, 8, new_ms, fx_tags, f"{weapon.id}_fx")
         write_sheet(f"{public}/sprites/{weapon.id}_fx_atras", backs, FX, FX, 8, new_ms, fx_tags, f"{weapon.id}_fx_atras")
-        item_sheet(weapon, f"{public}/assets/{weapon.id}")
+        item_sheet(weapon, f"{public}/assets/{weapon.id}", spec["angle"])
         print(f"{weapon.id}: reach {weapon.reach:.1f}")
     print(f"frames {first} + {len(new_bodies)}")
 

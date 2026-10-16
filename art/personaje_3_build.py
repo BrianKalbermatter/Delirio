@@ -551,7 +551,7 @@ def main(weapon_dir_path, public, frames_dir):
                                ("fx_izq_atras", left_back)):
             armas.write_sheet(f"{public}/sprites/{weapon.id}_{suffix}", frames, FX, FX, FX_COLUMNS, sheet.ms,
                               sheet.tags, f"{weapon.id}_{suffix}")
-        armas.item_sheet(weapon, f"{public}/assets/{weapon.id}")
+        armas.item_sheet(weapon, f"{public}/assets/{weapon.id}", spec["angle"])
 
     # Slam dirt, per direction, from where the fists hit the floor.
     dirt_front, dirt_back, dirt_tags = [], [], []
