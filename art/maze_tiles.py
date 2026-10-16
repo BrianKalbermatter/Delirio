@@ -94,6 +94,8 @@ DEAD_LEAVES = [(62, 39, 49), (115, 62, 57), (184, 111, 80)]
 # and scattered over GRASS_VARIANTS tiles, so no repetition shows.
 PASTO_PNG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pasto.png")
 GRASS_VARIANTS = 8
+GRASS_GROUND = (150, 212, 64)  # light meadow green
+GRASS_STROKE = (104, 160, 50)  # his strokes, a darker shade of it
 # Older flat lime, still the base of the tree tufts' palette. TUFT_COLORS and SMALL_TUFTS are the
 # grass tufts drawn around trees (art/pasto_arbol.py): darker blades, a soft
 # shadow under them and lit tips.
@@ -495,7 +497,10 @@ def build(out_dir):
         tiles[f"forest_{i}"] = forest_floor(square_rng)
     # Own generator too, so the forest floor stays as it was.
     grass_rng = random.Random(23)
-    ground, stroke, patterns = grass_patterns()
+    _, _, patterns = grass_patterns()
+    # Brian's strokes over a lighter green than his drawing's: he wants the
+    # meadow bright, far from the dark forest floor.
+    ground, stroke = GRASS_GROUND, GRASS_STROKE
     for i in range(GRASS_VARIANTS):
         tiles[f"grass_{i}"] = grass(grass_rng, ground, stroke, patterns)
     gate = gate_face()
