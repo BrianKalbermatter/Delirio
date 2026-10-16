@@ -1,12 +1,14 @@
 -- Builds Bicho_Anim.aseprite from the frames written by `python3 bicho.py <dir>`.
 --
 -- Usage (batch):
---   Aseprite.exe -b --script-param dir=<dir> --script-param out=<file> --script bicho_aseprite.lua
+--   Aseprite.exe -b --script-param dir=<dir> --script-param out=<file> [--script-param body=<layer>] --script bicho_aseprite.lua
+-- `body` names the creature layer and its frame files (default Bicho; Enemigo1 uses Enemigo).
 -- The sprite has 263 frames of 64x96, layers Sombra / Bicho and the same tags
 -- and frame durations as Personaje_2_Anim.
 
 local dir = app.params["dir"]
 local out = app.params["out"]
+local bodyName = app.params["body"] or "Bicho"
 if not dir or not out then error("missing --script-param dir=<folder> out=<file>") end
 
 local durations = {}
@@ -20,7 +22,7 @@ for _ = 2, #durations do sprite:newEmptyFrame() end
 local shadow = sprite.layers[1]
 shadow.name = "Sombra"
 local body = sprite:newLayer()
-body.name = "Bicho"
+body.name = bodyName
 
 for f = 1, #durations do
   sprite.frames[f].duration = durations[f] / 1000

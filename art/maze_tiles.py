@@ -7,6 +7,7 @@ Writes maze_tiles.png and maze_tiles.json (frames by name, Aseprite-like).
 """
 import json
 import math
+import os
 import random
 import sys
 
@@ -27,16 +28,19 @@ SLAB = [(38, 43, 68), (58, 68, 102), (78, 92, 128), (104, 122, 158)]
 SLAB_GAP = (24, 20, 37)
 SLAB_MOSS = (62, 137, 72)
 
-CAP = [(25, 60, 62), (38, 92, 66), (58, 126, 70), (84, 168, 74), (122, 196, 94)]
-CAP_GAP = (24, 20, 37)
-
-FACE = [(20, 24, 40), (25, 48, 56), (32, 70, 64), (44, 96, 72), (60, 124, 80)]
+# Walls and gates use the Mushroom palette (lospec.com/palette-list/mushroom):
+# grey-green dungeon bricks with near-black purple outlines.
+M_BLACK = (46, 34, 47)  # #2e222f outlines, deepest shadow
+M_DARK = (68, 56, 70)  # #443846 mortar, shadow
+M_MAUVE = (102, 89, 100)  # #665964 odd bricks
+M_STONE = (87, 96, 105)  # #576069 brick
+M_LIGHT = (120, 138, 135)  # #788a87 lit stone
+M_PALE = (169, 178, 162)  # #a9b2a2 highlight
 
 # Gates of the central square: iron bars over darkness, wooden top beam.
-IRON = [(38, 43, 68), (58, 68, 102), (90, 105, 136), (139, 155, 180)]
-GATE_DARK = (24, 20, 37)
-WOOD = [(62, 39, 49), (115, 62, 57), (184, 111, 80), (228, 166, 114)]
-FACE_MOSS = [(62, 137, 72), (99, 199, 77)]
+IRON = [M_DARK, M_STONE, M_LIGHT, M_PALE]
+GATE_DARK = M_BLACK
+WOOD = [(69, 41, 63), (122, 48, 69), (153, 61, 65), (205, 104, 61)]
 
 
 def put(img, x, y, color, wrap=True):
@@ -85,7 +89,12 @@ FOREST_FLOOR = [(20, 24, 40), (25, 48, 56), (32, 70, 64), (44, 96, 72)]
 DEAD_LEAVES = [(62, 39, 49), (115, 62, 57), (184, 111, 80)]
 
 
-# Bright meadow: one flat lime green. TUFT_COLORS and SMALL_TUFTS are the
+# Square meadow: Brian's Pasto.aseprite (exported to art/pasto.png), a green
+# ground with dark grass strokes. The strokes are cut into separate patterns
+# and scattered over GRASS_VARIANTS tiles, so no repetition shows.
+PASTO_PNG = os.path.join(os.path.dirname(os.path.abspath(__file__)), "pasto.png")
+GRASS_VARIANTS = 8
+# Older flat lime, still the base of the tree tufts' palette. TUFT_COLORS and SMALL_TUFTS are the
 # grass tufts drawn around trees (art/pasto_arbol.py): darker blades, a soft
 # shadow under them and lit tips.
 LIME = (164, 210, 62)
@@ -128,9 +137,66 @@ SMALL_TUFTS = [
 ]
 
 
-def grass():
-    """Flat lime meadow."""
-    return Image.new("RGBA", (T, T), LIME + (255,))
+def grass_patterns():
+    """Brian's ground colour and his strokes, one pattern per 8-connected group
+    of stroke pixels: a list of (dx, dy) offsets from its top-left corner."""
+    img = Image.open(PASTO_PNG).convert("RGB")
+    px = img.load()
+    w, h = img.size
+    counts = {}
+    for y in range(h):
+        for x in range(w):
+            counts[px[x, y]] = counts.get(px[x, y], 0) + 1
+    ground = max(counts, key=counts.get)
+    strokes = {(x, y) for y in range(h) for x in range(w) if px[x, y] != ground}
+    stroke_color = px[next(iter(strokes))] if strokes else ground
+    patterns = []
+    while strokes:
+        todo = [strokes.pop()]
+        group = []
+        while todo:
+            x, y = todo.pop()
+            group.append((x, y))
+            for dx in (-1, 0, 1):
+                for dy in (-1, 0, 1):
+                    q = (x + dx, y + dy)
+                    if q in strokes:
+                        strokes.remove(q)
+                        todo.append(q)
+        x0 = min(p[0] for p in group)
+        y0 = min(p[1] for p in group)
+        patterns.append(sorted((x - x0, y - y0) for x, y in group))
+    patterns.sort()
+    return ground, stroke_color, patterns
+
+
+def grass(rng, ground, stroke, patterns):
+    """Brian's ground with his strokes scattered at random, mirrored now and
+    then. Strokes stay inside the tile and never touch each other."""
+    img = Image.new("RGBA", (T, T), ground + (255,))
+    px = img.load()
+    big = [p for p in patterns if len(p) > 1]
+    dots = [p for p in patterns if len(p) == 1]
+    taken = set()
+    wanted = [rng.choice(big) for _ in range(rng.randint(2, 3))]
+    if dots:
+        wanted += [dots[0]] * rng.randint(2, 4)
+    for pattern in wanted:
+        if rng.random() < 0.5:
+            wmax = max(p[0] for p in pattern)
+            pattern = [(wmax - x, y) for x, y in pattern]
+        pw = max(p[0] for p in pattern) + 1
+        ph = max(p[1] for p in pattern) + 1
+        for _ in range(30):
+            ox, oy = rng.randint(1, T - pw - 1), rng.randint(1, T - ph - 1)
+            cells = {(ox + x, oy + y) for x, y in pattern}
+            halo = {(x + dx, y + dy) for x, y in cells for dx in (-1, 0, 1) for dy in (-1, 0, 1)}
+            if not halo & taken:
+                taken |= halo
+                for c in cells:
+                    px[c] = stroke + (255,)
+                break
+    return img
 
 
 def forest_floor(rng):
@@ -201,104 +267,168 @@ TOP_GRID = 4  # wall tops: one seamless texture of 4x4 tiles
 FACE_GRID = 3  # wall faces: one seamless strip 3 tiles wide
 
 
+SLAB_TOP = 16  # wall tops: square slabs, every other row shifted by half
+
+
 def wall_top(rng):
-    """Packed round moss-covered stones, seen from above. One seamless texture
-    of TOP_GRID x TOP_GRID tiles, so neighbouring tiles continue each other."""
+    """Wall tops seen from above: square stone slabs lit from the top-left,
+    one seamless texture of TOP_GRID x TOP_GRID tiles."""
     size = T * TOP_GRID
-    img = Image.new("RGBA", (size, size), CAP_GAP + (255,))
-    stones = []
-    for _ in range(200 * TOP_GRID * TOP_GRID):
-        r = rng.uniform(4.0, 7.0)
-        x, y = rng.uniform(0, size), rng.uniform(0, size)
-        if all(wrapped_dist(x, y, sx, sy, size) > (r + sr) * 0.78 for sx, sy, sr in stones):
-            stones.append((x, y, r))
-    # Draw back to front so lower stones overlap the ones above them.
-    for sx, sy, r in sorted(stones, key=lambda s: s[1]):
-        for y in range(int(sy - r - 1), int(sy + r + 2)):
-            for x in range(int(sx - r - 1), int(sx + r + 2)):
-                dx, dy = x + 0.5 - sx, (y + 0.5 - sy) * 1.15
-                d = math.hypot(dx, dy)
-                if d > r:
-                    continue
-                # Light from the top-left: rim light up, shadow down.
-                light = -(dx * 0.5 + dy * 0.85) / r
-                tone = 2.4 + light * 1.4 - (d / r) ** 3 * 0.8
-                if dy > r * 0.55:
-                    tone = 0.8
-                put(img, x, y, CAP[max(0, min(4, round(tone)))])
-    # A few grass blades on the caps.
-    for _ in range(rng.randint(0, 2) * TOP_GRID * TOP_GRID):
-        x, y = rng.randrange(size), rng.randrange(size)
-        put(img, x, y, GRASS[2])
-        put(img, x, y + 1, GRASS[1])
+    img = Image.new("RGBA", (size, size), M_DARK + (255,))
+    s = SLAB_TOP
+    for row in range(size // s):
+        shift = (row % 2) * (s // 2)
+        for i in range(size // s):
+            x0, y0 = i * s + shift, row * s
+            fill = M_STONE if rng.random() < 0.2 else M_LIGHT
+            for y in range(y0, y0 + s - 1):
+                for x in range(x0, x0 + s - 1):
+                    color = fill
+                    if y == y0 or x == x0:
+                        color = M_PALE if fill == M_LIGHT else M_LIGHT
+                    elif y == y0 + s - 2 or x == x0 + s - 2:
+                        color = M_STONE if fill == M_LIGHT else M_DARK
+                    put(img, x, y, color)
+            if rng.random() < 0.25:  # a crack across the slab
+                x, y = x0 + rng.randrange(3, s - 4), y0 + 2
+                for _ in range(rng.randint(4, 9)):
+                    put(img, x, y, M_DARK)
+                    x += rng.choice((-1, 0, 1))
+                    y += 1
     return img
 
 
-def wrapped_dist(x1, y1, x2, y2, size):
-    dx = min(abs(x1 - x2), size - abs(x1 - x2))
-    dy = min(abs(y1 - y2), size - abs(y1 - y2))
-    return math.hypot(dx, dy)
+CORNICE_H = 20  # stone band along the top of every wall face
+PLINTH_H = 12  # stone band along the floor
+PILLAR_W = 16  # one pillar every FACE_GRID tiles, at the start of the strip
+BRICK_W, BRICK_H = 12, 6  # brick pitch, mortar included
 
 
 def wall_face(rng):
-    """Tall front face: columns of stacked round stones, darker towards the floor."""
+    """Tall front face in the style of a dungeon wall: a cornice on top, a
+    plinth below, a pillar every FACE_GRID tiles and recessed bricks between."""
     width_px = T * FACE_GRID
-    img = Image.new("RGBA", (width_px, WALL_H), FACE[0] + (255,))
-    x = 0
-    while x < width_px:
-        # The last columns share what is left, so the strip ends exactly at its
-        # edge and wraps seamlessly, with no thin leftover column.
-        remaining = width_px - x
-        if remaining <= 12:
-            width = remaining
-        elif remaining < 21:
-            width = remaining // 2
-        else:
-            width = rng.choice((9, 10, 11, 12))
-        column(img, rng, x, width)
-        x += width
-    # Moss dripping from the top edge.
-    for x in range(width_px):
-        drip = rng.choice((1, 2, 2, 3, 4, 6)) if rng.random() < 0.7 else 0
-        for y in range(drip):
-            put(img, x, y, FACE_MOSS[1 if y < drip - 1 else 0], wrap=False)
-    # Moss streaks running down some columns.
-    for _ in range(rng.randint(2, 4) * FACE_GRID):
-        x, length = rng.randrange(width_px), rng.randint(8, 30)
-        y0 = rng.randrange(0, 20)
-        for y in range(y0, y0 + length):
-            if rng.random() < 0.8:
-                put(img, x, y, FACE_MOSS[0], wrap=False)
-            x += rng.choice((0, 0, 0, 1, -1))
-
-    # Vertical darkening: the bottom of a tall wall gets little light.
-    for y in range(WALL_H):
-        k = 1.0 - 0.55 * (y / WALL_H) ** 1.4
-        if y >= WALL_H - 4:
-            k *= 0.55  # ambient occlusion where the wall meets the floor
-        for x in range(width_px):
-            r, g, b = get(img, x, y)
-            put(img, x, y, (int(r * k), int(g * k), int(b * k)))
+    img = Image.new("RGBA", (width_px, WALL_H), M_DARK + (255,))
+    bricks(img, rng, PILLAR_W, width_px)
+    pillar(img, rng)
+    cornice(img, width_px)
+    plinth(img, width_px)
     return img
 
 
-def column(img, rng, x0, width):
-    shade = rng.choice((-0.6, -0.3, 0.0, 0.0, 0.3))  # columns are not all equally lit
-    y = -rng.randrange(0, 8)
-    while y < WALL_H:
-        height = rng.choice((7, 8, 9, 10))
-        for yy in range(y, y + height - 1):
-            for xx in range(x0, x0 + width - 1):
-                # Cylinder shading: lit left of center, dark at the edges.
-                u = (xx - x0 + 0.5) / (width - 1) * 2 - 1
-                v = (yy - y + 0.5) / (height - 1) * 2 - 1
-                if u * u + v * v * 0.6 > 1.05:
-                    continue
-                tone = 3.0 + shade - abs(u + 0.25) * 2.2 - max(0, v) * 0.9
-                if v < -0.6:
-                    tone += 0.6
-                put(img, xx, yy, FACE[max(1, min(4, round(tone)))], wrap=False)
-        y += height
+def bricks(img, rng, x0, x1):
+    """Running-bond bricks between the pillars, darker towards the floor."""
+    bottom = WALL_H - PLINTH_H
+    for row, y0 in enumerate(range(CORNICE_H, bottom, BRICK_H)):
+        shift = (row % 2) * (BRICK_W // 2)
+        for bx in range(x0 - shift, x1, BRICK_W):
+            roll = rng.random()
+            fill = M_MAUVE if roll < 0.08 else M_DARK if roll < 0.12 else M_STONE
+            # Near the floor more and more bricks sit in shadow.
+            depth = (y0 - (bottom - 60)) / 60
+            if depth > 0 and rng.random() < depth * 0.7:
+                fill = M_DARK
+            lit = fill == M_STONE and rng.random() < 0.4
+            for y in range(y0, min(y0 + BRICK_H - 1, bottom)):
+                for x in range(max(bx, x0), min(bx + BRICK_W - 1, x1)):
+                    put(img, x, y, M_LIGHT if lit and y == y0 else fill, wrap=False)
+            if rng.random() < 0.04:  # a cracked brick
+                x, y = rng.randrange(max(bx, x0), max(max(bx, x0) + 1, min(bx + BRICK_W - 1, x1))), y0
+                for _ in range(BRICK_H - 1):
+                    put(img, x, y, M_BLACK, wrap=False)
+                    x += rng.choice((0, 1))
+                    y += 1
+    # Shadows cast into the recess by the cornice and the pillar.
+    for x in range(x0, x1):
+        put(img, x, CORNICE_H, M_BLACK, wrap=False)
+        put(img, x, CORNICE_H + 1, M_DARK, wrap=False)
+    for y in range(CORNICE_H, bottom):
+        put(img, x0, y, M_BLACK, wrap=False)
+        put(img, x0 + 1, y, M_DARK, wrap=False)
+
+
+def pillar(img, rng):
+    """A pillar of stacked blocks standing in front of the bricks."""
+    w = PILLAR_W
+    bottom = WALL_H - PLINTH_H
+    for row, y0 in enumerate(range(CORNICE_H, bottom, 8)):
+        split = rng.random() < 0.5  # one wide block or two half blocks
+        for y in range(y0, min(y0 + 8, bottom)):
+            for x in range(w):
+                if y == y0 + 7 or (split and x == w // 2 and row % 2 == 0):
+                    color = M_DARK
+                elif x == 1 or y == y0:
+                    color = M_LIGHT
+                elif x == w - 2:
+                    color = M_DARK
+                else:
+                    color = M_STONE
+                if x in (0, w - 1):
+                    color = M_BLACK
+                put(img, x, y, color, wrap=False)
+    # Capital under the cornice
+    for y in range(CORNICE_H, CORNICE_H + 6):
+        for x in range(w):
+            color = M_PALE if y == CORNICE_H else M_STONE if y == CORNICE_H + 4 else M_LIGHT
+            if y == CORNICE_H + 5 or x in (0, w - 1):
+                color = M_BLACK
+            put(img, x, y, color, wrap=False)
+
+
+def cornice(img, width_px):
+    """Long stone blocks along the top, a recessed plaque over each pillar gap."""
+    for y in range(CORNICE_H):
+        for x in range(width_px):
+            if y == 0 or y == CORNICE_H - 1:
+                color = M_BLACK
+            elif y <= 2:
+                color = M_PALE
+            elif y >= CORNICE_H - 3:
+                color = M_STONE if y == CORNICE_H - 3 else M_DARK
+            else:
+                color = M_LIGHT
+            put(img, x, y, color, wrap=False)
+    for x in range(0, width_px, 24):  # joints between the blocks
+        for y in range(1, CORNICE_H - 3):
+            put(img, x, y, M_DARK, wrap=False)
+            if y > 2:
+                put(img, x + 1, y, M_PALE, wrap=False)
+    # Recessed plaque centred over the bricks
+    px0, px1 = PILLAR_W + 22, width_px - 22
+    for y in range(6, 14):
+        for x in range(px0, px1):
+            edge_y = y in (6, 13)
+            edge_x = x in (px0, px1 - 1)
+            if edge_y and edge_x:
+                continue  # rounded corners
+            color = M_DARK if y == 6 or x == px0 else M_PALE if y == 13 or x == px1 - 1 else M_STONE
+            put(img, x, y, color, wrap=False)
+
+
+def plinth(img, width_px):
+    """Stone band where the wall meets the floor, with contact shadow."""
+    top = WALL_H - PLINTH_H
+    for y in range(top, WALL_H):
+        for x in range(width_px):
+            k = y - top
+            if k == 0:
+                color = M_BLACK
+            elif k == 1:
+                color = M_PALE
+            elif k < PLINTH_H - 4:
+                color = M_LIGHT
+            elif k < PLINTH_H - 2:
+                color = M_STONE
+            else:
+                color = M_DARK if k == PLINTH_H - 2 else M_BLACK
+            put(img, x, y, color, wrap=False)
+    for x in range(PILLAR_W, width_px, 24):  # joints
+        for y in range(top + 1, WALL_H - 2):
+            put(img, x, y, M_DARK, wrap=False)
+    # The pillar's base sticks out a bit further.
+    for y in range(top, WALL_H - 1):
+        put(img, 0, y, M_BLACK, wrap=False)
+        put(img, PILLAR_W - 1, y, M_BLACK, wrap=False)
 
 
 def gate_face():
@@ -325,12 +455,6 @@ def gate_face():
             for y in range(WALL_H - 4, WALL_H):
                 if x % 8 != 4 and y > WALL_H - 3:
                     put(img, x, y, GATE_DARK, wrap=False)
-    # Same vertical darkening as the walls
-    for y in range(WALL_H):
-        k = 1.0 - 0.35 * (y / WALL_H)
-        for x in range(width_px):
-            r, g, b = get(img, x, y)
-            put(img, x, y, (int(r * k), int(g * k), int(b * k)))
     return img
 
 
@@ -367,9 +491,13 @@ def build(out_dir):
     tiles["gate_top_0"] = gate_top(rng)
     # Own generator, so adding square tiles never changes the maze tiles.
     square_rng = random.Random(11)
-    tiles["grass_0"] = grass()  # flat: one variant is enough
     for i in range(4):
         tiles[f"forest_{i}"] = forest_floor(square_rng)
+    # Own generator too, so the forest floor stays as it was.
+    grass_rng = random.Random(23)
+    ground, stroke, patterns = grass_patterns()
+    for i in range(GRASS_VARIANTS):
+        tiles[f"grass_{i}"] = grass(grass_rng, ground, stroke, patterns)
     gate = gate_face()
     for i in range(FACE_GRID):
         tiles[f"gate_face_{i}"] = gate.crop((i * T, 0, (i + 1) * T, WALL_H))
