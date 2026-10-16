@@ -62,4 +62,7 @@ export default defineConfig({
   // BASE_PATH=/Delirio/.
   base: process.env.BASE_PATH ?? "/",
   plugins: [cCore()],
+  // A new value on every build (and dev server start): see versioned() in
+  // src/infrastructure/render/sprite-sheet.ts.
+  define: { BUILD_ID: JSON.stringify(Date.now().toString(36)) },
 });

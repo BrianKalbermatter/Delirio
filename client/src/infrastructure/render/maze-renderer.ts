@@ -17,7 +17,7 @@ import type { Square } from "../../domain/square";
 import type { TileMap } from "../../domain/tile-map";
 import type { Rect } from "../wasm/game-wasm";
 import { DEPTH, depthOf } from "./depth";
-import { loadImage } from "./sprite-sheet";
+import { loadImage, versioned } from "./sprite-sheet";
 import { paintTexture } from "./textures";
 
 interface TileFrame {
@@ -89,7 +89,7 @@ const FLOOR_CHUNK = 16;
 
 export async function loadMazeTiles(basePath: string): Promise<MazeTiles> {
   const [data, image] = await Promise.all([
-    fetch(`${basePath}.json`).then((r) => r.json()),
+    fetch(versioned(`${basePath}.json`)).then((r) => r.json()),
     loadImage(`${basePath}.png`),
   ]);
   return { image, tileSize: data.tileSize, frames: data.frames };

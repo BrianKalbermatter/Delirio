@@ -48,9 +48,16 @@ export interface LoadOptions {
   pivotOnBody?: boolean;
 }
 
+// Sprites and data keep their names between builds, so a browser that saw them
+// before would keep showing the old ones. Every build asks for them with its
+// own version (BUILD_ID, set in vite.config.ts) to get the current files.
+export function versioned(url: string): string {
+  return `${url}${url.includes("?") ? "&" : "?"}v=${BUILD_ID}`;
+}
+
 export async function loadSpriteSheet(basePath: string, options: LoadOptions = {}): Promise<SpriteSheet> {
   const [data, image] = await Promise.all([
-    fetch(`${basePath}.json`).then((r) => r.json() as Promise<AsepriteExport>),
+    fetch(versioned(`${basePath}.json`)).then((r) => r.json() as Promise<AsepriteExport>),
     loadImage(`${basePath}.png`),
   ]);
 
@@ -126,6 +133,6 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
     const image = new Image();
     image.onload = () => resolve(image);
     image.onerror = () => reject(new Error(`Cannot load image ${src}`));
-    image.src = src;
+    image.src = versioned(src);
   });
 }
