@@ -1,0 +1,2176 @@
+{
+ "frames": [
+  {
+   "filename": "personaje_3_tierra_atras 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 1",
+   "frame": {
+    "x": 160,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 2",
+   "frame": {
+    "x": 320,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 3",
+   "frame": {
+    "x": 480,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 50
+  },
+  {
+   "filename": "personaje_3_tierra_atras 4",
+   "frame": {
+    "x": 640,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 5",
+   "frame": {
+    "x": 800,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 6",
+   "frame": {
+    "x": 960,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 7",
+   "frame": {
+    "x": 1120,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 8",
+   "frame": {
+    "x": 1280,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 9",
+   "frame": {
+    "x": 1440,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 10",
+   "frame": {
+    "x": 1600,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 11",
+   "frame": {
+    "x": 1760,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 12",
+   "frame": {
+    "x": 0,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 13",
+   "frame": {
+    "x": 160,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 14",
+   "frame": {
+    "x": 320,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 15",
+   "frame": {
+    "x": 480,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 50
+  },
+  {
+   "filename": "personaje_3_tierra_atras 16",
+   "frame": {
+    "x": 640,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 17",
+   "frame": {
+    "x": 800,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 18",
+   "frame": {
+    "x": 960,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 19",
+   "frame": {
+    "x": 1120,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 20",
+   "frame": {
+    "x": 1280,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 21",
+   "frame": {
+    "x": 1440,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 22",
+   "frame": {
+    "x": 1600,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 23",
+   "frame": {
+    "x": 1760,
+    "y": 128,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 24",
+   "frame": {
+    "x": 0,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 25",
+   "frame": {
+    "x": 160,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 26",
+   "frame": {
+    "x": 320,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 27",
+   "frame": {
+    "x": 480,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 50
+  },
+  {
+   "filename": "personaje_3_tierra_atras 28",
+   "frame": {
+    "x": 640,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 29",
+   "frame": {
+    "x": 800,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 30",
+   "frame": {
+    "x": 960,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 31",
+   "frame": {
+    "x": 1120,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 32",
+   "frame": {
+    "x": 1280,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 33",
+   "frame": {
+    "x": 1440,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 34",
+   "frame": {
+    "x": 1600,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 35",
+   "frame": {
+    "x": 1760,
+    "y": 256,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 36",
+   "frame": {
+    "x": 0,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 37",
+   "frame": {
+    "x": 160,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 38",
+   "frame": {
+    "x": 320,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 39",
+   "frame": {
+    "x": 480,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 50
+  },
+  {
+   "filename": "personaje_3_tierra_atras 40",
+   "frame": {
+    "x": 640,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 41",
+   "frame": {
+    "x": 800,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 42",
+   "frame": {
+    "x": 960,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 43",
+   "frame": {
+    "x": 1120,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 44",
+   "frame": {
+    "x": 1280,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 45",
+   "frame": {
+    "x": 1440,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 46",
+   "frame": {
+    "x": 1600,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 47",
+   "frame": {
+    "x": 1760,
+    "y": 384,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 48",
+   "frame": {
+    "x": 0,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 49",
+   "frame": {
+    "x": 160,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 50",
+   "frame": {
+    "x": 320,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 51",
+   "frame": {
+    "x": 480,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 50
+  },
+  {
+   "filename": "personaje_3_tierra_atras 52",
+   "frame": {
+    "x": 640,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 53",
+   "frame": {
+    "x": 800,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 54",
+   "frame": {
+    "x": 960,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 55",
+   "frame": {
+    "x": 1120,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 56",
+   "frame": {
+    "x": 1280,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 57",
+   "frame": {
+    "x": 1440,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 58",
+   "frame": {
+    "x": 1600,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 59",
+   "frame": {
+    "x": 1760,
+    "y": 512,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 60",
+   "frame": {
+    "x": 0,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 61",
+   "frame": {
+    "x": 160,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 62",
+   "frame": {
+    "x": 320,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 63",
+   "frame": {
+    "x": 480,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 50
+  },
+  {
+   "filename": "personaje_3_tierra_atras 64",
+   "frame": {
+    "x": 640,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 65",
+   "frame": {
+    "x": 800,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 66",
+   "frame": {
+    "x": 960,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 67",
+   "frame": {
+    "x": 1120,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 68",
+   "frame": {
+    "x": 1280,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 69",
+   "frame": {
+    "x": 1440,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 70",
+   "frame": {
+    "x": 1600,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 71",
+   "frame": {
+    "x": 1760,
+    "y": 640,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 72",
+   "frame": {
+    "x": 0,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 73",
+   "frame": {
+    "x": 160,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 74",
+   "frame": {
+    "x": 320,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 75",
+   "frame": {
+    "x": 480,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 50
+  },
+  {
+   "filename": "personaje_3_tierra_atras 76",
+   "frame": {
+    "x": 640,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 77",
+   "frame": {
+    "x": 800,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 78",
+   "frame": {
+    "x": 960,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 79",
+   "frame": {
+    "x": 1120,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 80",
+   "frame": {
+    "x": 1280,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 81",
+   "frame": {
+    "x": 1440,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 82",
+   "frame": {
+    "x": 1600,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 83",
+   "frame": {
+    "x": 1760,
+    "y": 768,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 84",
+   "frame": {
+    "x": 0,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 85",
+   "frame": {
+    "x": 160,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 86",
+   "frame": {
+    "x": 320,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 87",
+   "frame": {
+    "x": 480,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 50
+  },
+  {
+   "filename": "personaje_3_tierra_atras 88",
+   "frame": {
+    "x": 640,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 60
+  },
+  {
+   "filename": "personaje_3_tierra_atras 89",
+   "frame": {
+    "x": 800,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 90",
+   "frame": {
+    "x": 960,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 91",
+   "frame": {
+    "x": 1120,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 92",
+   "frame": {
+    "x": 1280,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  },
+  {
+   "filename": "personaje_3_tierra_atras 93",
+   "frame": {
+    "x": 1440,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 94",
+   "frame": {
+    "x": 1600,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 70
+  },
+  {
+   "filename": "personaje_3_tierra_atras 95",
+   "frame": {
+    "x": 1760,
+    "y": 896,
+    "w": 160,
+    "h": 128
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 160,
+    "h": 128
+   },
+   "sourceSize": {
+    "w": 160,
+    "h": 128
+   },
+   "duration": 80
+  }
+ ],
+ "meta": {
+  "app": "art/armas.py",
+  "image": "personaje_3_tierra_atras.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 1920,
+   "h": 1024
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "slam_front",
+    "from": 0,
+    "to": 11,
+    "direction": "forward"
+   },
+   {
+    "name": "slam_right",
+    "from": 12,
+    "to": 23,
+    "direction": "forward"
+   },
+   {
+    "name": "slam_left",
+    "from": 24,
+    "to": 35,
+    "direction": "forward"
+   },
+   {
+    "name": "slam_back",
+    "from": 36,
+    "to": 47,
+    "direction": "forward"
+   },
+   {
+    "name": "slam_down_right",
+    "from": 48,
+    "to": 59,
+    "direction": "forward"
+   },
+   {
+    "name": "slam_down_left",
+    "from": 60,
+    "to": 71,
+    "direction": "forward"
+   },
+   {
+    "name": "slam_up_right",
+    "from": 72,
+    "to": 83,
+    "direction": "forward"
+   },
+   {
+    "name": "slam_up_left",
+    "from": 84,
+    "to": 95,
+    "direction": "forward"
+   }
+  ]
+ }
+}

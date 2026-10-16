@@ -1,0 +1,198 @@
+{
+ "frames": [
+  {
+   "filename": "antorcha_fuego 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 30
+   },
+   "duration": 80
+  },
+  {
+   "filename": "antorcha_fuego 1",
+   "frame": {
+    "x": 20,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 30
+   },
+   "duration": 80
+  },
+  {
+   "filename": "antorcha_fuego 2",
+   "frame": {
+    "x": 40,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 30
+   },
+   "duration": 80
+  },
+  {
+   "filename": "antorcha_fuego 3",
+   "frame": {
+    "x": 60,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 30
+   },
+   "duration": 80
+  },
+  {
+   "filename": "antorcha_fuego 4",
+   "frame": {
+    "x": 80,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 30
+   },
+   "duration": 80
+  },
+  {
+   "filename": "antorcha_fuego 5",
+   "frame": {
+    "x": 100,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 30
+   },
+   "duration": 80
+  },
+  {
+   "filename": "antorcha_fuego 6",
+   "frame": {
+    "x": 120,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 30
+   },
+   "duration": 80
+  },
+  {
+   "filename": "antorcha_fuego 7",
+   "frame": {
+    "x": 140,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 30
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 30
+   },
+   "duration": 80
+  }
+ ],
+ "meta": {
+  "app": "art/armas.py",
+  "image": "antorcha_fuego.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 160,
+   "h": 30
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "fuego",
+    "from": 0,
+    "to": 7,
+    "direction": "forward"
+   }
+  ]
+ }
+}

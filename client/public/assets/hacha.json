@@ -1,0 +1,59 @@
+{
+ "frames": [
+  {
+   "filename": "hacha 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 42,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 42,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 42,
+    "h": 64
+   },
+   "duration": 100
+  },
+  {
+   "filename": "hacha 1",
+   "frame": {
+    "x": 42,
+    "y": 0,
+    "w": 42,
+    "h": 64
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 42,
+    "h": 64
+   },
+   "sourceSize": {
+    "w": 42,
+    "h": 64
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "app": "art/armas.py",
+  "image": "hacha.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 84,
+   "h": 64
+  },
+  "scale": "1",
+  "frameTags": []
+ }
+}

@@ -4,7 +4,18 @@
 import { type Direction, directionFromVector, stepToward, turnDistance, vectorOf } from "./facing";
 
 export type Motion = "idle" | "walk" | "run" | "death";
-type Side = "left" | "right";
+// One-shot animations started by the client (art/personaje_3_build.py), all of
+// them in the 8 directions: swinging a weapon on the ground or in the air,
+// picking a weapon up from the floor, and punching the ground.
+export type Action = "attack" | "jump_attack" | "pickup" | "slam";
+
+interface ActionState {
+  name: Action;
+  view: Direction;
+  ms: number; // time since it started
+  durationMs: number; // time it is shown for
+  artMs: number; // length of its frames as timed in the sheet
+}
 
 // From the C state (enum estados in src/entidad.h) to an animation. States
 // without their own animation yet fall back to idle.
@@ -27,14 +38,13 @@ const PIVOT_STEP_MS = 85;
 // every pixel.
 const LOOK_DEAD_ZONE = 16; // px
 
-// Roll, in three phases that together last HAB_RODAR in src/mecanicas/jugador.c.
-// Each phase plays its frames (timed in Aseprite) at the speed that fits its
-// share: a quick tuck, a long time curled up as a ball, then it opens.
-const ROLL_PHASES = [
-  { tag: "roll_in", artMs: 490, ms: 260 }, // crouch, jump, curl up (first 7 frames of roll_start)
-  { tag: "roll", artMs: 480, ms: 480 }, // the ball rolling, one pass
-  { tag: "roll_end", artMs: 560, ms: 260 }, // uncurl and land
-] as const;
+// The jump lasts HAB_SALTAR in src/mecanicas/jugador.c. Its frames (JUMP_MS in
+// art/personaje_3_build.py) are stretched over that time: it crouches, is in
+// the air from frame 2 to 7, and lands.
+export const JUMP_MS = 600;
+const JUMP_ART_MS = 670;
+const JUMP_AIR_ART_MS = [140, 520]; // art time when the feet leave and touch the floor
+const JUMP_HEIGHT = 26; // px at the top of the arc
 
 // Walking away from where it looks (more than ~100° off) plays the walk cycle
 // backwards, so the feet push the right way instead of moonwalking. Sideways
@@ -47,7 +57,7 @@ export interface CoreState {
   dirX: number;
   dirY: number;
   state: string; // name of the C state, e.g. "CAMINANDO"
-  rolling: boolean; // HAB_RODAR active
+  jumping: boolean; // HAB_SALTAR active
 }
 
 export class Character {
@@ -58,11 +68,9 @@ export class Character {
   private targetFacing: Direction = "front";
   private turnClockMs = 0;
   private pivoting = false;
-  // Roll in progress: time since it started and the side drawn.
-  // The sheet only has left and right rolls; rolling straight up or down keeps
-  // the side the character was last turned to.
-  private rollMs: number | null = null;
-  private side: Side = "right";
+  // Jump in progress: time since it started.
+  private jumpMs: number | null = null;
+  private action: ActionState | null = null;
   // Direction the C core is moving along this frame (unit-ish, 0 when still).
   private moveX = 0;
   private moveY = 0;
@@ -74,8 +82,9 @@ export class Character {
   // Animation tag for the current state, e.g. "walk_down_left". During a pivot
   // the idle pose is shown so the legs do not keep striding mid-rotation.
   get animationTag(): string {
-    if (this.isDead) return "death"; // one animation, front view, whatever killed it
-    if (this.rollMs !== null) return `${this.rollPhase().tag}_${this.side}`;
+    if (this.isDead) return "death"; // one animation, whatever killed it
+    if (this.action) return `${this.action.name}_${this.action.view}`;
+    if (this.jumpMs !== null) return `jump_${this.facing}`;
     const motion = this.pivoting ? "idle" : this.motion;
     return `${motion}_${this.facing}`;
   }
@@ -84,29 +93,53 @@ export class Character {
     return this.motion === "death";
   }
 
-  // Playback rate for the animator: each roll phase is squeezed into its share.
+  get isJumping(): boolean {
+    return this.jumpMs !== null;
+  }
+
+  // Where the jump animation is, in the sheet's time, so it picks up at the
+  // right frame after an attack in the air. Null when not jumping.
+  get jumpArtMs(): number | null {
+    if (this.jumpMs === null) return null;
+    return Math.min(JUMP_ART_MS - 1, (this.jumpMs / JUMP_MS) * JUMP_ART_MS);
+  }
+
+  // Height of the body over the floor, px.
+  get lift(): number {
+    const art = this.jumpArtMs;
+    if (art === null) return 0;
+    const [up, down] = JUMP_AIR_ART_MS;
+    if (art <= up || art >= down) return 0;
+    return Math.round(JUMP_HEIGHT * Math.sin((Math.PI * (art - up)) / (down - up)));
+  }
+
+  // Playback rate for the animator: an action is squeezed into its time.
   get animationSpeed(): number {
-    if (this.rollMs === null) return 1;
-    const phase = this.rollPhase();
-    return phase.artMs / phase.ms;
+    if (this.action) return this.action.artMs / this.action.durationMs;
+    return 1;
   }
 
   // True while walking or running away from where the character looks.
   get animationReversed(): boolean {
-    if (this.rollMs !== null || this.pivoting || this.motion === "idle") return false;
+    if (this.action || this.jumpMs !== null || this.pivoting || this.motion === "idle") return false;
     const [fx, fy] = vectorOf(this.facing);
     const length = Math.hypot(this.moveX, this.moveY);
     if (length === 0) return false;
     return (fx * this.moveX + fy * this.moveY) / length < BACKWARDS_DOT;
   }
 
-  private rollPhase(): (typeof ROLL_PHASES)[number] {
-    let start = 0;
-    for (const phase of ROLL_PHASES) {
-      start += phase.ms;
-      if (this.rollMs! < start) return phase;
+  get isActing(): boolean {
+    return this.action !== null;
+  }
+
+  // Plays `name` once, squeezed into `durationMs`, towards where the character
+  // looks, or turned to `towards` first when given.
+  startAction(name: Action, durationMs: number, artMs: number, towards?: Direction): void {
+    if (towards) {
+      this.facing = this.targetFacing = towards;
+      this.pivoting = false;
     }
-    return ROLL_PHASES[ROLL_PHASES.length - 1];
+    this.action = { name, view: this.facing, ms: 0, durationMs, artMs };
   }
 
   // `lookAt` is a world point (the cursor) to face, measured from `lookFromY`
@@ -118,13 +151,18 @@ export class Character {
     this.moveX = core.dirX;
     this.moveY = core.dirY;
     if (this.isDead) {
-      // Comes back facing the camera, with no turn or roll half done.
+      // Comes back facing the camera, with no turn or jump half done.
       this.facing = this.targetFacing = "front";
       this.pivoting = false;
-      this.rollMs = null;
+      this.jumpMs = null;
+      this.action = null;
       return;
     }
-    if (this.syncRoll(core, dtMs)) return;
+    if (this.action) {
+      this.action.ms += dtMs;
+      if (this.action.ms >= this.action.durationMs) this.action = null;
+    }
+    if (this.syncJump(core, dtMs)) return;
     let target: Direction | null = null;
     if (lookAt) {
       const dx = lookAt.x - core.x;
@@ -133,8 +171,9 @@ export class Character {
     } else if (core.dirX !== 0 || core.dirY !== 0) {
       target = directionFromVector(core.dirX, core.dirY);
     }
-    // No target keeps the last facing.
-    if (target) {
+    // No target keeps the last facing. An action keeps the direction it
+    // started in until it ends.
+    if (target && !this.action) {
       if (target !== this.targetFacing) {
         this.targetFacing = target;
         this.pivoting ||= turnDistance(this.facing, target) >= PIVOT_MIN_STEPS;
@@ -143,23 +182,23 @@ export class Character {
     this.advanceTurn(dtMs);
   }
 
-  // Returns true while rolling: the roll sets the facing itself, no turn.
-  private syncRoll(core: CoreState, dtMs: number): boolean {
-    if (!core.rolling) {
-      this.rollMs = null;
+  // Returns true while jumping: the jump keeps the direction it took off in.
+  private syncJump(core: CoreState, dtMs: number): boolean {
+    if (!core.jumping) {
+      this.jumpMs = null;
       return false;
     }
-    if (this.rollMs === null) {
-      // The C core rolls along its direction: face it at once.
-      this.rollMs = 0;
+    if (this.jumpMs === null) {
+      // The C core jumps along its direction: face it at once. Jumping cuts a
+      // swing on the ground or a pickup short.
+      this.jumpMs = 0;
+      if (this.action && this.action.name !== "jump_attack") this.action = null;
       if (core.dirX !== 0 || core.dirY !== 0) {
         this.facing = this.targetFacing = directionFromVector(core.dirX, core.dirY);
       }
       this.pivoting = false;
-      if (core.dirX < 0) this.side = "left";
-      else if (core.dirX > 0) this.side = "right";
     } else {
-      this.rollMs += dtMs;
+      this.jumpMs += dtMs;
     }
     return true;
   }
@@ -175,14 +214,7 @@ export class Character {
     while (this.isTurning && this.turnClockMs >= stepMs) {
       this.turnClockMs -= stepMs;
       this.facing = stepToward(this.facing, this.targetFacing);
-      this.side = sideOf(this.facing) ?? this.side;
     }
     if (!this.isTurning) this.pivoting = false;
   }
-}
-
-function sideOf(direction: Direction): Side | null {
-  if (direction.endsWith("left")) return "left";
-  if (direction.endsWith("right")) return "right";
-  return null;
 }

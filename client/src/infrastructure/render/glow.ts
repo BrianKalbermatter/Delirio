@@ -1,4 +1,4 @@
-// Breathing glow on the pixels of one color of a sprite (the player's cyan).
+// Breathing glow on the pixels of one color of a sprite (the player's eyes).
 // At load time every frame is scanned and the pixels of that color are copied
 // into two masks: a dark one (breathing out, the light dims) and a bright one
 // (breathing in, the light blooms). Frames without that color (back views)
@@ -18,7 +18,7 @@ interface FrameGlow {
 
 type Rgb = [number, number, number];
 
-const DIM_COLOR: Rgb = [22, 58, 74]; // the cyan with the light off
+const DIM_COLOR: Rgb = [122, 48, 69]; // the eyes with the light off
 const DIM_STRENGTH = 0.8; // how dark it gets at the bottom of the breath
 const BLOOM_BLUR = "blur(3px)";
 const BLOOM_MARGIN = 9; // room for the blur to spread: three times its radius

@@ -15,12 +15,12 @@ const COLOR: Record<number, string> = {
   [ABILITY.PARRY]: "#aaf5ff",
   [ABILITY.ULTI]: "#c58cf0",
   [ABILITY.BLOQUEAR]: "#8fa6c9",
-  [ABILITY.RODAR]: "#d8cfb8",
+  [ABILITY.SALTAR]: "#d8cfb8",
   [ABILITY.CORRER]: "#d8cfb8",
 };
 
 // Shown as floating text but with no shape (their effect is the movement).
-const TEXT_ONLY = new Set<number>([ABILITY.RODAR, ABILITY.CORRER]);
+const TEXT_ONLY = new Set<number>([ABILITY.SALTAR, ABILITY.CORRER]);
 const ATTACKS = new Set<number>([
   ABILITY.ATAQUE_LIGERO,
   ABILITY.ATAQUE_RAPIDO,
@@ -43,6 +43,8 @@ export class AbilityEffects {
   private wasActive: boolean[] = [];
   private labels: Label[] = [];
   private active: number[] = [];
+  // Off while the attacks have their own animation (the axe and its smear).
+  showAttacks = true;
 
   constructor() {
     this.view.addChild(this.shapes);
@@ -79,6 +81,7 @@ export class AbilityEffects {
       if (TEXT_ONLY.has(id)) continue;
       const stroke = { width: 2, color: COLOR[id] };
       if (ATTACKS.has(id)) {
+        if (!this.showAttacks) continue;
         // Slash: an arc in front of the player.
         const angle = Math.atan2(dirY, dirX);
         const reach = id === ABILITY.ATAQUE_LARGO ? 34 : 24;

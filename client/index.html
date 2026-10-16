@@ -21,7 +21,7 @@
       }
       #game {
         position: relative;
-        flex: 0 0 75%;
+        flex: 0 0 68%;
         overflow: hidden;
         background: #000;
       }
@@ -105,7 +105,7 @@
         color: var(--muted);
       }
       #panel h2:first-child, .tab-page > h2:first-child { margin-top: 0; }
-      .slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 6px; }
+      .slots { display: grid; grid-template-columns: repeat(8, 1fr); gap: 5px; }
       .slot {
         position: relative;
         aspect-ratio: 1;
@@ -121,6 +121,44 @@
       .slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
       .slot canvas { width: 64%; image-rendering: pixelated; }
       .slot .count { position: absolute; right: 4px; bottom: 2px; font-size: 11px; color: var(--text); }
+      /* Equipment: the player on a lit backdrop, a square on each body part */
+      .doll {
+        position: relative;
+        height: 320px;
+        border: 1px solid var(--line);
+        border-radius: 6px;
+        background: radial-gradient(ellipse at 50% 55%, #8a8f99 0%, #6a6e78 45%, #3e4049 100%);
+      }
+      .doll canvas { position: absolute; left: 50%; top: 14px; transform: translateX(-50%); image-rendering: pixelated; }
+      .doll .equip { position: absolute; width: 52px; background: rgba(15, 13, 20, 0.85); }
+      .doll .equip::after {
+        content: attr(data-label);
+        position: absolute;
+        top: 100%;
+        left: 50%;
+        transform: translateX(-50%);
+        margin-top: 2px;
+        font-size: 10px;
+        white-space: nowrap;
+        color: #e8e6ee;
+        text-shadow: 0 1px 2px #000;
+      }
+      .doll .equip.is-empty { border-style: dashed; border-color: #2a2833; }
+      .equip-head { left: 10px; top: 48px; }
+      .equip-body { left: 10px; top: 130px; }
+      .equip-legs { left: 10px; top: 212px; }
+      .equip-rightHand { right: 10px; top: 112px; }
+      .equip-leftHand { right: 10px; top: 194px; }
+      .drag-ghost {
+        position: fixed;
+        left: 0;
+        top: 0;
+        width: 32px;
+        z-index: 999;
+        pointer-events: none;
+        image-rendering: pixelated;
+      }
+      .drag-ghost[hidden] { display: none; }
       .selected { min-height: 1.4em; color: var(--text); }
       .log { margin: 0; padding-left: 18px; color: var(--muted); }
       .log li:first-child { color: var(--text); }

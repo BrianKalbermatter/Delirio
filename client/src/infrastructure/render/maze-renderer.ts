@@ -1,29 +1,24 @@
-// Draws the maze in a 3/4 top-down view: the floor, and walls as tall blocks
-// with a lit mossy top and a dark front face.
+// Draws the maze seen from above at a slant, with a perspective camera: the
+// floor, and walls as low blocks whose tops lean away from the middle of the
+// screen. A wall right of the camera shows its left side, one left of it its
+// right side, and every wall shows its front face, like a real camera above
+// the player.
 //
-// A wall tile's footprint is its cell on the floor. Its top is drawn raised by
-// the wall height, and its front face fills the space between the top and the
-// floor. Anything standing behind (north of) a wall is therefore hidden by it,
-// which is why walls are depth-sorted together with characters and props.
+// A wall's footprint is its cell on the floor. Its top is drawn raised by
+// WALL_HEIGHT and pushed sideways by SPLAY times its distance to the camera.
+// Anything standing behind (north of) a wall is hidden by it, which is why
+// walls are depth-sorted together with characters and props: one shape per
+// row of cells, since a whole row shares its depth.
 //
-// The floor is baked into chunk textures; walls and gates are pooled sprites
-// in the depth-sorted container, reused for other cells as the view scrolls.
-import {
-  Container,
-  Graphics,
-  Rectangle,
-  type Renderer,
-  RenderTexture,
-  Sprite,
-  Texture,
-  TilingSprite,
-} from "pixi.js";
+// The floor is baked into chunk textures; walls and gates are redrawn every
+// frame, since their sides change as the camera moves.
+import { Container, Graphics, Rectangle, type Renderer, RenderTexture, Sprite, Texture } from "pixi.js";
 import type { Square } from "../../domain/square";
 import type { TileMap } from "../../domain/tile-map";
 import type { Rect } from "../wasm/game-wasm";
 import { DEPTH, depthOf } from "./depth";
 import { loadImage } from "./sprite-sheet";
-import { paintTexture, solidRect } from "./textures";
+import { paintTexture } from "./textures";
 
 interface TileFrame {
   x: number;
@@ -35,44 +30,51 @@ interface TileFrame {
 export interface MazeTiles {
   image: HTMLImageElement;
   tileSize: number;
-  wallHeight: number;
-  // Wall tops and faces are cut from seamless textures of this many tiles.
-  // Picking the piece by cell position makes neighbouring tiles continue each other.
-  wallTopGrid: number;
-  wallFaceGrid: number;
   frames: Record<string, TileFrame>;
 }
 
-// The sprites of one wall cell. When the cell scrolls out of view they are
-// set up again for another one, instead of being made anew.
-interface WallView {
+// The walls of one row of cells, redrawn every frame. When the row scrolls
+// out of view it is set up again for another one.
+interface RowView {
   root: Container;
-  face: Sprite;
-  faceLeft: Sprite; // dark vertical edges where the face ends
-  faceRight: Sprite;
-  top: Sprite;
-  topEdge: Sprite; // outline of the top where it meets open space
-  topLeft: Sprite;
-  topRight: Sprite;
+  shape: Graphics;
+  hole: Hole;
   seen: number; // last frame it was in view
+}
+
+// The see-through circle cut into a wall or gate that covers the player: an
+// inverted stencil mask, so the rest of it stays solid.
+interface Hole {
+  shape: Graphics;
+  on: boolean;
 }
 
 interface GateView {
   root: Container;
-  face: TilingSprite;
-  top: TilingSprite;
-  outline: Graphics;
-  outlined: Rectangle; // what the outline was drawn for, to redraw only on change
+  shape: Graphics;
+  hole: Hole;
 }
 
-const EDGE_COLOR = 0x0c0a12;
-const EDGE_ALPHA = 0.85;
-// Walls in front of the focus (the player) fade out as they get closer to it,
-// down to WALL_MIN_ALPHA when they cover it, so the player is never lost and
-// can see the floor ahead and to the sides (a gate or a dead end). The walls
-// are tall, so the see-through range is wide.
-const WALL_MIN_ALPHA = 0.12;
-const WALL_FADE_DISTANCE = 200; // px between wall and sight area where fading starts
+// About 1.2 times the player's height: walls mark the way without hiding it.
+const WALL_HEIGHT = 72; // px
+// How far a top leans out, per px from the middle of the screen.
+const SPLAY = 0.1;
+// Mushroom palette (art/maze_tiles.py).
+const WALL_TOP = 0x788a87;
+const WALL_RIM = 0xa9b2a2; // lit front edge of the top
+const WALL_FRONT = 0x576069;
+const WALL_SIDE = 0x443846;
+const WALL_FOOT = 0x2e222f; // dark band where the face meets the floor
+const EDGE_COLOR = 0x2e222f;
+const GATE_FRONT = 0x2e222f;
+const GATE_BAR = 0x788a87;
+const GATE_BAR_STEP = 8; // px between iron bars
+const GATE_TOP = 0x7a3045;
+const GATE_RIM = 0x993d41;
+// Walls and gates in front of the focus (the player) get a round hole around
+// it, so the player is never lost behind them; the rest of them stays solid.
+const SEE_THROUGH_RADIUS = 46; // px from the middle of the body
+const VOID_COLOR = 0x000000; // floor under walls, never seen unless something is off
 const FLOOR_SHADOW = 14; // px of shadow cast on the floor at the foot of a wall
 const SHADOW_RGB = [8, 6, 12];
 const SHADOW_ALPHA = 0.6;
@@ -90,14 +92,7 @@ export async function loadMazeTiles(basePath: string): Promise<MazeTiles> {
     fetch(`${basePath}.json`).then((r) => r.json()),
     loadImage(`${basePath}.png`),
   ]);
-  return {
-    image,
-    tileSize: data.tileSize,
-    wallHeight: data.wallHeight,
-    wallTopGrid: data.wallTopGrid,
-    wallFaceGrid: data.wallFaceGrid,
-    frames: data.frames,
-  };
+  return { image, tileSize: data.tileSize, frames: data.frames };
 }
 
 export class MazeRenderer {
@@ -109,18 +104,16 @@ export class MazeRenderer {
   // Every tile by name, plus the grass-to-forest transition tiles (blend_*).
   private readonly textures = new Map<string, Texture>();
   private readonly shadowTexture: Texture;
-  // Gates tile their iron bars and beams by world position, so they get
-  // textures of their own that repeat.
-  private readonly gateFaceTexture: Texture;
-  private readonly gateTopTexture: Texture;
   // Floor chunks already baked, by chunk index (row * chunk cols + col).
   private readonly floorChunks = new Map<number, Sprite>();
   private shownChunks: Sprite[] = [];
-  // Wall views by cell index (row * cols + col), and the ones out of use.
-  private readonly walls = new Map<number, WallView>();
-  private readonly spareWalls: WallView[] = [];
+  // Wall rows by row index, and the ones out of use.
+  private readonly rows = new Map<number, RowView>();
+  private readonly spareRows: RowView[] = [];
   private readonly gates: GateView[] = [];
   private frameCount = 0;
+  // World x of the camera: the tops lean away from it.
+  private cameraX = 0;
 
   // `depth`: the depth-sorted container walls and gates stand in.
   constructor(
@@ -140,36 +133,71 @@ export class MazeRenderer {
     }
     this.buildBlendTiles();
     this.shadowTexture = this.buildWallShadow();
-    const t = tiles.tileSize;
-    const grid = tiles.wallFaceGrid;
-    this.gateFaceTexture = paintTexture(t * grid, tiles.wallHeight, (ctx) => {
-      for (let i = 0; i < grid; i++) this.paintTile(ctx, `gate_face_${i}`, i * t, 0);
-    });
-    this.gateTopTexture = paintTexture(t, t, (ctx) => this.paintTile(ctx, "gate_top_0", 0, 0));
   }
 
   get wallHeight(): number {
-    return this.tiles.wallHeight;
+    return WALL_HEIGHT;
   }
 
   // Shows what is in view: the floor chunks, and the walls and gate leaves,
-  // sorted by depth with the rest. Walls in front of `focus` (world pixels,
-  // feet at the bottom) fade so it stays visible, and so does the floor around
-  // `sight`: the body stretched towards where the player goes.
-  show(view: View, focus: Box, sight: Box, leaves: Rect[]): void {
+  // sorted by depth with the rest. Walls and gates in front of `focus` (world
+  // pixels, feet at the bottom) get a round hole around it.
+  show(view: View, focus: Box, leaves: Rect[]): void {
+    this.cameraX = view.left + view.width / 2;
     this.showFloor(view);
-    this.showWalls(view, focus, sight);
-    this.showGates(leaves, focus, sight);
+    const hiding = this.hidingDepths(view, focus, leaves);
+    this.showWalls(view, focus, hiding);
+    this.showGates(leaves, focus, hiding);
   }
 
-  // Call when the maze changed (it grew): the floor is baked again lazily and
-  // the walls are set up again for their new neighbours.
+  // Where the top of a wall at world x is drawn.
+  private lean(x: number): number {
+    return Math.round(x + (x - this.cameraX) * SPLAY);
+  }
+
+  // Feet lines (depth) of the walls and gates that hide the body: in front of
+  // it (closer to the camera) and drawn over it. Only those get the hole; a
+  // wall across the corridor (behind the body) or a farther one stays solid.
+  private hidingDepths(view: View, focus: Box, leaves: Rect[]): Set<number> {
+    const t = this.map.tileSize;
+    const hiding = new Set<number>();
+    const over = (left: number, top: number, right: number, bottom: number) =>
+      left < focus.right && right > focus.left && top < focus.bottom && bottom > focus.top;
+    const { c0, c1, r0, r1 } = this.visibleCells(view, Math.ceil(WALL_HEIGHT / t));
+    for (let row = r0; row <= r1; row++) {
+      const depthY = (row + 1) * t;
+      if (depthY <= focus.bottom) continue;
+      for (let col = c0; col <= c1; col++) {
+        if (!this.map.isWall(col, row)) continue;
+        const [left, top, right, bottom] = this.wallRect(col, row);
+        if (over(left, top, right, bottom)) hiding.add(depthY);
+      }
+    }
+    for (const leaf of leaves) {
+      const depthY = leaf.y + leaf.h;
+      const left = Math.min(leaf.x, this.lean(leaf.x));
+      const right = Math.max(leaf.x + leaf.w, this.lean(leaf.x + leaf.w));
+      if (depthY > focus.bottom && over(left, leaf.y - WALL_HEIGHT, right, depthY)) hiding.add(depthY);
+    }
+    return hiding;
+  }
+
+  // What a wall cell covers on screen: its raised top, its sides, and its
+  // face below it when it has one.
+  private wallRect(col: number, row: number): [number, number, number, number] {
+    const t = this.map.tileSize;
+    const x0 = col * t;
+    const x1 = x0 + t;
+    const top = row * t - WALL_HEIGHT;
+    const bottom = this.hasFace(col, row) ? (row + 1) * t : top + t;
+    return [Math.min(x0, this.lean(x0)), top, Math.max(x1, this.lean(x1)), bottom];
+  }
+
+  // Call when the maze changed (it grew): the floor is baked again lazily.
   invalidate(): void {
     for (const chunk of this.floorChunks.values()) chunk.destroy({ texture: true, textureSource: true });
     this.floorChunks.clear();
     this.shownChunks = [];
-    for (const wall of this.walls.values()) this.releaseWall(wall);
-    this.walls.clear();
   }
 
   // Floor of every visible cell, plus the shadow walls cast on it: a few
@@ -207,190 +235,226 @@ export class MazeRenderer {
     const tiles = new Container();
     for (let row = cy * FLOOR_CHUNK; row < Math.min(this.map.rows, (cy + 1) * FLOOR_CHUNK); row++) {
       for (let col = cx * FLOOR_CHUNK; col < Math.min(this.map.cols, (cx + 1) * FLOOR_CHUNK); col++) {
-        if (this.map.isWall(col, row)) continue;
         const x = col * t - cx * size;
         const y = row * t - cy * size;
+        if (this.map.isWall(col, row)) {
+          tiles.addChild(
+            placed(
+              new Sprite({
+                texture: Texture.WHITE,
+                tint: VOID_COLOR,
+                width: t,
+                height: t,
+              }),
+              x,
+              y,
+            ),
+          );
+          continue;
+        }
         tiles.addChild(placed(new Sprite(this.textures.get(this.floorTile(col, row))), x, y));
         if (this.map.isWall(col, row - 1)) tiles.addChild(placed(new Sprite(this.shadowTexture), x, y));
       }
     }
     const texture = RenderTexture.create({ width: size, height: size });
-    this.renderer.render({ container: tiles, target: texture, clear: true, clearColor: [0, 0, 0, 0] });
+    this.renderer.render({
+      container: tiles,
+      target: texture,
+      clear: true,
+      clearColor: [0, 0, 0, 0],
+    });
     tiles.destroy({ children: true });
     const chunk = placed(new Sprite(texture), cx * size, cy * size);
     this.floor.addChild(chunk);
     return chunk;
   }
 
-  // Wall cells in view. Includes rows below the screen, whose raised tops
+  // Wall rows in view. Includes rows below the screen, whose raised tops
   // reach up into it.
-  private showWalls(view: View, focus: Box, sight: Box): void {
+  private showWalls(view: View, focus: Box, hiding: Set<number>): void {
     const t = this.map.tileSize;
     const frame = ++this.frameCount;
-    const { c0, c1, r0, r1 } = this.visibleCells(view, Math.ceil(this.wallHeight / t));
+    const { c0, c1, r0, r1 } = this.visibleCells(view, Math.ceil(WALL_HEIGHT / t));
     for (let row = r0; row <= r1; row++) {
-      for (let col = c0; col <= c1; col++) {
-        if (!this.map.isWall(col, row)) continue;
-        const key = row * this.map.cols + col;
-        let wall = this.walls.get(key);
-        if (!wall) {
-          wall = this.spareWalls.pop() ?? this.createWall();
-          this.setUpWall(wall, col, row);
-          this.walls.set(key, wall);
-        }
-        wall.seen = frame;
-        const depthY = (row + 1) * t;
-        wall.root.alpha = this.fades(depthY, focus, sight) ? this.fadeAlpha(col, row, sight) : 1;
+      let wall = this.rows.get(row);
+      if (!wall) {
+        wall = this.spareRows.pop() ?? this.createRow();
+        wall.root.visible = true;
+        wall.root.zIndex = depthOf((row + 1) * t, DEPTH.wall);
+        this.rows.set(row, wall);
       }
+      wall.seen = frame;
+      this.drawRow(wall.shape, row, c0, c1);
+      const top = row * t - WALL_HEIGHT;
+      this.cutHole(
+        wall.root,
+        wall.hole,
+        hiding.has((row + 1) * t),
+        view.left,
+        top,
+        view.left + view.width,
+        (row + 1) * t,
+        focus,
+      );
     }
-    for (const [key, wall] of this.walls) {
+    for (const [row, wall] of this.rows) {
       if (wall.seen === frame) continue;
-      this.releaseWall(wall);
-      this.walls.delete(key);
+      wall.root.visible = false;
+      setHole(wall.root, wall.hole, false);
+      this.spareRows.push(wall);
+      this.rows.delete(row);
     }
   }
 
-  private createWall(): WallView {
-    const t = this.map.tileSize;
-    const h = this.wallHeight;
-    const wall: WallView = {
+  private createRow(): RowView {
+    const wall: RowView = {
       root: new Container(),
-      face: new Sprite(),
-      faceLeft: solidRect(EDGE_COLOR, EDGE_ALPHA, 1, h),
-      faceRight: solidRect(EDGE_COLOR, EDGE_ALPHA, 1, h),
-      top: new Sprite(),
-      topEdge: solidRect(EDGE_COLOR, EDGE_ALPHA, t, 2),
-      topLeft: solidRect(EDGE_COLOR, EDGE_ALPHA, 1, t),
-      topRight: solidRect(EDGE_COLOR, EDGE_ALPHA, 1, t),
+      shape: new Graphics(),
+      hole: { shape: new Graphics(), on: false },
       seen: 0,
     };
-    wall.root.addChild(wall.face, wall.faceLeft, wall.faceRight, wall.top, wall.topEdge, wall.topLeft, wall.topRight);
+    wall.root.addChild(wall.shape, wall.hole.shape);
     this.depth.addChild(wall.root);
     return wall;
   }
 
-  // Points the wall's sprites at the cell (col, row): its face, top and the
-  // edges that show where it meets open space.
-  private setUpWall(wall: WallView, col: number, row: number): void {
+  // The walls of one row, run by run of wall cells: the side that faces the
+  // camera, the front face where the floor in front is open, and the top.
+  private drawRow(g: Graphics, row: number, c0: number, c1: number): void {
     const t = this.map.tileSize;
-    const h = this.wallHeight;
-    const x = col * t;
-    const topY = row * t - h;
-    const faceY = (row + 1) * t - h;
-    const face = this.hasFace(col, row);
-    const openLeft = !this.map.isWall(col - 1, row);
-    const openRight = !this.map.isWall(col + 1, row);
-    const grid = this.tiles.wallTopGrid;
+    const h = WALL_HEIGHT;
+    const back = row * t;
+    const foot = back + t;
+    g.clear();
+    for (let col = c0; col <= c1; col++) {
+      if (!this.map.isWall(col, row)) continue;
+      const first = col;
+      while (col < c1 && this.map.isWall(col + 1, row)) col++;
+      const x0 = first * t;
+      const x1 = (col + 1) * t;
+      const top0 = this.lean(x0);
+      const top1 = this.lean(x1);
+      const openLeft = !this.map.isWall(first - 1, row);
+      const openRight = !this.map.isWall(col + 1, row);
 
-    wall.root.visible = true;
-    wall.root.zIndex = depthOf((row + 1) * t, DEPTH.wall);
-    wall.face.visible = face;
-    wall.face.texture = this.textures.get(`wall_face_${col % this.tiles.wallFaceGrid}`)!;
-    wall.face.position.set(x, faceY);
-    wall.faceLeft.visible = face && openLeft;
-    wall.faceLeft.position.set(x, faceY);
-    wall.faceRight.visible = face && openRight;
-    wall.faceRight.position.set(x + t - 1, faceY);
-    wall.top.texture = this.textures.get(`wall_top_${(row % grid) * grid + (col % grid)}`)!;
-    wall.top.position.set(x, topY);
-    wall.topEdge.visible = !this.map.isWall(col, row - 1);
-    wall.topEdge.position.set(x, topY);
-    wall.topLeft.visible = openLeft;
-    wall.topLeft.position.set(x, topY);
-    wall.topRight.visible = openRight;
-    wall.topRight.position.set(x + t - 1, topY);
+      // Sides: only the one turned to the camera shows.
+      if (openLeft && top0 > x0) {
+        g.poly([x0, back, x0, foot, top0, foot - h, top0, back - h]).fill(WALL_SIDE);
+      }
+      if (openRight && top1 < x1) {
+        g.poly([x1, back, x1, foot, top1, foot - h, top1, back - h]).fill(WALL_SIDE);
+      }
+
+      // Front faces, over the cells with open floor in front.
+      for (let c = first; c <= col; c++) {
+        if (!this.hasFace(c, row)) continue;
+        const start = c;
+        while (c < col && this.hasFace(c + 1, row)) c++;
+        const f0 = start * t;
+        const f1 = (c + 1) * t;
+        const l0 = this.lean(f0);
+        const l1 = this.lean(f1);
+        g.poly([f0, foot, f1, foot, l1, foot - h, l0, foot - h]).fill(WALL_FRONT);
+        g.rect(f0, foot - 3, f1 - f0, 3).fill(WALL_FOOT);
+        g.rect(l0, foot - h, l1 - l0, 2).fill(WALL_RIM);
+      }
+
+      // Top, outlined where it meets open space.
+      g.rect(top0, back - h, top1 - top0, t).fill(WALL_TOP);
+      for (let c = first; c <= col; c++) {
+        if (this.map.isWall(c, row - 1)) continue;
+        const l0 = this.lean(c * t);
+        g.rect(l0, back - h, this.lean((c + 1) * t) - l0, 1).fill(EDGE_COLOR);
+      }
+      if (openLeft) g.rect(top0, back - h, 1, t).fill(EDGE_COLOR);
+      if (openRight) g.rect(top1 - 1, back - h, 1, t).fill(EDGE_COLOR);
+    }
   }
 
-  private releaseWall(wall: WallView): void {
-    wall.root.visible = false;
-    this.spareWalls.push(wall);
-  }
-
-  // The leaves of the gates of the central square, as solid blocks of their
+  // The leaves of the gates of the central square, as low blocks of their
   // exact size (they slide, so they are not whole tiles): iron bars in front,
-  // wood on top. They fade in front of `focus` like the walls.
-  private showGates(leaves: Rect[], focus: Box, sight: Box): void {
-    const h = this.wallHeight;
+  // wood on top. They get the hole in front of `focus` like the walls.
+  private showGates(leaves: Rect[], focus: Box, hiding: Set<number>): void {
+    const h = WALL_HEIGHT;
     let shown = 0;
     for (const leaf of leaves) {
       if (leaf.w <= 0.5 || leaf.h <= 0.5) continue;
       const gate = (this.gates[shown] ??= this.createGate());
       shown++;
-      const depthY = leaf.y + leaf.h;
-      const top = leaf.y - h;
+      const x0 = Math.round(leaf.x);
+      const x1 = Math.round(leaf.x + leaf.w);
+      const back = Math.round(leaf.y);
+      const foot = Math.round(leaf.y + leaf.h);
+      const top0 = this.lean(x0);
+      const top1 = this.lean(x1);
       gate.root.visible = true;
-      gate.root.zIndex = depthOf(depthY, DEPTH.gate);
-      gate.root.alpha = this.fades(depthY, focus, sight)
-        ? this.fadeAlphaRect(leaf.x, top, leaf.x + leaf.w, depthY, sight)
-        : 1;
+      gate.root.zIndex = depthOf(foot, DEPTH.gate);
+      this.cutHole(
+        gate.root,
+        gate.hole,
+        hiding.has(leaf.y + leaf.h),
+        Math.min(x0, top0),
+        back - h,
+        Math.max(x1, top1),
+        foot,
+        focus,
+      );
 
-      // Front: iron bars, tiled by world position so they do not slide with the leaf
-      const x = Math.round(leaf.x);
-      const w = Math.round(leaf.w);
-      const faceTop = Math.round(leaf.y + leaf.h - h);
-      gate.face.position.set(x, faceTop);
-      gate.face.setSize(w, h);
-      gate.face.tilePosition.set(-x, 0);
-
-      // Top: wooden beam
-      const topY = Math.round(top);
-      const topH = Math.round(leaf.h);
-      gate.top.position.set(x, topY);
-      gate.top.setSize(w, topH);
-      gate.top.tilePosition.set(-x, -topY);
-
-      // Dark outline so the moving edge reads clearly
-      const o = gate.outlined;
-      if (o.x !== x || o.y !== topY || o.width !== w || o.height !== topH) {
-        o.x = x;
-        o.y = topY;
-        o.width = w;
-        o.height = topH;
-        gate.outline
-          .clear()
-          .rect(x + 0.5, topY + 0.5, w - 1, topH - 1)
-          .stroke({ width: 1, color: EDGE_COLOR, alpha: EDGE_ALPHA });
+      const g = gate.shape.clear();
+      if (top0 > x0) g.poly([x0, back, x0, foot, top0, foot - h, top0, back - h]).fill(WALL_SIDE);
+      if (top1 < x1) g.poly([x1, back, x1, foot, top1, foot - h, top1, back - h]).fill(WALL_SIDE);
+      g.poly([x0, foot, x1, foot, top1, foot - h, top0, foot - h]).fill(GATE_FRONT);
+      // Bars on fixed world positions, so they do not slide with the leaf.
+      for (let x = Math.ceil(x0 / GATE_BAR_STEP) * GATE_BAR_STEP + 2; x < x1 - 1; x += GATE_BAR_STEP) {
+        const top = this.lean(x);
+        g.poly([x, foot, x + 2, foot, top + 2, foot - h, top, foot - h]).fill(GATE_BAR);
       }
+      g.rect(top0, back - h, top1 - top0, foot - back).fill(GATE_TOP);
+      g.rect(top0, foot - h - 2, top1 - top0, 2).fill(GATE_RIM);
+      g.rect(top0, back - h, top1 - top0, foot - back).stroke({
+        width: 1,
+        color: EDGE_COLOR,
+        alignment: 1,
+      });
     }
-    for (let i = shown; i < this.gates.length; i++) this.gates[i].root.visible = false;
+    for (let i = shown; i < this.gates.length; i++) {
+      this.gates[i].root.visible = false;
+      setHole(this.gates[i].root, this.gates[i].hole, false);
+    }
   }
 
   private createGate(): GateView {
     const gate: GateView = {
       root: new Container(),
-      face: new TilingSprite({ texture: this.gateFaceTexture }),
-      top: new TilingSprite({ texture: this.gateTopTexture }),
-      outline: new Graphics(),
-      outlined: new Rectangle(),
+      shape: new Graphics(),
+      hole: { shape: new Graphics(), on: false },
     };
-    gate.root.addChild(gate.face, gate.top, gate.outline);
+    gate.root.addChild(gate.shape, gate.hole.shape);
     this.depth.addChild(gate.root);
     return gate;
   }
 
-  // Walls in front of the body fade. Behind it (further up) they only hide
-  // the floor beyond, so they fade only while the player heads up there.
-  private fades(depthY: number, focus: Box, sight: Box): boolean {
-    return depthY > focus.bottom || sight.top < focus.top;
-  }
-
-  // 1 when the wall is far from the box, WALL_MIN_ALPHA when it overlaps it.
-  private fadeAlpha(col: number, row: number, box: Box): number {
-    const t = this.map.tileSize;
-    const left = col * t;
-    const top = row * t - this.wallHeight;
-    const bottom = this.hasFace(col, row) ? (row + 1) * t : top + t;
-    return this.fadeAlphaRect(left, top, left + t, bottom, box);
-  }
-
-  // Same, for any rectangle drawn on screen (world pixels).
-  private fadeAlphaRect(left: number, top: number, right: number, bottom: number, box: Box): number {
-    const dx = Math.max(left - box.right, box.left - right, 0);
-    const dy = Math.max(top - box.bottom, box.top - bottom, 0);
-    const t = Math.min(1, Math.hypot(dx, dy) / WALL_FADE_DISTANCE);
-    // Smoothstep: stays see-through near the body, turns solid near the edge.
-    const closeness = t * t * (3 - 2 * t);
-    return WALL_MIN_ALPHA + (1 - WALL_MIN_ALPHA) * closeness;
+  // Cuts the see-through circle into `root` (a wall or gate drawn over the
+  // rectangle left..bottom) when it belongs to a line that hides the body
+  // and reaches the circle.
+  private cutHole(
+    root: Container,
+    hole: Hole,
+    hides: boolean,
+    left: number,
+    top: number,
+    right: number,
+    bottom: number,
+    focus: Box,
+  ): void {
+    const cx = (focus.left + focus.right) / 2;
+    const cy = (focus.top + focus.bottom) / 2;
+    const nearX = Math.max(left, Math.min(cx, right));
+    const nearY = Math.max(top, Math.min(cy, bottom));
+    const on = hides && Math.hypot(nearX - cx, nearY - cy) < SEE_THROUGH_RADIUS;
+    setHole(root, hole, on);
+    // Whole pixels, so the edge stays crisp like the rest of the art.
+    if (on) hole.shape.clear().circle(Math.round(cx), Math.round(cy), SEE_THROUGH_RADIUS).fill(0xffffff);
   }
 
   // A face shows only where the floor in front of the wall is open.
@@ -475,12 +539,6 @@ export class MazeRenderer {
     });
   }
 
-  // Copies one tile of the tileset into a texture being painted.
-  private paintTile(ctx: CanvasRenderingContext2D, name: string, x: number, y: number): void {
-    const f = this.tiles.frames[name];
-    ctx.drawImage(this.tiles.image, f.x, f.y, f.w, f.h, x, y, f.w, f.h);
-  }
-
   private pick(variants: string[], col: number, row: number): string {
     return variants[hash(col, row) % variants.length];
   }
@@ -538,4 +596,11 @@ function valueNoise(x: number, y: number): number {
 
 function smooth(t: number): number {
   return t * t * (3 - 2 * t);
+}
+
+function setHole(root: Container, hole: Hole, on: boolean): void {
+  if (hole.on === on) return;
+  hole.on = on;
+  hole.shape.visible = on;
+  root.setMask(on ? { mask: hole.shape, inverse: true } : { mask: null });
 }

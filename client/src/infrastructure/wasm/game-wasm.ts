@@ -20,7 +20,7 @@ export const ABILITY = {
   PARRY: 5,
   ULTI: 6,
   BLOQUEAR: 7,
-  RODAR: 8,
+  SALTAR: 8,
   CORRER: 9,
 } as const;
 
@@ -37,6 +37,7 @@ export interface ClockState {
   expansions: number; // how many times the maze grew
   nextExpansionMs: number; // time until the maze grows again, -1 if it will not
   daylight: number; // 0 = dark night, 1 = full day
+  sun: number; // where the sun is: 0 dawn, 0.5 noon, 1 dusk; -1 at night
   gatesOpen: boolean;
   gatesChangeMs: number; // time until the gates close (if open) or open (if closed)
 }
@@ -133,6 +134,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const expansions = num("web_reloj_expansiones", 0);
   const nextExpansion = num("web_reloj_proxima_expansion_ms", 0);
   const daylight = num("web_reloj_luz", 0);
+  const sun = num("web_reloj_sol", 0);
   const gates = num("web_reloj_compuertas", 0);
   const useAbility = call("web_usar", 1);
   const hold = call("web_mantener", 2);
@@ -185,6 +187,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
       expansions: expansions(),
       nextExpansionMs: nextExpansion(),
       daylight: daylight(),
+      sun: sun(),
       gatesOpen: gates() === 1,
       gatesChangeMs: gatesChange(),
     }),

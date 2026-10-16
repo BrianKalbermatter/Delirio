@@ -34,6 +34,28 @@ export class Animator {
     this.tag = tag;
   }
 
+  // Plays the current animation again from its first frame (an attack right
+  // after another one keeps the same tag).
+  restart(): void {
+    this.frameIndex = 0;
+    this.frameClockMs = 0;
+    this.motionTimeMs = 0;
+  }
+
+  // Shows the frame at `ms` into the current animation (as timed in the
+  // sheet), instead of advancing with update: the jump follows its own clock.
+  seek(ms: number): void {
+    const frames = this.frames();
+    if (frames.length === 0) return;
+    let index = 0;
+    while (index < frames.length - 1 && ms >= frames[index].durationMs) {
+      ms -= frames[index].durationMs;
+      index++;
+    }
+    this.frameIndex = index;
+    this.frameClockMs = ms;
+  }
+
   // `speed` scales playback: 2 plays the frames twice as fast as in Aseprite.
   // `reverse` steps through the frames backwards (walking backwards).
   update(dtMs: number, speed = 1, reverse = false): void {

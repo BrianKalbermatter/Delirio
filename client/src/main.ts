@@ -9,12 +9,13 @@
 // Esc, which opens the pause menu.
 // The game view is drawn with PixiJS (WebGL): one stage with the world (ground
 // and a depth-sorted layer) under the light and the HUD.
-import { Application, Container, Sprite, Texture, TextureStyle } from "pixi.js";
+import { Application, Container, Graphics, Matrix, Sprite, Texture, TextureStyle } from "pixi.js";
 import { Character } from "./domain/character";
-import { vectorOf } from "./domain/facing";
+import { directionFromVector, vectorOf } from "./domain/facing";
+import { Equipment, type EquipSlot } from "./domain/equipment";
 import { Inventory } from "./domain/inventory";
-import { ITEMS } from "./domain/items";
-import { ITEM_SPRITES, placeItems, type Prop } from "./domain/level-items";
+import { ITEMS, type ItemKind } from "./domain/items";
+import { ITEM_SPRITES, placeItems, type Prop, WEAPON_ITEMS } from "./domain/level-items";
 import { Square } from "./domain/square";
 import { placeSampleTree, sampleTrunkBox } from "./domain/sample-tree";
 import { TileMap } from "./domain/tile-map";
@@ -27,17 +28,15 @@ import { PlazaDeco } from "./infrastructure/render/plaza-deco";
 import { Camera } from "./infrastructure/render/camera";
 import { CursorOverlay, TargetMarker } from "./infrastructure/render/cursor";
 import { DEPTH, depthOf } from "./infrastructure/render/depth";
+import { FlameGlow } from "./infrastructure/render/flame-glow";
 import { Glow } from "./infrastructure/render/glow";
 import { createKeyPrompt, formatMs, Hud, KEY_PROMPT_SIZE } from "./infrastructure/render/hud";
 import { Lighting } from "./infrastructure/render/lighting";
+import { type Box, loadMazeTiles, MazeRenderer, type View } from "./infrastructure/render/maze-renderer";
 import {
-  type Box,
-  loadMazeTiles,
-  MazeRenderer,
-  type View,
-} from "./infrastructure/render/maze-renderer";
-import {
+  animationDurationMs,
   DEFAULT_ANIMATION,
+  type Frame,
   loadImage,
   loadSpriteSheet,
   placeFrame,
@@ -45,7 +44,7 @@ import {
 } from "./infrastructure/render/sprite-sheet";
 import { AbilityPanel } from "./infrastructure/ui/ability-panel";
 import { CoreDebug } from "./infrastructure/ui/core-debug";
-import { InventoryPanel } from "./infrastructure/ui/inventory-panel";
+import { DOLL_HEIGHT, DOLL_SCALE, DOLL_WIDTH, InventoryPanel } from "./infrastructure/ui/inventory-panel";
 import { GameLog } from "./infrastructure/ui/game-log";
 import { SideTabs } from "./infrastructure/ui/side-tabs";
 import { MapBook } from "./infrastructure/ui/map-book";
@@ -57,14 +56,13 @@ import { ABILITY, loadGameWasm, STATE } from "./infrastructure/wasm/game-wasm";
 // size, nothing stretched. The scale aims at about TARGET_VIEW_HEIGHT pixels
 // of world vertically; a bigger window shows a bit more of the maze.
 const TARGET_VIEW_HEIGHT = 480;
-// Empty rows under the feet in personaje_2's canvas; drawn lower so the feet
+// Empty rows under the feet in personaje_3's canvas; drawn lower so the feet
 // land on the collision box.
 const PLAYER_FEET_PADDING = 13;
 // Drawn size of the player, for fading walls and the light position.
-const PLAYER_BODY_WIDTH = 34;
-const PLAYER_BODY_HEIGHT = 46;
+const PLAYER_BODY_WIDTH = 32;
+const PLAYER_BODY_HEIGHT = 62;
 const PICKUP_RADIUS = 22;
-const SIGHT_AHEAD = 140; // px the walls also clear ahead of the player
 // Items picked up with E (branches): reach from the feet, and the key prompt
 // shown above the head while one is in reach.
 const KEY_PICKUP_RADIUS = 26;
@@ -75,12 +73,51 @@ const DROP_AHEAD = 32;
 const DROP_FALL_MS = 280;
 const DROP_HOP = 16; // px of the hop's peak
 const TARGET_REACHED = 4; // px: the floor marker hides when the player gets this close
-// The player's cyan "breathes": one slow pulse every two idle loops
-// (idle = 6 frames x 150 ms), in step with the idle movement.
-const PLAYER_CYAN: [number, number, number] = [95, 205, 228];
-const PLAYER_GLOW: [number, number, number] = [110, 225, 255];
+// The player's eyes "breathe": one slow pulse every two idle loops
+// (idle = 8 frames, 900 ms), in step with the idle movement.
+const PLAYER_EYES: [number, number, number] = [251, 185, 84]; // #fbb954, Mushroom palette
+const PLAYER_GLOW: [number, number, number] = [255, 214, 120];
+// How long each attack shows the swing: the time it is active in C
+// (habilidades in src/mecanicas/jugador.c), but never so short it can't be seen.
+const ATTACK_ACTIVE_MS: Record<number, number> = {
+  [ABILITY.ATAQUE_LIGERO]: 200,
+  [ABILITY.ATAQUE_RAPIDO]: 120,
+  [ABILITY.ATAQUE_LARGO]: 400,
+  [ABILITY.ATAQUE_CRITICO]: 300,
+};
+const MIN_SWING_MS = 260;
+const PICKUP_MS = 450;
+// The player's shadow on the floor, cast away from the sun (game.clock().sun):
+// short and behind at noon, long to the left in the morning and to the right
+// as night falls, fading out with the daylight. Lengths are fractions of the
+// sprite height.
+const SUN_SHADOW_ALPHA = 0.3;
+const SUN_SHADOW_NOON = 0.22; // length behind the body at noon
+const SUN_SHADOW_LOW = 1.1; // sideways length with the sun on the horizon
+// Punching the ground (the ulti, D): as long as HAB_ULTI in C. The fists hit
+// the floor SLAM_IMPACT_MS in (frame 4 of slam, art/personaje_3_build.py) and
+// the view shakes.
+const SLAM_MS = 900;
+const SLAM_IMPACT_MS = 270;
+const SLAM_SHAKE_MS = 350;
+const SLAM_SHAKE_PX = 3;
 const BREATH_MS = 1800;
-const INVENTORY_SIZE = 12;
+// The player's own faint light at night, without a torch (Lighting's default).
+const BARE_LIGHT = { inner: 24, outer: 120 };
+// Colors of the torch's flame (sprites/Objetos/Antorcha.aseprite) and of its glow.
+const FLAME_COLORS: [number, number, number][] = [
+  [176, 150, 42],
+  [223, 113, 38],
+  [217, 87, 99],
+];
+const FLAME_GLOW: [number, number, number] = [255, 150, 60];
+// The fire's base (art/antorcha_fuego.py BASE_Y) goes this far below the
+// center of the torch's flame, so the fire covers it.
+const FIRE_BASE_Y = 24;
+const FIRE_BELOW_CENTER = 4;
+const INVENTORY_SIZE = 16;
+type Hand = "rightHand" | "leftHand";
+const HANDS: Hand[] = ["rightHand", "leftHand"];
 const GROWTH_BANNER_MS = 2500; // "the maze grows" message on screen
 const DEATH_BANNER_MS = 3000;
 // Testing aid: F cycles the clock speed, to see dusk and night without waiting
@@ -114,21 +151,63 @@ fitCanvas();
 // the site is served from ("/" locally, "/Delirio/" on GitHub Pages).
 const BASE = import.meta.env.BASE_URL;
 const assetNames = ITEM_SPRITES;
-const [game, playerSheet, mazeTiles, treeArt, flowerSheet, tallFlowerSheet, ...assetSheets] = await Promise.all([
+const [
+  game,
+  playerSheet,
+  armedSheet,
+  armedLeftSheet,
+  armedBothSheet,
+  dirtFrontSheet,
+  dirtBehindSheet,
+  mazeTiles,
+  fireSheet,
+  treeArt,
+  flowerSheet,
+  tallFlowerSheet,
+  ...assetSheets
+] = await Promise.all([
   loadGameWasm(),
-  loadSpriteSheet(`${BASE}sprites/personaje_2`, { pivotOnBody: true }),
+  // Rendered from a model in every direction (art/personaje_3_build.py): the
+  // body stays at the middle of the canvas, the default pivot.
+  loadSpriteSheet(`${BASE}sprites/personaje_3`),
+  // Same frames and tags, with the right hand gripping a weapon, the left
+  // one, and both.
+  loadSpriteSheet(`${BASE}sprites/personaje_3_armado`),
+  loadSpriteSheet(`${BASE}sprites/personaje_3_armado_izq`),
+  loadSpriteSheet(`${BASE}sprites/personaje_3_armado_ambas`),
+  // The dirt thrown up by slam, in front of the body and behind it.
+  loadSpriteSheet(`${BASE}sprites/personaje_3_tierra`),
+  loadSpriteSheet(`${BASE}sprites/personaje_3_tierra_atras`),
   loadMazeTiles(`${BASE}assets/maze_tiles`),
+  // The torch's fire (art/antorcha_fuego.py), drawn on its flame.
+  loadSpriteSheet(`${BASE}sprites/antorcha_fuego`),
   loadBigTreeArt(),
   loadSpriteSheet(`${BASE}sprites/flores`),
   loadSpriteSheet(`${BASE}sprites/flores_2`),
   ...assetNames.map((name) => loadSpriteSheet(`${BASE}assets/${name}`)),
 ]);
-// roll_start in the sheet already rolls once and lands; the roll only uses its
-// first frames, up to curling into a ball, and the ball phase comes from "roll".
-for (const side of ["left", "right"]) {
-  const start = playerSheet.animations.get(`roll_start_${side}`);
-  if (start) playerSheet.animations.set(`roll_in_${side}`, start.slice(0, 7));
+// Each weapon's overlays (in front of the body and behind it), by item id and
+// hand. They have a frame for every frame of the body: the weapon is drawn in
+// that hand in each one, already turned, and in the right hand with its smear
+// in the swings (the left hand only carries).
+interface HandFx {
+  front: SpriteSheet;
+  behind: SpriteSheet;
 }
+const weaponFx = new Map(
+  await Promise.all(
+    WEAPON_ITEMS.map(async (item) => {
+      const [front, behind, leftFront, leftBehind] = await Promise.all(
+        ["fx", "fx_atras", "fx_izq", "fx_izq_atras"].map((s) => loadSpriteSheet(`${BASE}sprites/${item.sprite}_${s}`)),
+      );
+      const hands: Record<Hand, HandFx> = {
+        rightHand: { front, behind },
+        leftHand: { front: leftFront, behind: leftBehind },
+      };
+      return [item.id, hands] as const;
+    }),
+  ),
+);
 const sheets = new Map<string, SpriteSheet>(assetNames.map((name, i) => [name, assetSheets[i]]));
 
 // The maze comes from C: a random seed each game (shown in the panel, so a
@@ -178,25 +257,75 @@ const plazaDeco = new PlazaDeco(tree.flowers, [flowerSheet, tallFlowerSheet], st
 // Fallen branches lie around the tree, each drawn with its own variant.
 propViews.push(
   ...tree.branches.map((b) =>
-    addProp({ sprite: ITEMS.branch.sprite, frame: b.kind, x: b.x, y: b.y, pickup: ITEMS.branch }, false),
+    addProp(
+      {
+        sprite: ITEMS.branch.sprite,
+        frame: b.kind,
+        x: b.x,
+        y: b.y,
+        pickup: ITEMS.branch,
+      },
+      false,
+    ),
   ),
 );
 
 const player = new Character();
 player.sync(coreState(), 0);
 const playerAnimator = new Animator(playerSheet);
+playerAnimator.play(player.animationTag); // shown behind the start menu too
 const playerSprite = new Sprite();
-standing.addChild(playerSprite);
-const playerGlow = new Glow(playerSheet, PLAYER_CYAN, PLAYER_GLOW);
+// The weapon overlays (weapon, fist, smear) and slam's dirt, in front of the
+// body and behind it.
+const weaponFxFront = new Sprite();
+const weaponFxBehind = new Sprite();
+const dirtFront = new Sprite();
+const dirtBehind = new Sprite();
+// The same for the left hand.
+const leftFxFront = new Sprite();
+const leftFxBehind = new Sprite();
+// The torch's fire, over its flame, in each hand.
+const fireSprites: Record<Hand, Sprite> = { rightHand: new Sprite(), leftHand: new Sprite() };
+const fireAnimator = new Animator(fireSheet);
+fireAnimator.play("fuego");
+standing.addChild(
+  playerSprite,
+  weaponFxFront,
+  weaponFxBehind,
+  leftFxFront,
+  leftFxBehind,
+  dirtFront,
+  dirtBehind,
+  fireSprites.rightHand,
+  fireSprites.leftHand,
+);
+// The shadow left on the floor while the player is in the air.
+const jumpShadow = new Graphics().ellipse(0, 0, 9, 3).fill({ color: 0x000000, alpha: 0.35 });
+let slamImpactMs: number | null = null; // time left until the fists hit the floor
+const playerGlow = new Glow(playerSheet, PLAYER_EYES, PLAYER_GLOW);
+const torchFx = weaponFx.get(ITEMS.torch.id)!;
+const torchGlows: Record<Hand, FlameGlow> = {
+  rightHand: new FlameGlow([torchFx.rightHand.front, torchFx.rightHand.behind], FLAME_COLORS, FLAME_GLOW),
+  leftHand: new FlameGlow([torchFx.leftHand.front, torchFx.leftHand.behind], FLAME_COLORS, FLAME_GLOW),
+};
 const camera = new Camera(player.x, playerCenterY(), canvas.width, canvas.height);
 const maze = new MazeRenderer(app.renderer, standing, map, mazeTiles, square);
 const targetMarker = new TargetMarker();
-ground.addChild(maze.floor, bigTree.ground, targetMarker.view);
+const sunShadow = new Sprite({ tint: 0x000000 });
+ground.addChild(maze.floor, bigTree.ground, targetMarker.view, sunShadow, jumpShadow);
 const lighting = new Lighting(canvas.width, canvas.height);
 const keyPrompt = createKeyPrompt();
 const abilityEffects = new AbilityEffects();
 const hud = new Hud();
-app.stage.addChild(lighting.view, playerGlow.view, keyPrompt, abilityEffects.view, hud.view);
+app.stage.addChild(
+  lighting.view,
+  torchGlows.rightHand.view,
+  torchGlows.leftHand.view,
+  playerGlow.view,
+  keyPrompt,
+  abilityEffects.view,
+  hud.view,
+);
 window.addEventListener("resize", () => {
   fitCanvas();
   camera.viewWidth = canvas.width;
@@ -220,6 +349,7 @@ function fitCanvas(): void {
 }
 
 const inventory = new Inventory(INVENTORY_SIZE);
+const equipment = new Equipment();
 const tabs = new SideTabs(
   panelEl,
   [
@@ -232,7 +362,22 @@ const tabs = new SideTabs(
 const coreDebug = new CoreDebug(tabs.page("technical"));
 const gameLog = new GameLog(tabs.page("technical"));
 showControlsHint(tabs.page("technical"));
-const panel = new InventoryPanel(tabs.page("inventory"), inventory, sheets, (i) => dropItem(i));
+// The cursor is read lazily: the mouse is set up further down.
+const panelCursor = {
+  get x() {
+    return mouse.x;
+  },
+  get y() {
+    return mouse.y;
+  },
+};
+const panel = new InventoryPanel(tabs.page("inventory"), inventory, equipment, sheets, panelCursor, {
+  drop: dropItem,
+  use: useItem,
+  equip: equipFrom,
+  clickEquip: (slot) => equipFrom(slot, inventory.selected),
+  takeOff,
+});
 const abilityPanel = new AbilityPanel(tabs.page("skills"), ABILITY_KEY_LABEL);
 gameLog.log("You wake up at the base.");
 
@@ -258,7 +403,7 @@ new AbilityKeys(
   window,
   () => mouse.locked,
   (ability) => {
-    // E over a branch picks it up instead of attacking.
+    // E over a branch or a weapon picks it up instead of attacking.
     if (ability === ABILITY.ATAQUE_LARGO && pickUpWithKey()) return;
     game.useAbility(ability);
   },
@@ -336,16 +481,38 @@ function update(dtMs: number): void {
   showCoreDebug(core);
   const abilities = game.abilities();
   abilityPanel.show(abilities);
+  abilityEffects.showAttacks = !equippedWeapon();
   for (const started of abilityEffects.update(abilities, dtMs)) {
     gameLog.log(started.name);
-    if (abilities.indexOf(started) <= ABILITY.ATAQUE_CRITICO) {
+    const id = abilities.indexOf(started);
+    if (id <= ABILITY.ATAQUE_CRITICO && !player.isDead) {
       bigTree.chop(player.x, player.y, vectorOf(player.facing));
+      // In the air it slashes with the legs tucked; the jump goes on after.
+      const name = player.isJumping ? "jump_attack" : "attack";
+      const ms = Math.max(MIN_SWING_MS, ATTACK_ACTIVE_MS[id] ?? MIN_SWING_MS);
+      player.startAction(name, ms, animationDurationMs(playerSheet, `${name}_right`));
+      playerAnimator.restart();
+    }
+    if (id === ABILITY.ULTI && !player.isDead && !player.isJumping) {
+      player.startAction("slam", SLAM_MS, animationDurationMs(playerSheet, "slam_right"));
+      playerAnimator.restart();
+      slamImpactMs = SLAM_IMPACT_MS;
     }
   }
   pickUpItems();
 
-  playerAnimator.play(player.animationTag, !player.isDead);
-  playerAnimator.update(dtMs, player.animationSpeed, player.animationReversed);
+  playerAnimator.play(player.animationTag, !player.isDead && !player.isActing);
+  const jumpArtMs = player.jumpArtMs;
+  if (jumpArtMs !== null && !player.isActing) playerAnimator.seek(jumpArtMs);
+  else playerAnimator.update(dtMs, player.animationSpeed, player.animationReversed);
+  if (slamImpactMs !== null) {
+    slamImpactMs -= dtMs;
+    if (slamImpactMs <= 0) {
+      slamImpactMs = null;
+      camera.shake(SLAM_SHAKE_MS, SLAM_SHAKE_PX);
+    }
+  }
+  camera.updateShake(dtMs);
   for (const view of propViews) {
     view.animator?.update(dtMs);
     if (view.fall) {
@@ -358,7 +525,7 @@ function update(dtMs: number): void {
 
   camera.follow(player.x, playerCenterY(), player.facing, dtMs);
   camera.clampTo(map.width, map.height, maze.wallHeight);
-  panel.update();
+  fireAnimator.update(dtMs);
 }
 
 function pickUpItems(): void {
@@ -406,7 +573,129 @@ function pickUpWithKey(): boolean {
   propViews = propViews.filter((v) => v !== view);
   view.sprite.destroy();
   gameLog.log(`Picked up: ${item.name}`);
+  if (item.weapon) {
+    // Turns to it and bends down to take it.
+    const towards = directionFromVector(view.prop.x - player.x, view.prop.y - player.y);
+    player.startAction("pickup", PICKUP_MS, animationDurationMs(playerSheet, "pickup_right"), towards);
+    playerAnimator.restart();
+    gameLog.log(`Double click the ${item.name.toLowerCase()} in the inventory to hold it.`);
+  }
   return true;
+}
+
+// The weapon (or torch) in the right hand, the one that swings.
+function equippedWeapon(): ItemKind | null {
+  return equipment.slots.rightHand;
+}
+
+// Double click on an inventory slot: a potion is drunk, the map book opens,
+// and what can be held or worn is put on (a weapon in a free hand, or in the
+// right one).
+function useItem(index: number): void {
+  const item = inventory.slots[index]?.item;
+  if (!item) return;
+  if (item.id.startsWith("potion_")) {
+    inventory.removeOne(index);
+    gameLog.log(`You drink the ${item.name.toLowerCase()}. Nothing happens... yet.`);
+    return;
+  }
+  if (item.id === "map_book") {
+    book.toggle();
+    return;
+  }
+  const slot = item.weapon ? (equipment.freeSlotFor(item) ?? "rightHand") : item.wear;
+  if (!slot) {
+    gameLog.log(`The ${item.name.toLowerCase()} cannot be used.`);
+    return;
+  }
+  equipFrom(slot, index);
+}
+
+// Puts the item of inventory slot `index` on `slot` (what was there goes back
+// to the inventory). Clicking a square with an item that does not fit there
+// takes off what the square has instead.
+function equipFrom(slot: EquipSlot, index: number): void {
+  const item = inventory.slots[index]?.item;
+  if (!item || !Equipment.fits(item, slot)) {
+    if (item) gameLog.log(`The ${item.name.toLowerCase()} does not go there.`);
+    else takeOff(slot);
+    return;
+  }
+  inventory.removeOne(index);
+  const old = equipment.put(slot, item);
+  if (old && !inventory.add(old)) {
+    // No room for what was there: undo.
+    equipment.put(slot, old);
+    inventory.add(item);
+    gameLog.log("The inventory is full.");
+    return;
+  }
+  gameLog.log(`Equipped: ${item.name}`);
+}
+
+function takeOff(slot: EquipSlot): void {
+  const item = equipment.slots[slot];
+  if (!item) return;
+  if (!inventory.add(item)) {
+    gameLog.log("The inventory is full.");
+    return;
+  }
+  equipment.take(slot);
+  gameLog.log(`Took off: ${item.name}`);
+}
+
+// The player in the inventory tab: idle facing the camera, with what the
+// hands hold, at DOLL_SCALE times the sprite's size.
+function paintDoll(now: number): void {
+  const ctx = panel.doll.getContext("2d")!;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, DOLL_WIDTH, DOLL_HEIGHT);
+  ctx.imageSmoothingEnabled = false;
+  ctx.setTransform(DOLL_SCALE, 0, 0, DOLL_SCALE, 0, 0);
+  const tag = "idle_front";
+  const frames = playerSheet.animations.get(tag)!;
+  const total = frames.reduce((sum, f) => sum + f.durationMs, 0);
+  let t = now % total;
+  let index = 0;
+  while (t >= frames[index].durationMs) t -= frames[index++].durationMs;
+  const draw = (sheet: SpriteSheet, x: number, y: number) => {
+    const f = sheet.animations.get(tag)![index];
+    ctx.drawImage(sheet.image, f.x, f.y, f.w, f.h, x, y, f.w, f.h);
+  };
+  const held = HANDS.filter((hand) => equipment.slots[hand]);
+  const fx = (hand: Hand) => weaponFx.get(equipment.slots[hand]!.id)![hand];
+  // The overlays are 128x128 with the body's canvas at (32, 32).
+  for (const hand of held) draw(fx(hand).behind, -32, -32);
+  draw(bodySheet(held.includes("rightHand"), held.includes("leftHand")), 0, 0);
+  for (const hand of held) draw(fx(hand).front, -32, -32);
+  for (const hand of held) {
+    if (equipment.slots[hand]!.id !== ITEMS.torch.id) continue;
+    const glow = torchGlows[hand];
+    const c =
+      glow.centerOf(torchFx[hand].front.animations.get(tag)![index]) ??
+      glow.centerOf(torchFx[hand].behind.animations.get(tag)![index]);
+    const fire = fireAnimator.currentFrame()!;
+    if (!c) continue;
+    ctx.drawImage(
+      fireSheet.image,
+      fire.x,
+      fire.y,
+      fire.w,
+      fire.h,
+      Math.round(c.cx - 32 - fire.w / 2),
+      Math.round(c.cy - 32 + FIRE_BELOW_CENTER - FIRE_BASE_Y),
+      fire.w,
+      fire.h,
+    );
+  }
+}
+
+// The body with the right hand, the left one, both or none gripping.
+function bodySheet(right: boolean, left: boolean): SpriteSheet {
+  if (right && left) return armedBothSheet;
+  if (right) return armedSheet;
+  if (left) return armedLeftSheet;
+  return playerSheet;
 }
 
 // A key cap with an "E" above the player's head while an item to pick up
@@ -437,9 +726,18 @@ function dropItem(index: number): void {
     x = Math.round(player.x);
     y = Math.round(player.y);
   }
-  const prop: Prop = { sprite: item.sprite, frame: item.frame, x, y, pickup: item };
+  const prop: Prop = {
+    sprite: item.sprite,
+    frame: item.frame,
+    x,
+    y,
+    pickup: item,
+  };
   propViews.push(
-    addProp(prop, false, { waitForLeave: true, fall: { fromX: player.x, fromY: player.y, ms: DROP_FALL_MS } }),
+    addProp(prop, false, {
+      waitForLeave: true,
+      fall: { fromX: player.x, fromY: player.y, ms: DROP_FALL_MS },
+    }),
   );
   gameLog.log(`Dropped: ${item.name}`);
   if (item.id === "map_book" && book.isOpen && !inventory.has("map_book")) book.toggle();
@@ -447,6 +745,9 @@ function dropItem(index: number): void {
 
 // Updates what the stage shows from the game state, then renders it.
 function draw(): void {
+  // Side panel, also while paused (the inventory is still usable).
+  panel.update();
+  paintDoll(performance.now());
   // World space.
   camera.apply(world);
   const view: View = {
@@ -455,7 +756,7 @@ function draw(): void {
     width: canvas.width,
     height: canvas.height,
   };
-  maze.show(view, playerBody(), playerSight(), game.maze.gateLeaves());
+  maze.show(view, playerBody(), game.maze.gateLeaves());
   bigTree.show(playerBody());
   targetMarker.show(target, performance.now());
   for (const v of propViews) showProp(v);
@@ -465,16 +766,22 @@ function draw(): void {
   const [dirX, dirY] = vectorOf(player.facing);
   const [lightX, lightY] = worldToScreen(player.x, playerCenterY());
   lighting.setDaylight(game.clock().daylight);
+  // A torch in either hand widens the light, flickering.
+  const torchLight = equipment.items.find((i) => i.light)?.light;
+  const flicker = torchFlicker(performance.now());
+  const light = torchLight ?? BARE_LIGHT;
+  const flickerScale = torchLight ? 0.92 + 0.08 * flicker : 1;
+  lighting.innerRadius = light.inner * flickerScale;
+  lighting.outerRadius = light.outer * flickerScale;
   lighting.update(lightX, lightY, dirX, dirY);
+  showTorchGlow(flicker);
   showPlayerGlow(); // over the darkness: it is the player's own light
   showKeyPrompt();
   showAbilityEffects();
   hud.showMedusa(game.medusaLife(), game.medusaLifeMax());
   hud.showClock(game.clock(), gateOpening, timeSpeed, canvas.width, performance.now());
   hud.showBanners(growthBannerMs, deathBannerMs, DEATH_BANNER_MS, canvas.width, canvas.height);
-  cursor.setShape(
-    book.isOpen && mouse.isOver(book.element) ? (mouse.rightHeld ? "eraser" : "pencil") : "arrow",
-  );
+  cursor.setShape(book.isOpen && mouse.isOver(book.element) ? (mouse.rightHeld ? "eraser" : "pencil") : "arrow");
   cursor.update(mouse.locked, mouse.x, mouse.y);
   app.render();
 }
@@ -483,7 +790,7 @@ function showControlsHint(root: HTMLElement): void {
   const hint = document.createElement("p");
   hint.className = "hint";
   hint.textContent =
-    "Left click: move · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch: pick it up · F: clock speed · G: test gates · Esc: menu";
+    "Left click: move · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Q W E R: attack (also in the air) · Space: jump · D: punch the ground · F: clock speed · G: test gates · Esc: menu";
   root.appendChild(hint);
 }
 
@@ -543,9 +850,106 @@ async function loadBigTreeArt(): Promise<BigTreeArt> {
 
 function showPlayer(): void {
   const frame = playerAnimator.currentFrame();
+  const floorY = player.y + PLAYER_FEET_PADDING;
+  const feetY = floorY - player.lift;
+  const depth = depthOf(player.y, DEPTH.player);
   playerSprite.visible = frame !== null;
-  if (frame) placeFrame(playerSprite, frame, player.x, player.y + PLAYER_FEET_PADDING);
-  playerSprite.zIndex = depthOf(player.y, DEPTH.player);
+  playerSprite.zIndex = depth;
+  for (const sprite of [
+    weaponFxFront,
+    weaponFxBehind,
+    leftFxFront,
+    leftFxBehind,
+    dirtFront,
+    dirtBehind,
+    fireSprites.rightHand,
+    fireSprites.leftHand,
+  ]) {
+    sprite.visible = false;
+  }
+  sunShadow.visible = false;
+  jumpShadow.visible = player.lift > 0;
+  jumpShadow.position.set(Math.round(player.x), Math.round(player.y));
+  jumpShadow.scale.set(1 - player.lift / 80);
+  if (!frame) return;
+  // Hands holding something. Bending down to pick something up, the right
+  // hand reaches for the floor: what it holds is hidden until it is back.
+  const picking = player.animationTag.startsWith("pickup_");
+  const held = player.isDead ? [] : HANDS.filter((hand) => equipment.slots[hand] && !(picking && hand === "rightHand"));
+  const body = playerAnimator.frameIn(bodySheet(held.includes("rightHand"), held.includes("leftHand")));
+  placeFrame(playerSprite, body, player.x, feetY);
+  showSunShadow(body, floorY);
+  const overlays: [Sprite, SpriteSheet, number][] = [];
+  for (const hand of held) {
+    const fx = weaponFx.get(equipment.slots[hand]!.id)![hand];
+    const [front, behind] = hand === "rightHand" ? [weaponFxFront, weaponFxBehind] : [leftFxFront, leftFxBehind];
+    overlays.push([front, fx.front, 1e-7], [behind, fx.behind, -1e-7]);
+  }
+  if (player.animationTag.startsWith("slam_")) {
+    overlays.push([dirtFront, dirtFrontSheet, 2e-7], [dirtBehind, dirtBehindSheet, -2e-7]);
+  }
+  for (const [sprite, sheet, offset] of overlays) {
+    sprite.visible = true;
+    placeFrame(sprite, playerAnimator.frameIn(sheet), player.x, feetY);
+    sprite.zIndex = depth + offset;
+  }
+  for (const hand of held) {
+    if (equipment.slots[hand]!.id === ITEMS.torch.id) showFire(hand, feetY, depth);
+  }
+}
+
+// The fire on the flame of the torch in `hand`, in front of the body or
+// behind it like the torch. The overlays are 128x128, centered on the player,
+// their bottom on the feet.
+function showFire(hand: Hand, feetY: number, depth: number): void {
+  const fireSprite = fireSprites[hand];
+  for (const [sheet, offset] of [
+    [torchFx[hand].front, 1.5e-7],
+    [torchFx[hand].behind, -0.5e-7],
+  ] as const) {
+    const c = torchGlows[hand].centerOf(playerAnimator.frameIn(sheet));
+    if (!c) continue;
+    const fire = fireAnimator.currentFrame()!;
+    fireSprite.texture = fire.texture;
+    fireSprite.position.set(
+      Math.round(player.x - 64 + c.cx - fire.w / 2),
+      Math.round(feetY - 128 + c.cy + FIRE_BELOW_CENTER - FIRE_BASE_Y),
+    );
+    fireSprite.zIndex = depth + offset;
+    fireSprite.visible = true;
+    return;
+  }
+}
+
+// The body's silhouette lying on the floor from the feet, away from the sun.
+// In the air it moves off the feet along the same direction.
+function showSunShadow(body: Frame, floorY: number): void {
+  const { sun, daylight } = game.clock();
+  if (sun < 0 || daylight <= 0 || player.isDead) return;
+  const height = sun * Math.PI; // 0 dawn, PI/2 noon, PI dusk
+  const elevation = Math.sin(height);
+  const h = body.h - PLAYER_FEET_PADDING;
+  // Where the top of the head falls, from the feet. The sun crosses the sky in
+  // front of the camera (south), east to west: the shadow points away, up the
+  // screen, and swings from the left (morning) to the right (evening).
+  const tipX = -Math.cos(height) * h * SUN_SHADOW_LOW * (1 - 0.5 * elevation);
+  const tipY = -h * (SUN_SHADOW_NOON + 0.2 * (1 - elevation));
+  const lift = player.lift / h;
+  sunShadow.texture = body.texture;
+  sunShadow.anchor.set(body.anchorX / body.w, 1 - PLAYER_FEET_PADDING / body.h);
+  // Maps the sprite's up axis (y = -h at the head) onto the tip vector.
+  sunShadow.setFromMatrix(
+    new Matrix(
+      1,
+      0,
+      -tipX / h,
+      -tipY / h,
+      Math.round(player.x + tipX * lift),
+      Math.round(floorY - PLAYER_FEET_PADDING + tipY * lift),
+    ),
+  );
+  sunShadow.alpha = SUN_SHADOW_ALPHA * daylight;
+  sunShadow.visible = true;
 }
 
 function showAbilityEffects(): void {
@@ -553,6 +957,29 @@ function showAbilityEffects(): void {
   const x = player.x + Math.round(canvas.width / 2 - camera.x);
   const feetY = player.y + Math.round(canvas.height / 2 - camera.y);
   abilityEffects.show(x, feetY, PLAYER_BODY_HEIGHT, dirX, dirY, performance.now());
+}
+
+// 0..1, uneven like a real flame.
+function torchFlicker(now: number): number {
+  return 0.55 + 0.25 * Math.sin(now / 90) + 0.2 * Math.sin(now / 37 + 1.3);
+}
+
+// The warm halo on the flame of a torch in each hand.
+function showTorchGlow(flicker: number): void {
+  const picking = player.animationTag.startsWith("pickup_");
+  for (const hand of HANDS) {
+    const glow = torchGlows[hand];
+    if (equipment.slots[hand]?.id !== ITEMS.torch.id || player.isDead || (picking && hand === "rightHand")) {
+      glow.show(null, 0, 0, 0);
+      continue;
+    }
+    const feetY = player.y + PLAYER_FEET_PADDING - player.lift;
+    const left = Math.round(player.x - 64) + Math.round(canvas.width / 2 - camera.x);
+    const top = Math.round(feetY - 128) + Math.round(canvas.height / 2 - camera.y);
+    const frame = playerAnimator.frameIn(torchFx[hand].front);
+    const shown = glow.centerOf(frame) ? frame : playerAnimator.frameIn(torchFx[hand].behind);
+    glow.show(shown, left, top, flicker);
+  }
 }
 
 // Slow breath: dim -> bright -> dim, starting with the idle loop.
@@ -566,26 +993,12 @@ function showPlayerGlow(): void {
   const breath = 0.5 - 0.5 * Math.cos(phase * Math.PI * 2); // 0 -> 1 -> 0
   // Same spot placeFrame uses, through the same rounded camera offset.
   const left = Math.round(player.x - frame.anchorX) + Math.round(canvas.width / 2 - camera.x);
-  const top = Math.round(player.y + PLAYER_FEET_PADDING - frame.h) + Math.round(canvas.height / 2 - camera.y);
+  const top =
+    Math.round(player.y + PLAYER_FEET_PADDING - player.lift - frame.h) + Math.round(canvas.height / 2 - camera.y);
   playerGlow.show(frame, left, top, breath);
 }
 
 // Where the player's body is drawn, in world pixels.
-// The area the walls clear for the player: the body, stretched SIGHT_AHEAD px
-// towards where the player faces, so the way ahead (a gate, a dead end) shows.
-function playerSight(): Box {
-  const body = playerBody();
-  const [dirX, dirY] = vectorOf(player.facing);
-  const ax = dirX * SIGHT_AHEAD;
-  const ay = dirY * SIGHT_AHEAD;
-  return {
-    left: Math.min(body.left, body.left + ax),
-    right: Math.max(body.right, body.right + ax),
-    top: Math.min(body.top, body.top + ay),
-    bottom: Math.max(body.bottom, body.bottom + ay),
-  };
-}
-
 function playerBody(): Box {
   return {
     left: player.x - PLAYER_BODY_WIDTH / 2,
@@ -627,7 +1040,7 @@ function coreState() {
   return {
     ...p,
     state: STATE[p.state] ?? `unknown (${p.state})`,
-    rolling: game.abilities()[ABILITY.RODAR]?.active ?? false,
+    jumping: game.abilities()[ABILITY.SALTAR]?.active ?? false,
   };
 }
 

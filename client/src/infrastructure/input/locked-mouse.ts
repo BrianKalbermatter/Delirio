@@ -11,6 +11,10 @@
 // re-locking needs a user click. Both match the game flow: Esc opens the menu,
 // a click on "Resume" locks again.
 
+// Dispatched on the element under the virtual cursor when the left button is
+// released over the panel (the real mouseup has no useful target while locked).
+export const VIRTUAL_MOUSEUP = "virtual-mouseup";
+
 export class LockedMouse {
   // Virtual cursor in window CSS pixels.
   x = 0;
@@ -55,6 +59,12 @@ export class LockedMouse {
       else (this.buttonUnderCursor() as HTMLElement | null)?.click();
     });
     document.addEventListener("mouseup", (e) => {
+      // Releasing over the panel tells the element under the cursor, so
+      // things can be dragged there (an item onto the player's figure).
+      if (e.button === 0 && this.locked && !this.held) {
+        const under = this.elementUnderCursor() ?? document.body;
+        under.dispatchEvent(new CustomEvent(VIRTUAL_MOUSEUP, { bubbles: true }));
+      }
       if (e.button === 0) this.held = false;
       if (e.button === 2) this.rightHeld = false;
     });

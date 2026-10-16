@@ -21,6 +21,9 @@ export class Camera {
   // Current look-ahead offset, eased towards where the target is facing.
   private leadX = 0;
   private leadY = 0;
+  private shakeMs = 0;
+  private shakeTotalMs = 1;
+  private shakeAmplitude = 0;
 
   constructor(
     x: number,
@@ -52,10 +55,28 @@ export class Camera {
     this.y = clamp(this.y, this.viewHeight / 2 - topOverhang, worldHeight - this.viewHeight / 2);
   }
 
+  // Shakes the view for `ms`, up to `amplitude` px, fading out (a blow on the
+  // ground).
+  shake(ms: number, amplitude: number): void {
+    this.shakeMs = this.shakeTotalMs = ms;
+    this.shakeAmplitude = amplitude;
+  }
+
+  updateShake(dtMs: number): void {
+    this.shakeMs = Math.max(0, this.shakeMs - dtMs);
+  }
+
   // Moves the world container so this camera's point is at the center of the
   // screen. Rounded so pixel art does not shimmer.
   apply(world: Container): void {
-    world.position.set(Math.round(this.viewWidth / 2 - this.x), Math.round(this.viewHeight / 2 - this.y));
+    let dx = 0;
+    let dy = 0;
+    if (this.shakeMs > 0) {
+      const strength = this.shakeAmplitude * (this.shakeMs / this.shakeTotalMs);
+      dx = (Math.random() * 2 - 1) * strength;
+      dy = (Math.random() * 2 - 1) * strength;
+    }
+    world.position.set(Math.round(this.viewWidth / 2 - this.x + dx), Math.round(this.viewHeight / 2 - this.y + dy));
   }
 }
 

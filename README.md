@@ -19,12 +19,18 @@ It runs with the testing clock for now: 10 s days and 10 s nights.
 | Left click (hold) | Walk to the cursor |
 | Mouse | Aim: the character always looks at the cursor |
 | Shift (hold) | Run |
-| Space | Roll |
+| Space | Jump (Q · W · E · R also hit in the air) |
 | Right click (hold) | Block |
 | S | Parry |
 | Q · W · E · R | Light, quick, long and critical attack |
-| A · D | Support · Ultimate |
+| A | Support |
+| D | Punch the ground: dirt flies and the screen shakes |
+| E | Pick up the branch, weapon or torch at your feet |
 | 1-9 or click a slot | Select an inventory slot |
+| Double click a slot | Use it: drink a potion, open the map book, hold a weapon or the torch |
+| Drag a slot onto a body square | Put it there (helmet, armor, pants, right or left hand) |
+| Right click a slot · a body square | Drop it on the floor · take it off |
+| X | Drop one item of the selected slot |
 | Click a tab | Side panel: Technical, Inventory, Skills |
 | `` ` `` | Map book (left click draws, right click erases) |
 | Esc | Pause menu |
@@ -41,8 +47,19 @@ the same in every game; only the maze around it changes with the seed.
   same places every game. They are scenery: you walk through them.
 - **The dark forest floor** covers the top-right corner, ready for trees.
 
-Past the gates, the maze keeps its dirt and old stone paving, between walls
-nine tiles tall.
+Past the gates, the maze keeps its dirt and old stone paving, between low
+walls seen in perspective: their sides lean away from the middle of the
+screen, and any wall in front of you opens a round window so you never get
+lost behind it.
+
+## Your character and the inventory
+
+You play Brian's Personaje_3, drawn in the 8 directions. Near the start lie
+an **axe** and a **torch**. Pick them up with **E**: they go to the
+inventory (16 slots, in the **Inventory** tab of the side panel). Double click
+one, or drag it onto a hand, to hold it. The right hand swings, the left one
+carries. The torch burns with an animated flame and lights up much more
+around you, by night and by day.
 
 ## Art
 
@@ -60,4 +77,6 @@ read from its Aseprite file and recoloured to the square's greens.
 | Wind on Brian's flowers (tag `viento`) | `art/flores_viento.py` + `art/frames_aseprite.lua` → `sprites/Laberinto/Terreno/{Flores,Flores2}_viento.aseprite` (his `Flores` and `Flores2` stay untouched) | `python3 art/flores_viento.py <Terreno dir> <dir>`, then per folder `Aseprite -b --script-param dir=<dir>/<name> --script-param out=<name>_viento.aseprite --script-param tag=viento --script frames_aseprite.lua`; sheets with `bash client/scripts/export-sprites.sh` |
 | Wind on the big tree (its `idle` tag) | `art/arbol_viento.lua` → `sprites/Arboles/Arbol1_pintado.aseprite` (rebuilds the wind from the first frame; rerun after retouching it) | `Aseprite -b --script-param file=Arbol1_pintado.aseprite --script arbol_viento.lua`, then `bash client/scripts/export-sprites.sh` |
 | Shadow under the big tree | `art/sombra_arbol.py` → `client/public/sprites/sombra_arbol.png` | `python3 art/sombra_arbol.py client/public/sprites` |
+| Player (Personaje_3, every animation in 8 directions), its weapons in either hand, slam dirt | `art/personaje_3.py` + `art/personaje_3_build.py` + `art/armas.py` (weapons: `WEAPONS`) | `bash art/armas_build.sh` (also writes `Personaje_3_Anim.aseprite`) |
+| Torch fire | `art/antorcha_fuego.py` | `python3 art/antorcha_fuego.py` |
 | Aseprite sprites to sheets | `client/scripts/export-sprites.sh` | `bash client/scripts/export-sprites.sh` |

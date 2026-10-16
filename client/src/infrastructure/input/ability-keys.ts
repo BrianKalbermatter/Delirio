@@ -11,7 +11,7 @@ export const INSTANT_KEYS: Record<string, number> = {
   KeyA: ABILITY.APOYO,
   KeyS: ABILITY.PARRY,
   KeyD: ABILITY.ULTI,
-  Space: ABILITY.RODAR,
+  Space: ABILITY.SALTAR,
 };
 
 // Key code -> held ability.
@@ -30,7 +30,7 @@ export const ABILITY_KEY_LABEL: Record<number, string> = {
   [ABILITY.PARRY]: "S",
   [ABILITY.ULTI]: "D",
   [ABILITY.BLOQUEAR]: "R-click",
-  [ABILITY.RODAR]: "Space",
+  [ABILITY.SALTAR]: "Space",
   [ABILITY.CORRER]: "Shift",
 };
 
