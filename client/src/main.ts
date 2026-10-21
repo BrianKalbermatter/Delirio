@@ -25,6 +25,7 @@ import { AbilityEffects } from "./infrastructure/render/ability-effects";
 import { Animator } from "./infrastructure/render/animator";
 import { BigTree, type BigTreeArt } from "./infrastructure/render/big-tree";
 import { PlazaDeco } from "./infrastructure/render/plaza-deco";
+import { BushViews } from "./infrastructure/render/bushes";
 import { Camera } from "./infrastructure/render/camera";
 import { CursorOverlay, TargetMarker } from "./infrastructure/render/cursor";
 import { DEPTH, depthOf } from "./infrastructure/render/depth";
@@ -121,6 +122,8 @@ const POTION_HEAL = 30;
 // An enemy's hit shakes the view, softer than the slam.
 const HURT_SHAKE_MS = 180;
 const HURT_SHAKE_PX = 2;
+// Hidden in a bush, the player is drawn see-through (League of Legends style).
+const HIDDEN_ALPHA = 0.5;
 type Hand = "rightHand" | "leftHand";
 const HANDS: Hand[] = ["rightHand", "leftHand"];
 const GROWTH_BANNER_MS = 2500; // "the maze grows" message on screen
@@ -170,6 +173,7 @@ const [
   treeArt,
   flowerSheet,
   tallFlowerSheet,
+  bushSheet,
   ...assetSheets
 ] = await Promise.all([
   loadGameWasm(),
@@ -192,6 +196,8 @@ const [
   loadBigTreeArt(),
   loadSpriteSheet(`${BASE}sprites/flores`),
   loadSpriteSheet(`${BASE}sprites/flores_2`),
+  // Bushes to hide in (art/arbusto.py).
+  loadSpriteSheet(`${BASE}sprites/arbusto`),
   ...assetNames.map((name) => loadSpriteSheet(`${BASE}assets/${name}`)),
 ]);
 // Each weapon's overlays (in front of the body and behind it), by item id and
@@ -230,6 +236,7 @@ let seenExpansions = 0;
 let seenDeaths = 0;
 let lastLife = -1;
 let enemyAnimMs = 0; // game time the enemies' animations have to catch up on
+let seenAutoAttacks = 0; // swings C made on its own (an enemy got too close)
 let deathBannerMs = 0;
 let timeSpeed = 1;
 syncMaze();
@@ -264,6 +271,7 @@ game.maze.addObstacle(sampleTrunkBox(tree));
 const bigTree = new BigTree(tree, treeArt);
 standing.addChild(bigTree.view);
 const plazaDeco = new PlazaDeco(tree.flowers, [flowerSheet, tallFlowerSheet], standing);
+const bushViews = new BushViews(game.bushes(), bushSheet, standing);
 // Fallen branches lie around the tree, each drawn with its own variant.
 propViews.push(
   ...tree.branches.map((b) =>
@@ -486,6 +494,10 @@ function update(dtMs: number): void {
   if (medusaWasAlive && !medusaAlive) gameLog.log("The medusa is dead.");
   medusaWasAlive = medusaAlive;
   const core = coreState();
+  const cover = game.cover();
+  // C swung on its own at an enemy: the swing faces it, not the cursor.
+  const autoAttacked = cover.autoAttacks > seenAutoAttacks;
+  seenAutoAttacks = cover.autoAttacks;
   const lookAt = mouse.overGame() && !book.isOpen ? cursorInWorld() : undefined;
   const wasDead = player.isDead;
   player.sync(core, dtMs, lookAt, core.y - PLAYER_BODY_HEIGHT / 2);
@@ -509,7 +521,9 @@ function update(dtMs: number): void {
       // In the air it slashes with the legs tucked; the jump goes on after.
       const name = player.isJumping ? "jump_attack" : "attack";
       const ms = Math.max(MIN_SWING_MS, ATTACK_ACTIVE_MS[id] ?? MIN_SWING_MS);
-      player.startAction(name, ms, animationDurationMs(playerSheet, `${name}_right`));
+      const towards =
+        autoAttacked && id === ABILITY.ATAQUE_LIGERO ? directionFromVector(core.dirX, core.dirY) : undefined;
+      player.startAction(name, ms, animationDurationMs(playerSheet, `${name}_right`), towards);
       playerAnimator.restart();
     }
     if (id === ABILITY.ULTI && !player.isDead && !player.isJumping) {
@@ -541,6 +555,7 @@ function update(dtMs: number): void {
   }
   bigTree.update(dtMs);
   plazaDeco.update(dtMs);
+  bushViews.update(dtMs, cover.bush);
 
   camera.follow(player.x, playerCenterY(), player.facing, dtMs);
   camera.clampTo(map.width, map.height, maze.wallHeight);
@@ -777,12 +792,13 @@ function draw(): void {
     height: canvas.height,
   };
   maze.show(view, playerBody(), game.maze.gateLeaves());
-  enemyViews.show(game.enemies(), enemyAnimMs);
+  const cover = game.cover();
+  enemyViews.show(game.enemies(), enemyAnimMs, cover.bush);
   enemyAnimMs = 0;
   bigTree.show(playerBody());
   targetMarker.show(target, performance.now());
   for (const v of propViews) showProp(v);
-  showPlayer();
+  showPlayer(cover.hidden ? HIDDEN_ALPHA : 1);
 
   // Screen space.
   const [dirX, dirY] = vectorOf(player.facing);
@@ -872,13 +888,15 @@ async function loadBigTreeArt(): Promise<BigTreeArt> {
   };
 }
 
-function showPlayer(): void {
+// `alpha`: below 1 while hidden in a bush.
+function showPlayer(alpha: number): void {
   const frame = playerAnimator.currentFrame();
   const floorY = player.y + PLAYER_FEET_PADDING;
   const feetY = floorY - player.lift;
   const depth = depthOf(player.y, DEPTH.player);
   playerSprite.visible = frame !== null;
   playerSprite.zIndex = depth;
+  playerSprite.alpha = alpha;
   for (const sprite of [
     weaponFxFront,
     weaponFxBehind,
@@ -890,6 +908,7 @@ function showPlayer(): void {
     fireSprites.leftHand,
   ]) {
     sprite.visible = false;
+    sprite.alpha = alpha;
   }
   sunShadow.visible = false;
   jumpShadow.visible = player.lift > 0;

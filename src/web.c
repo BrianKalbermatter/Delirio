@@ -59,6 +59,27 @@ EMSCRIPTEN_KEEPALIVE int web_enemigo_animo(int i) { return enemigo(i)->animo; }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_vida(int i) { return enemigo(i)->entidad.vida; }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_vida_max(int i) { return enemigo(i)->entidad.vidaMAX; }
 EMSCRIPTEN_KEEPALIVE float web_enemigo_golpeado(int i) { return enemigo(i)->golpeado_ms; }
+// Con quien anda: su ronda (0..RONDAS_MAX-1), RONDAS_MAX + su manada, o -1
+EMSCRIPTEN_KEEPALIVE int web_enemigo_grupo(int i) { return enemigos_grupo(juego_enemigos(), i); }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_habla(int i) { return enemigos_habla(juego_enemigos(), i); }
+// En que arbusto esta (-1: en ninguno)
+EMSCRIPTEN_KEEPALIVE int web_enemigo_arbusto(int i) {
+  return arbustos_en(&juego_enemigos()->arbustos, enemigo(i)->entidad.posicion);
+}
+
+// Arbustos: fijos desde web_iniciar
+static const Arbusto *arbusto(int i) { return &juego_enemigos()->arbustos.lista[i]; }
+EMSCRIPTEN_KEEPALIVE int web_arbustos_cant(void) { return juego_enemigos()->arbustos.cant; }
+EMSCRIPTEN_KEEPALIVE float web_arbusto_x(int i) { return arbusto(i)->centro.x; }
+EMSCRIPTEN_KEEPALIVE float web_arbusto_y(int i) { return arbusto(i)->centro.y; }
+EMSCRIPTEN_KEEPALIVE float web_arbusto_radio(int i) { return arbusto(i)->radio; }
+// En que arbusto esta el jugador (-1: en ninguno), y si esta escondido en el
+EMSCRIPTEN_KEEPALIVE int web_jugador_arbusto(void) {
+  return arbustos_en(&juego_enemigos()->arbustos, juego_jugador()->posicion);
+}
+EMSCRIPTEN_KEEPALIVE int web_jugador_escondido(void) { return enemigos_jugador_escondido(juego_enemigos()); }
+// Cuantas veces pego solo (sube con cada golpe; mira hacia web_jugador_dir_*)
+EMSCRIPTEN_KEEPALIVE int web_jugador_auto_ataques(void) { return juego_auto_ataques(); }
 
 // Destino (para verificar desde el navegador que el click llego a C)
 EMSCRIPTEN_KEEPALIVE int web_hay_destino(void) { return juego_hay_destino(); }

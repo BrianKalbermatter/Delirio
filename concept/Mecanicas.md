@@ -110,6 +110,9 @@ Con el paso del tiempo aparecen persas más fuertes, que sueltan mejor loot.
 - No va directo al jugador: toma **rutas más largas**, como si quisiera alejarse a propósito.
 - Al final ataca al personaje, porque necesita sobrevivir.
 - **Oportunista**: mientras los demás enemigos se lanzan a atacar, él se queda atrás y ataca solo cuando ve una oportunidad.
+- Anda de tres maneras: **suelto**, deambulando; en **manada** de 3 o 4 que siguen a uno que caza; o en una **ronda**, un grupo quieto charlando en círculo (uno habla, otro baila en el medio). Charlando está distraído y ve poco; si uno ve al jugador o lo lastiman, se alerta la ronda entera. Cuando se calman vuelven a charlar.
+- **Arbustos** (como en League of Legends): el jugador escondido en uno no se ve, salvo de muy cerca o desde el mismo arbusto. Sirven para espiar las rondas y atacar por sorpresa; pegar desde adentro lo delata un segundo.
+- Si un enemigo se le acerca mucho, el personaje **le pega solo** (ataque ligero).
 
 ### Cantidad de enemigos
 

@@ -50,7 +50,7 @@ export interface PlayerStats {
 }
 
 // Same order as `enum animo` in src/mecanicas/enemigos.h.
-export const MOOD = ["DEAMBULA", "ACECHA", "ATACA", "HUYE"] as const;
+export const MOOD = ["DEAMBULA", "ACECHA", "ATACA", "HUYE", "CHARLA"] as const;
 
 // A level 1 enemy (src/mecanicas/enemigos.c), by its slot in C's list.
 export interface EnemyState {
@@ -66,6 +66,24 @@ export interface EnemyState {
   life: number;
   lifeMax: number;
   hitMs: number; // > 0 right after being hit
+  // Who it goes around with: its chatting circle (0..7), 8 + its pack, or -1.
+  group: number;
+  talking: boolean; // the one speaking in its chatting circle right now
+  bush: number; // the bush it stands in, -1 if none
+}
+
+// A bush the player hides in (src/mecanicas/arbustos.c): a circle on the floor.
+export interface Bush {
+  x: number;
+  y: number;
+  radius: number;
+}
+
+// The player's relation to the bushes and the auto-attack.
+export interface PlayerCover {
+  bush: number; // the bush the player stands in, -1 if none
+  hidden: boolean; // in a bush and not given away by attacking
+  autoAttacks: number; // goes up by one every time the player swings on its own
 }
 
 export interface PlayerState {
@@ -119,6 +137,9 @@ export interface GameWasm {
   clock(): ClockState;
   // Level 1 enemies in play (dying ones included, MUERTO).
   enemies(): EnemyState[];
+  // The bushes, fixed since start().
+  bushes(): Bush[];
+  cover(): PlayerCover;
   // Gives the player life back (a potion), up to the maximum.
   heal(life: number): void;
   medusaLife(): number;
@@ -180,10 +201,31 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const lifeMax = num("web_jugador_vida_max", 0);
   const enemyMax = num("web_enemigos_max", 0)();
   const enemy = Object.fromEntries(
-    ["activo", "x", "y", "mira_x", "mira_y", "dir_x", "dir_y", "estado", "animo", "vida", "vida_max", "golpeado"].map(
-      (field) => [field, num(`web_enemigo_${field}`, 1)],
-    ),
+    [
+      "activo",
+      "x",
+      "y",
+      "mira_x",
+      "mira_y",
+      "dir_x",
+      "dir_y",
+      "estado",
+      "animo",
+      "vida",
+      "vida_max",
+      "golpeado",
+      "grupo",
+      "habla",
+      "arbusto",
+    ].map((field) => [field, num(`web_enemigo_${field}`, 1)]),
   );
+  const bushCount = num("web_arbustos_cant", 0);
+  const bushX = num("web_arbusto_x", 1);
+  const bushY = num("web_arbusto_y", 1);
+  const bushRadius = num("web_arbusto_radio", 1);
+  const playerBush = num("web_jugador_arbusto", 0);
+  const playerHidden = num("web_jugador_escondido", 0);
+  const autoAttacks = num("web_jugador_auto_ataques", 0);
 
   return {
     start,
@@ -229,10 +271,15 @@ export async function loadGameWasm(): Promise<GameWasm> {
           life: enemy.vida(i),
           lifeMax: enemy.vida_max(i),
           hitMs: enemy.golpeado(i),
+          group: enemy.grupo(i),
+          talking: enemy.habla(i) === 1,
+          bush: enemy.arbusto(i),
         });
       }
       return list;
     },
+    bushes: () => Array.from({ length: bushCount() }, (_, i) => ({ x: bushX(i), y: bushY(i), radius: bushRadius(i) })),
+    cover: () => ({ bush: playerBush(), hidden: playerHidden() === 1, autoAttacks: autoAttacks() }),
     heal: call("web_curar", 1),
     targetInC: () => (hasTarget() ? { x: targetX(), y: targetY() } : null),
     clock: () => ({

@@ -1,7 +1,9 @@
 // Draws the level 1 enemies the C core moves (src/mecanicas/enemigos.c):
 // Brian's Enemigo1 in 8 directions, idle, walking, running and dying. Each
 // one faces where it looks (at the player while it stalks), flashes red when
-// hit and shows a small life bar once hurt.
+// hit and shows a small life bar once hurt. In a chatting circle the one
+// speaking shows a speech bubble; the dancer's steps play the walk. One
+// inside a bush the player is not in cannot be seen (League of Legends' rule).
 import { Container, Graphics, Sprite } from "pixi.js";
 import { directionFromVector } from "../../domain/facing";
 import type { EnemyState } from "../wasm/game-wasm";
@@ -15,6 +17,12 @@ const FEET_PADDING = 13; // like the player: the bottom row of the floor line
 const BAR_WIDTH = 20;
 const BAR_ABOVE_FEET = 70; // px from the feet to the life bar
 const HIT_TINT = 0xff7070;
+// Speech bubble: a small white box with three dots that light up in turn.
+const BUBBLE_ABOVE_FEET = 84; // px from the feet to the bubble's bottom
+const BUBBLE_W = 15;
+const BUBBLE_H = 9;
+const DOT_MS = 260; // each dot lights up this long
+const BUBBLE_INK = 0x2e222f;
 
 const MOTION_BY_STATE: Record<(typeof STATE)[number], string> = {
   QUIETO: "idle",
@@ -28,6 +36,7 @@ interface EnemyView {
   root: Container;
   sprite: Sprite;
   bar: Graphics;
+  bubble: Graphics;
   animator: Animator;
   seen: number;
 }
@@ -35,6 +44,7 @@ interface EnemyView {
 export class EnemyViews {
   private readonly views = new Map<number, EnemyView>();
   private frame = 0;
+  private clockMs = 0;
 
   // `depth`: the depth-sorted container they stand in.
   constructor(
@@ -43,8 +53,10 @@ export class EnemyViews {
   ) {}
 
   // Shows `enemies` as they are now; advances their animations `dtMs`.
-  show(enemies: EnemyState[], dtMs: number): void {
+  // `playerBush`: the bush the player stands in (-1 if none).
+  show(enemies: EnemyState[], dtMs: number, playerBush: number): void {
     const frame = ++this.frame;
+    this.clockMs += dtMs;
     for (const enemy of enemies) {
       let view = this.views.get(enemy.slot);
       if (!view) {
@@ -52,6 +64,7 @@ export class EnemyViews {
         this.views.set(enemy.slot, view);
       }
       view.seen = frame;
+      view.root.visible = enemy.bush < 0 || enemy.bush === playerBush;
       this.place(view, enemy, dtMs);
     }
     for (const [slot, view] of this.views) {
@@ -66,10 +79,11 @@ export class EnemyViews {
       root: new Container(),
       sprite: new Sprite(),
       bar: new Graphics(),
+      bubble: new Graphics(),
       animator: new Animator(this.sheet),
       seen: 0,
     };
-    view.root.addChild(view.sprite, view.bar);
+    view.root.addChild(view.sprite, view.bar, view.bubble);
     this.depth.addChild(view.root);
     return view;
   }
@@ -102,6 +116,28 @@ export class EnemyViews {
         .fill(0x1a1622)
         .rect(x, y, Math.max(1, Math.round((BAR_WIDTH * enemy.life) / enemy.lifeMax)), 2)
         .fill(0xd95763);
+    }
+
+    const talking = !dead && enemy.talking;
+    view.bubble.visible = talking;
+    if (talking) this.drawBubble(view.bubble, enemy.x, enemy.y - BUBBLE_ABOVE_FEET);
+  }
+
+  // The bubble with its tail at (x, y), its dots lit in turn.
+  private drawBubble(g: Graphics, x: number, y: number): void {
+    const left = Math.round(x - BUBBLE_W / 2);
+    const top = Math.round(y - BUBBLE_H);
+    const lit = Math.floor(this.clockMs / DOT_MS) % 4; // 0..2 one dot, 3 all
+    g.clear()
+      .roundRect(left - 1, top - 1, BUBBLE_W + 2, BUBBLE_H + 2, 3)
+      .fill(BUBBLE_INK)
+      .roundRect(left, top, BUBBLE_W, BUBBLE_H, 2)
+      .fill(0xffffff)
+      .poly([x - 2, top + BUBBLE_H, x + 2, top + BUBBLE_H, x - 3, top + BUBBLE_H + 4])
+      .fill(0xffffff);
+    for (let d = 0; d < 3; d++) {
+      const on = lit === 3 || lit === d;
+      g.rect(left + 3 + d * 4, top + 4, 2, 2).fill(on ? BUBBLE_INK : 0xb0a8b9);
     }
   }
 }

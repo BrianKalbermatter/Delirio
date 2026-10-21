@@ -1,0 +1,298 @@
+{
+ "frames": [
+  {
+   "filename": "Arbusto 0.aseprite",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 1.aseprite",
+   "frame": {
+    "x": 168,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 2.aseprite",
+   "frame": {
+    "x": 336,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 3.aseprite",
+   "frame": {
+    "x": 504,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 4.aseprite",
+   "frame": {
+    "x": 0,
+    "y": 184,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 5.aseprite",
+   "frame": {
+    "x": 168,
+    "y": 184,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 6.aseprite",
+   "frame": {
+    "x": 336,
+    "y": 184,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 7.aseprite",
+   "frame": {
+    "x": 504,
+    "y": 184,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 8.aseprite",
+   "frame": {
+    "x": 0,
+    "y": 368,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 9.aseprite",
+   "frame": {
+    "x": 168,
+    "y": 368,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 10.aseprite",
+   "frame": {
+    "x": 336,
+    "y": 368,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  },
+  {
+   "filename": "Arbusto 11.aseprite",
+   "frame": {
+    "x": 504,
+    "y": 368,
+    "w": 168,
+    "h": 184
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 168,
+    "h": 184
+   },
+   "sourceSize": {
+    "w": 168,
+    "h": 184
+   },
+   "duration": 160
+  }
+ ],
+ "meta": {
+  "app": "art/arbusto.py",
+  "image": "arbusto.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 672,
+   "h": 552
+  },
+  "scale": "1",
+  "frameTags": [
+   {
+    "name": "viento_0",
+    "from": 0,
+    "to": 3,
+    "direction": "forward"
+   },
+   {
+    "name": "viento_1",
+    "from": 4,
+    "to": 7,
+    "direction": "forward"
+   },
+   {
+    "name": "viento_2",
+    "from": 8,
+    "to": 11,
+    "direction": "forward"
+   }
+  ]
+ }
+}

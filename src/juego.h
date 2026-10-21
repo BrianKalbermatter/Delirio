@@ -50,6 +50,10 @@ const Entity *juego_medusa(void);
 // Enemigos de nivel 1 (mecanicas/enemigos.h)
 const Enemigos *juego_enemigos(void);
 
+// Cuantas veces pego solo el jugador (un enemigo se le acerco mucho). Sube
+// en uno con cada golpe; la direccion de ese golpe queda en su dir.
+int juego_auto_ataques(void);
+
 // Le devuelve vida al jugador (una pocion), sin pasarse del maximo.
 void juego_curar(int vida);
 void juego_reiniciar(void);
