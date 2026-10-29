@@ -52,6 +52,11 @@ WEAPONS = [
     # Brian's torch (sprites/Objetos/Antorcha.aseprite): straight handle, flame on top.
     {"id": "antorcha", "aseprite": "..\\Objetos\\Antorcha.aseprite", "grip": (23, 40), "angle": 0, "edge": "ccw",
      "scale": 0.9, "carry_w": 150},
+    # Brian's spear (sprites/Armas/Lanza1_Arma.aseprite): drawn on a diagonal on
+    # a big canvas, so it is trimmed to its pixels (grip in canvas pixels).
+    # Thrown, it sticks in the ground (stuck: item frames 3 and 4).
+    {"id": "lanza", "aseprite": "..\\Armas\\Lanza1_Arma.aseprite", "grip": (98, 84), "angle": 45, "edge": "ccw",
+     "scale": 0.75, "carry_w": 150, "trim": True, "stuck": True},
 ]
 
 CELL_W, CELL_H = 64, 96
@@ -185,7 +190,12 @@ class Weapon:
         # Angle of the arm's plane it is carried at (personaje_3_build.CARRY_W
         # when not given): 0 points the head down, 180 up.
         self.carry_w = spec.get("carry_w", 55)
+        self.stuck = spec.get("stuck", False)
         self.img = Image.open(path).convert("RGBA")
+        if spec.get("trim"):
+            box = self.img.getbbox()
+            self.img = self.img.crop(box)
+            self.grip = (self.grip[0] - box[0], self.grip[1] - box[1])
         w = self.img.width
         mirrored = self.img.transpose(Image.FLIP_LEFT_RIGHT)
         as_drawn = (self.upscale(self.img), self.grip, spec["angle"])
@@ -417,26 +427,61 @@ def inventory_icon(weapon, angle_deg, spec_angle):
 
 
 ICON_ANGLE = 45  # head up and to the right
+# Stuck in the ground after a throw: head down, leaning this much off the
+# vertical, this many px of it buried, with some dirt around.
+STUCK_LEAN = 35
+STUCK_BURIED = 7
+STUCK_DIRT = [(82, 75, 36), (102, 57, 49), (0, 0, 0)]
+
+
+def stuck_in_ground(weapon, lean):
+    """The weapon stuck in the floor, head down, leaning `lean` degrees
+    (positive: thrown to the right, so the tail points back up to the left).
+    Cropped so the point where it enters the ground is the bottom centre."""
+    size = 2 * weapon.radius + 4
+    img = Image.new("RGBA", (size, size))
+    weapon.paste(img, (size // 2, size // 2), 180 - lean)
+    px = img.load()
+    rows = [y for y in range(size) if any(px[x, y][3] for x in range(size))]
+    ground = rows[-1] - STUCK_BURIED
+    for y in range(ground + 1, size):
+        for x in range(size):
+            px[x, y] = (0, 0, 0, 0)
+    xs = [x for x in range(size) if px[x, ground][3]]
+    entry = (min(xs) + max(xs)) // 2
+    for dx, color in ((-3, 0), (-2, 1), (-1, 2), (1, 2), (2, 1), (3, 0)):
+        px[entry + dx, ground] = STUCK_DIRT[color] + (255,)
+    box = img.getchannel("A").getbbox()
+    half = max(entry - box[0], box[2] - 1 - entry)
+    return img.crop((entry - half, box[1], entry + half + 1, ground + 1))
 
 
 def item_sheet(weapon, path, spec_angle):
     """Frame 0: lying on the floor. Frame 1: as drawn, to carry. Frame 2: the
-    inventory icon, big and on a diagonal."""
+    inventory icon, big and on a diagonal. A weapon that is thrown also has
+    frames 3 and 4: stuck in the ground after a throw to the right and to the
+    left (the point where it goes in at the bottom centre)."""
     size = 96
     lying = Image.new("RGBA", (size, size))
     weapon.paste(lying, (size // 2 + 12, size // 2), -90)
     lying = lying.crop(lying.getchannel("A").getbbox())
     held = weapon.img
     diagonal = inventory_icon(weapon, ICON_ANGLE, spec_angle)
-    w = max(lying.width, held.width, diagonal.width)
-    h = max(lying.height, held.height, diagonal.height)
+    stuck = [stuck_in_ground(weapon, lean) for lean in (STUCK_LEAN, -STUCK_LEAN)] if weapon.stuck else []
+    w = max(img.width for img in [lying, held, diagonal] + stuck)
+    h = max(img.height for img in [lying, held, diagonal] + stuck)
     floor = Image.new("RGBA", (w, h))
     floor.alpha_composite(lying, ((w - lying.width) // 2, h - lying.height))  # rests on the floor
     carried = Image.new("RGBA", (w, h))
     carried.alpha_composite(held, (0, 0))  # as drawn: the grip stays where it was drawn
     icon = Image.new("RGBA", (w, h))
     icon.alpha_composite(diagonal, ((w - diagonal.width) // 2, (h - diagonal.height) // 2))
-    write_sheet(path, [floor, carried, icon], w, h, 3, [100, 100, 100], [], weapon.id)
+    frames = [floor, carried, icon]
+    for img in stuck:
+        frame = Image.new("RGBA", (w, h))
+        frame.alpha_composite(img, ((w - img.width) // 2, h - img.height))  # entry point on the feet line
+        frames.append(frame)
+    write_sheet(path, frames, w, h, len(frames), [100] * len(frames), [], weapon.id)
 
 
 def view_of(tag):

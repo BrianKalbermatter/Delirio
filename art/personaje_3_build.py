@@ -12,6 +12,10 @@ Animations (tag_<direction>, frames x ms):
 - slam 12: both fists up and down onto the floor. Dirt bursts out at the
   impact (frame SLAM_IMPACT), in the personaje_3_tierra overlays.
 - pickup 7: bends down and takes the weapon from the floor.
+- throw 11: an exaggerated spear throw (THROW_RELEASE: the frame it lets go).
+  Winds up far back (torso turned away, leaning back, the free hand aiming
+  ahead), explodes forward and lets go: the spear flies off with speed lines
+  (steps with `fly`), the body follows through and recovers empty-handed.
 - death 33x80 (one direction, down_left like the drawing).
 
 Output (client/public):
@@ -168,12 +172,70 @@ PICKUP = [
 ]
 
 
+# The throw. Besides the swing keys: other = the free arm, foot = the feet,
+# root = whole body shift (forward, left, up), crest/head = crest_sway and
+# head_pitch. After the release the hand is open (open) and the spear is
+# either flying `fly` px ahead of the hand along its direction, or gone.
+THROW_MS = [90, 80, 220, 50, 40, 50, 60, 120, 90, 80, 90]
+THROW_RELEASE = 4
+_STANCE = {"r": (-7.0, 0.0), "l": (8.0, 0.0)}   # back foot behind, front foot ahead
+THROW = [
+    dict(arm=(120, 26, 60), twist=-12, lean=4, hip_drop=1.5, w=120, other=(20, 26, 20),
+         foot={"r": (-3.0, 0.0), "l": (3.0, 1.5)}, crest=-4),
+    dict(arm=(185, 26, 85), twist=-34, lean=-12, hip_drop=2.5, w=105, other=(70, 22, 10),
+         foot=_STANCE, root=(-2.0, 0.0, 0.0), crest=-12, head=-6),
+    dict(arm=(215, 30, 100), twist=-48, lean=-24, hip_drop=3.5, w=100, other=(95, 18, 0),
+         foot=_STANCE, root=(-3.5, 0.0, 0.0), crest=-18, head=-10),
+    dict(arm=(170, 20, 45), twist=-8, lean=0, hip_drop=2.5, w=96, other=(60, 22, 10),
+         foot=_STANCE, root=(0.0, 0.0, 0.0), crest=6, smear=True),
+    dict(arm=(105, 14, 5), twist=32, lean=24, hip_drop=3.0, w=92, other=(-30, 30, 20),
+         foot=_STANCE, root=(4.0, 0.0, 0.0), crest=20, head=6, open=True, fly=14),
+    dict(arm=(45, 12, 0), twist=48, lean=36, hip_drop=4.5, w=92, other=(-45, 34, 25),
+         foot={"r": (-1.0, 3.0), "l": (8.0, 0.0)}, root=(6.0, 0.0, 0.0), crest=28, head=8, open=True, fly=48),
+    dict(arm=(20, 14, 0), twist=50, lean=38, hip_drop=5.0, w=92, other=(-45, 34, 25),
+         foot={"r": (4.0, 2.0), "l": (8.0, 0.0)}, root=(6.5, 0.0, 0.0), crest=22, head=8, open=True, gone=True),
+    dict(arm=(18, 15, 2), twist=46, lean=36, hip_drop=4.8, w=92, other=(-40, 32, 22),
+         foot={"r": (6.0, 0.0), "l": (8.0, 0.0)}, root=(6.5, 0.0, 0.0), crest=14, head=6, open=True, gone=True),
+    dict(arm=(25, 20, 15), twist=24, lean=20, hip_drop=3.0, w=92, other=(-10, 26, 15),
+         foot={"r": (4.0, 0.0), "l": (5.0, 0.0)}, root=(4.0, 0.0, 0.0), crest=6, open=True, gone=True),
+    dict(arm=(8, 23, 10), twist=8, lean=6, hip_drop=1.2, w=92, other=(0, 24, 8),
+         foot={"r": (1.0, 0.0), "l": (2.0, 0.0)}, root=(1.0, 0.0, 0.0), crest=2, open=True, gone=True),
+    dict(arm=(0, 24, 8), w=92, open=True, gone=True),
+]
+
+
 def swing_pose(step, legs=None, other=(0.0, 24.0, 8.0)):
     kw = {k: step[k] for k in ("twist", "lean", "hip_drop") if k in step}
-    p = pose(arm={"r": step["arm"], "l": other}, fist={"r": True, "l": False}, **kw)
+    p = pose(arm={"r": step["arm"], "l": step.get("other", other)},
+             fist={"r": not step.get("open"), "l": False}, **kw)
     if legs:
         p.foot = dict(legs)
+    if "foot" in step:
+        p.foot = dict(step["foot"])
+    if "root" in step:
+        p.root = step["root"]
+    p.crest_sway = step.get("crest", p.crest_sway)
+    p.head_pitch = step.get("head", p.head_pitch)
     return p
+
+
+def speed_lines(img, tail, head, offsets):
+    """Streaks behind a thrown weapon: from `tail` to `head` (pixels),
+    shifted sideways by `offsets`, white at the front fading to grey."""
+    px = img.load()
+    dx, dy = head[0] - tail[0], head[1] - tail[1]
+    length = math.hypot(dx, dy) or 1.0
+    ux, uy = dx / length, dy / length
+    for off, start in offsets:
+        for k in range(int(length * start), int(length)):
+            t = k / length
+            x = int(round(tail[0] + ux * k - uy * off))
+            y = int(round(tail[1] + uy * k + ux * off))
+            if not (0 <= x < img.width and 0 <= y < img.height):
+                continue
+            if t < 0.5 and (x + y) % 2:
+                continue
+            px[x, y] = (p3.MASK if t > 0.6 else p3.MASK_SHADE) + (255,)
 
 
 # ---------------------------------------------------------------- slam
@@ -261,11 +323,27 @@ def weapon_frames(weapon, models, plan, floor_at=None):
     fronts, backs = [], []
     ox, oy = FX_OFFSET
     prev_w = None
+    launch = None  # where the hand let go of a thrown weapon (world)
     for model, step in zip(models, plan):
         front, back = Image.new("RGBA", (FX, FX)), Image.new("RGBA", (FX, FX))
         fronts.append(front)
         backs.append(back)
-        if step is None:
+        if step is None or step.get("gone"):
+            prev_w = None
+            continue
+        if "fly" in step:
+            # Let go: the spear flies straight ahead, level, from where the
+            # hand let go of it (the body leaning after it does not drag it down).
+            d = model.wdir((1.0, 0.0, 0.0))
+            if launch is None:
+                launch = np.asarray(model.world(model.hand_r))
+            (tx, ty), tip_depth = screen(launch + d * step["fly"])
+            (bx, by), _ = screen(launch + d * max(0.0, step["fly"] - 34))
+            _, body_depth = screen(model.world(model.torso((0.0, 0.0, 26.0))))
+            layer = back if tip_depth > body_depth + 0.5 else front
+            at = (int(tx) + ox, int(ty) + oy)
+            speed_lines(layer, (bx + ox, by + oy), at, ((0, 0.0), (-2, 0.35), (2, 0.25), (-4, 0.6), (4, 0.55)))
+            weapon.paste(layer, at, screen_angle(d), carry=not edge_clockwise(model, 90))
             prev_w = None
             continue
         (hx, hy), hand_depth = screen(model.world(model.hand_r))
@@ -405,7 +483,7 @@ def left_frames(weapon, models, steps):
         layer = back if hand_depth > body_depth + 0.5 else front
         w = weapon.carry_w
         weapon.paste(layer, hand, screen_angle(weapon_dir(model, w, "l")), carry=not edge_clockwise(model, w, "l"))
-        fist(layer, hand, p3.SKIN)
+        fist(layer, hand)
     return fronts, backs
 
 
@@ -515,6 +593,7 @@ def main(weapon_dir_path, public, frames_dir):
     weapon_animation(sheet, "attack", ATTACK, ATTACK_MS, None)
     weapon_animation(sheet, "jump_attack", JUMP_ATTACK, JUMP_ATTACK_MS, AIR_LEGS)
     weapon_animation(sheet, "pickup", PICKUP, PICKUP_MS, None)
+    weapon_animation(sheet, "throw", THROW, THROW_MS, None)
     death_imgs = []
     for i in range(DEATH_FRAMES):
         img, model = p3.draw("down_left", death(i))

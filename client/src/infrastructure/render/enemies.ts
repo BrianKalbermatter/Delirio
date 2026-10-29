@@ -1,7 +1,8 @@
 // Draws the level 1 enemies the C core moves (src/mecanicas/enemigos.c):
 // Brian's Enemigo1 in 8 directions, idle, walking, running and dying. Each
 // one faces where it looks (at the player while it stalks), flashes red when
-// hit and shows a small life bar once hurt. In a chatting circle the one
+// hit and shows a small life bar once hurt. One a spear pinned to a wall plays
+// the hit against it once and then hangs there bleeding. In a chatting circle the one
 // speaking shows a speech bubble; the dancer's steps play the walk. One
 // inside a bush the player is not in cannot be seen (League of Legends' rule).
 import { Container, Graphics, Sprite } from "pixi.js";
@@ -23,6 +24,9 @@ const BUBBLE_W = 15;
 const BUBBLE_H = 9;
 const DOT_MS = 260; // each dot lights up this long
 const BUBBLE_INK = 0x2e222f;
+// pinned_hit_*: 10 frames of 70 ms, then the pinned_* loop.
+const PIN_HIT_MS = 700;
+const TILE = 32; // LAB_TILE in src/mecanicas/laberinto.h
 
 const MOTION_BY_STATE: Record<(typeof STATE)[number], string> = {
   QUIETO: "idle",
@@ -39,6 +43,7 @@ interface EnemyView {
   bubble: Graphics;
   animator: Animator;
   seen: number;
+  pinnedMs: number; // time since it was pinned
 }
 
 export class EnemyViews {
@@ -82,6 +87,7 @@ export class EnemyViews {
       bubble: new Graphics(),
       animator: new Animator(this.sheet),
       seen: 0,
+      pinnedMs: 0,
     };
     view.root.addChild(view.sprite, view.bar, view.bubble);
     this.depth.addChild(view.root);
@@ -91,7 +97,10 @@ export class EnemyViews {
   private place(view: EnemyView, enemy: EnemyState, dtMs: number): void {
     const motion = MOTION_BY_STATE[STATE[enemy.state] ?? "QUIETO"];
     const dead = motion === "death";
-    if (dead) {
+    if (enemy.pinned) {
+      view.animator.play(`${view.pinnedMs < PIN_HIT_MS ? "pinned_hit" : "pinned"}_${enemy.pinned}`);
+      view.pinnedMs += dtMs;
+    } else if (dead) {
       view.animator.play("death", false);
     } else {
       const looking = Math.hypot(enemy.lookX, enemy.lookY) > 0.01;
@@ -103,7 +112,10 @@ export class EnemyViews {
     if (!frame) return;
     placeFrame(view.sprite, frame, enemy.x, enemy.y + FEET_PADDING);
     view.sprite.tint = enemy.hitMs > 0 ? HIT_TINT : 0xffffff;
-    view.root.zIndex = depthOf(enemy.y, DEPTH.prop);
+    // Pinned to a side face it stands in the wall's own row: drawn after the
+    // wall, so the cracks and the spearhead show on it.
+    const depthY = enemy.pinned === "left" || enemy.pinned === "right" ? (Math.floor(enemy.y / TILE) + 1) * TILE : enemy.y;
+    view.root.zIndex = depthOf(depthY, DEPTH.prop);
 
     const hurt = !dead && enemy.life < enemy.lifeMax;
     view.bar.visible = hurt;

@@ -6,8 +6,9 @@ import { type Direction, directionFromVector, stepToward, turnDistance, vectorOf
 export type Motion = "idle" | "walk" | "run" | "death";
 // One-shot animations started by the client (art/personaje_3_build.py), all of
 // them in the 8 directions: swinging a weapon on the ground or in the air,
-// picking a weapon up from the floor, and punching the ground.
-export type Action = "attack" | "jump_attack" | "pickup" | "slam";
+// picking a weapon up from the floor, punching the ground and throwing the
+// spear.
+export type Action = "attack" | "jump_attack" | "pickup" | "slam" | "throw";
 
 interface ActionState {
   name: Action;
@@ -140,6 +141,18 @@ export class Character {
       this.pivoting = false;
     }
     this.action = { name, view: this.facing, ms: 0, durationMs, artMs };
+  }
+
+  // Turns the action under way to `towards` (aiming while it is held).
+  turnAction(towards: Direction): void {
+    if (!this.action) return;
+    this.action.view = this.facing = this.targetFacing = towards;
+    this.pivoting = false;
+  }
+
+  // Ends the action under way now (one held for as long as a button is).
+  endAction(): void {
+    this.action = null;
   }
 
   // `lookAt` is a world point (the cursor) to face, measured from `lookFromY`

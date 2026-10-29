@@ -14,7 +14,7 @@ import { Character } from "./domain/character";
 import { directionFromVector, vectorOf } from "./domain/facing";
 import { Equipment, type EquipSlot } from "./domain/equipment";
 import { Inventory } from "./domain/inventory";
-import { ITEMS, type ItemKind } from "./domain/items";
+import { type ItemKind, ITEMS, WEAPON_STUCK_FRAME } from "./domain/items";
 import { ITEM_SPRITES, placeItems, type Prop, WEAPON_ITEMS } from "./domain/level-items";
 import { Square } from "./domain/square";
 import { placeSampleTree, sampleTrunkBox } from "./domain/sample-tree";
@@ -103,6 +103,22 @@ const SLAM_MS = 900;
 const SLAM_IMPACT_MS = 270;
 const SLAM_SHAKE_MS = 350;
 const SLAM_SHAKE_PX = 3;
+// Throwing the spear (with it in the right hand): the right button held aims
+// it, the body wound up (throw_* of art/personaje_3_build.py held at
+// THROW_HOLD_MS) and turned to the cursor while a bar under the feet charges
+// for SPEAR_CHARGE_MS. Released once charged it throws (the rest of the
+// animation, letting go at THROW_RELEASE_MS); released before, it cancels.
+// The spear sticks in the ground where it ends up and has to be picked up.
+const THROW_HOLD_MS = 260;
+const THROW_RELEASE_MS = 440;
+const SPEAR_CHARGE_MS = 600;
+const SPEAR_BAR_WIDTH = 24;
+const SPEAR_BAR_BELOW_FEET = 6; // px
+const SPEAR_BAR_CHARGING = 0x8b93af;
+const SPEAR_BAR_READY = 0xfbb954;
+// W A S D walk towards a point this far ahead while held.
+const WASD_AHEAD = 32; // px
+const WASD: Record<string, [number, number]> = { KeyW: [0, -1], KeyA: [-1, 0], KeyS: [0, 1], KeyD: [1, 0] };
 const BREATH_MS = 1800;
 // The player's own faint light at night, without a torch (Lighting's default).
 const BARE_LIGHT = { inner: 24, outer: 120 };
@@ -260,6 +276,9 @@ interface PropView {
   waitForLeave?: boolean;
   // While it falls from the hand: where it was thrown from and time left.
   fall?: { fromX: number; fromY: number; ms: number };
+  // A spear in the body of this enemy (its slot), pinned to a wall: hidden
+  // while the body shows it, and pulling it out drops the body.
+  pinnedEnemy?: number;
 }
 const spawn = game.player();
 const items = placeItems(map, spawn);
@@ -334,6 +353,7 @@ const sunShadow = new Sprite({ tint: 0x000000 });
 ground.addChild(maze.floor, bigTree.ground, targetMarker.view, sunShadow, jumpShadow);
 const lighting = new Lighting(canvas.width, canvas.height);
 const keyPrompt = createKeyPrompt();
+const spearBar = new Graphics();
 const abilityEffects = new AbilityEffects();
 const hud = new Hud();
 app.stage.addChild(
@@ -342,6 +362,7 @@ app.stage.addChild(
   torchGlows.leftHand.view,
   playerGlow.view,
   keyPrompt,
+  spearBar,
   abilityEffects.view,
   hud.view,
 );
@@ -433,6 +454,18 @@ let medusaWasAlive = true;
 
 // Last point sent to C, only to draw the marker on the floor.
 let target: { x: number; y: number } | null = null;
+// W A S D keys held, and whether they were moving the player last frame.
+const wasdHeld = new Set<string>();
+let wasdMoving = false;
+// The spear being aimed (ms: time held) or thrown (ms: time into its
+// animation), and where it lands once it has let go.
+let spearThrow: {
+  phase: "aim" | "throw";
+  ms: number;
+  dirX: number; // where it is thrown (unit), fixed on release
+  dirY: number;
+  landed?: { x: number; y: number; enemy: number };
+} | null = null;
 
 // Copies the C grid when the maze changed. Returns true if it did.
 function syncMaze(): boolean {
@@ -444,12 +477,11 @@ function syncMaze(): boolean {
 }
 
 function update(dtMs: number): void {
-  // Dragging onto the panel keeps the last target instead of walking to the edge.
-  if (mouse.held && mouse.overGame() && !book.isOpen) {
-    target = cursorInWorld();
-    game.setTarget(target.x, target.y);
-  }
-  const wantsBlock = mouse.rightHeld && !book.isOpen;
+  // The player walks with W A S D only (the mouse aims).
+  if (!spearThrow) walkWithKeys();
+  // With the spear in the right hand the right button aims and throws it
+  // instead of blocking.
+  const wantsBlock = mouse.rightHeld && !book.isOpen && !holdsSpear();
   if (wantsBlock !== blocking) {
     blocking = wantsBlock;
     game.holdAbility(ABILITY.BLOQUEAR, blocking);
@@ -533,10 +565,12 @@ function update(dtMs: number): void {
     }
   }
   pickUpItems();
+  updateSpearThrow(dtMs);
 
   playerAnimator.play(player.animationTag, !player.isDead && !player.isActing);
   const jumpArtMs = player.jumpArtMs;
-  if (jumpArtMs !== null && !player.isActing) playerAnimator.seek(jumpArtMs);
+  if (spearThrow) playerAnimator.seek(spearThrow.phase === "aim" ? Math.min(spearThrow.ms, THROW_HOLD_MS) : spearThrow.ms);
+  else if (jumpArtMs !== null && !player.isActing) playerAnimator.seek(jumpArtMs);
   else playerAnimator.update(dtMs, player.animationSpeed, player.animationReversed);
   if (slamImpactMs !== null) {
     slamImpactMs -= dtMs;
@@ -600,14 +634,25 @@ function pickUpWithKey(): boolean {
   const view = keyPickupInReach();
   if (!view) return false;
   const item = view.prop.pickup!;
-  if (!inventory.add(item)) {
+  // The spear always goes straight to the throwing hand, the right one (what
+  // was there goes to the inventory, or to the floor if it is full).
+  if (item.id === ITEMS.spear.id) {
+    const old = equipment.put("rightHand", item);
+    if (old && !inventory.add(old)) dropAtFeet(old);
+  } else if (!inventory.add(item)) {
     gameLog.log("The inventory is full.");
     return true;
   }
   propViews = propViews.filter((v) => v !== view);
   view.sprite.destroy();
+  if (view.pinnedEnemy !== undefined) game.unpin(view.pinnedEnemy);
   gameLog.log(`Picked up: ${item.name}`);
-  if (item.weapon) {
+  if (item.id === ITEMS.spear.id) {
+    const towards = directionFromVector(view.prop.x - player.x, view.prop.y - player.y);
+    player.startAction("pickup", PICKUP_MS, animationDurationMs(playerSheet, "pickup_right"), towards);
+    playerAnimator.restart();
+    gameLog.log("The spear is in your right hand: hold the right button to aim, release to throw.");
+  } else if (item.weapon) {
     // Turns to it and bends down to take it.
     const towards = directionFromVector(view.prop.x - player.x, view.prop.y - player.y);
     player.startAction("pickup", PICKUP_MS, animationDurationMs(playerSheet, "pickup_right"), towards);
@@ -615,6 +660,117 @@ function pickUpWithKey(): boolean {
     gameLog.log(`Double click the ${item.name.toLowerCase()} in the inventory to hold it.`);
   }
   return true;
+}
+
+// W A S D: walks that way (diagonals too) while held, and stops on release.
+function walkWithKeys(): void {
+  let dx = 0;
+  let dy = 0;
+  for (const code of wasdHeld) {
+    dx += WASD[code][0];
+    dy += WASD[code][1];
+  }
+  const len = Math.hypot(dx, dy);
+  if (len > 0 && !book.isOpen) {
+    target = null;
+    game.setTarget(player.x + (dx / len) * WASD_AHEAD, player.y + (dy / len) * WASD_AHEAD);
+    wasdMoving = true;
+  } else if (wasdMoving) {
+    game.setTarget(player.x, player.y);
+    wasdMoving = false;
+  }
+}
+
+function holdsSpear(): boolean {
+  return equippedWeapon()?.id === ITEMS.spear.id;
+}
+
+// The cursor's direction from the body (unit), or null right over it.
+function aimFromBody(): { x: number; y: number } | null {
+  const aim = cursorInWorld();
+  const dx = aim.x - player.x;
+  const dy = aim.y - playerCenterY();
+  const len = Math.hypot(dx, dy);
+  return len < 1 ? null : { x: dx / len, y: dy / len };
+}
+
+// Right button with the spear: held, it winds up and aims at the cursor;
+// released once charged, it throws. The spear lets go at THROW_RELEASE_MS and
+// is left stuck where it lands once the animation ends.
+function updateSpearThrow(dtMs: number): void {
+  // Something else took over the body (dying, a swing, a jump): no throw.
+  if (spearThrow && (player.isDead || !holdsSpear() || !player.animationTag.startsWith("throw_"))) {
+    if (player.animationTag.startsWith("throw_")) player.endAction();
+    spearThrow = null;
+  }
+  if (!spearThrow) {
+    const canAim = holdsSpear() && !player.isDead && !player.isActing && !player.isJumping;
+    if (!(mouse.rightHeld && canAim && mouse.overGame() && !book.isOpen)) return;
+    const aim = aimFromBody();
+    if (!aim) return;
+    target = null;
+    game.setTarget(player.x, player.y);
+    const artMs = animationDurationMs(playerSheet, "throw_right");
+    player.startAction("throw", Number.POSITIVE_INFINITY, artMs, directionFromVector(aim.x, aim.y));
+    playerAnimator.restart();
+    spearThrow = { phase: "aim", ms: 0, dirX: aim.x, dirY: aim.y };
+    return;
+  }
+  spearThrow.ms += dtMs;
+  if (spearThrow.phase === "aim") {
+    const aim = aimFromBody();
+    if (aim) player.turnAction(directionFromVector(aim.x, aim.y));
+    if (mouse.rightHeld) return;
+    if (spearThrow.ms < SPEAR_CHARGE_MS || !aim) {
+      player.endAction(); // let go before it charged: no throw
+      spearThrow = null;
+      return;
+    }
+    spearThrow = { phase: "throw", ms: THROW_HOLD_MS, dirX: aim.x, dirY: aim.y };
+    return;
+  }
+  if (!spearThrow.landed && spearThrow.ms >= THROW_RELEASE_MS) {
+    spearThrow.landed = game.throwSpear(spearThrow.dirX, spearThrow.dirY);
+    gameLog.log(spearThrow.landed.enemy >= 0 ? "The spear hits!" : "The spear misses.");
+  }
+  if (spearThrow.ms < animationDurationMs(playerSheet, "throw_right")) return;
+  // The throw is over: the spear leaves the hand and lies where it landed.
+  player.endAction();
+  const landed = spearThrow.landed!;
+  const dirX = spearThrow.dirX;
+  spearThrow = null;
+  equipment.take("rightHand");
+  propViews.push(
+    addProp(
+      {
+        sprite: ITEMS.spear.sprite,
+        frame: dirX >= 0 ? WEAPON_STUCK_FRAME.right : WEAPON_STUCK_FRAME.left,
+        x: Math.round(landed.x),
+        y: Math.round(landed.y),
+        pickup: ITEMS.spear,
+      },
+      false,
+      { pinnedEnemy: landed.enemy >= 0 ? landed.enemy : undefined },
+    ),
+  );
+}
+
+// While aiming the spear, its charge under the feet: filling, then gold once
+// it can be thrown. Screen space, like the key prompt.
+function showSpearBar(): void {
+  spearBar.visible = spearThrow?.phase === "aim";
+  if (!spearThrow || !spearBar.visible) return;
+  const [sx, sy] = worldToScreen(player.x, player.y + SPEAR_BAR_BELOW_FEET);
+  const x = Math.round(sx - SPEAR_BAR_WIDTH / 2);
+  const y = Math.round(sy);
+  const charge = Math.min(1, spearThrow.ms / SPEAR_CHARGE_MS);
+  const ready = charge === 1;
+  spearBar
+    .clear()
+    .rect(x - 1, y - 1, SPEAR_BAR_WIDTH + 2, 4)
+    .fill(0x1a1622)
+    .rect(x, y, Math.round(SPEAR_BAR_WIDTH * charge), 2)
+    .fill(ready ? SPEAR_BAR_READY : SPEAR_BAR_CHARGING);
 }
 
 // The weapon (or torch) in the right hand, the one that swings.
@@ -743,6 +899,19 @@ function showKeyPrompt(): void {
   keyPrompt.position.set(Math.round(sx - KEY_PROMPT_SIZE / 2), Math.round(sy - KEY_PROMPT_SIZE) + bob);
 }
 
+// Leaves `item` on the floor at the player's feet.
+function dropAtFeet(item: ItemKind): void {
+  const prop: Prop = {
+    sprite: item.sprite,
+    frame: item.frame,
+    x: Math.round(player.x),
+    y: Math.round(player.y),
+    pickup: item,
+  };
+  propViews.push(addProp(prop, false, { waitForLeave: true }));
+  gameLog.log(`No room in the inventory: the ${item.name.toLowerCase()} is on the floor.`);
+}
+
 // Takes one item out of an inventory slot and throws it on the floor ahead of
 // the player. Where that is a wall or the tree's trunk, it falls at the feet.
 function dropItem(index: number): void {
@@ -793,11 +962,16 @@ function draw(): void {
   };
   maze.show(view, playerBody(), game.maze.gateLeaves());
   const cover = game.cover();
-  enemyViews.show(game.enemies(), enemyAnimMs, cover.bush);
+  const enemies = game.enemies();
+  enemyViews.show(enemies, enemyAnimMs, cover.bush);
   enemyAnimMs = 0;
   bigTree.show(playerBody());
   targetMarker.show(target, performance.now());
-  for (const v of propViews) showProp(v);
+  const pinned = new Set(enemies.filter((e) => e.pinned).map((e) => e.slot));
+  for (const v of propViews) {
+    showProp(v);
+    if (v.pinnedEnemy !== undefined && pinned.has(v.pinnedEnemy)) v.sprite.visible = false;
+  }
   showPlayer(cover.hidden ? HIDDEN_ALPHA : 1);
 
   // Screen space.
@@ -815,6 +989,7 @@ function draw(): void {
   showTorchGlow(flicker);
   showPlayerGlow(); // over the darkness: it is the player's own light
   showKeyPrompt();
+  showSpearBar();
   showAbilityEffects();
   hud.showMedusa(game.medusaLife(), game.medusaLifeMax());
   const { life, lifeMax } = game.playerStats();
@@ -830,7 +1005,7 @@ function showControlsHint(root: HTMLElement): void {
   const hint = document.createElement("p");
   hint.className = "hint";
   hint.textContent =
-    "Left click: move · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Q W E R: attack (also in the air) · Space: jump · D: punch the ground · F: clock speed · G: test gates · Esc: menu";
+    "W A S D: move · Spear in the right hand: hold the right button to aim (the bar under the feet charges), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Q Z E R: attack (also in the air) · C: support · V: parry · Space: jump · B: punch the ground · F: clock speed · G: test gates · Esc: menu";
   root.appendChild(hint);
 }
 
@@ -1052,7 +1227,11 @@ function playerBody(): Box {
 }
 
 // Puts a prop on the floor, as a looping animation or as one fixed frame.
-function addProp(prop: Prop, animated: boolean, extra: Pick<PropView, "waitForLeave" | "fall"> = {}): PropView {
+function addProp(
+  prop: Prop,
+  animated: boolean,
+  extra: Pick<PropView, "waitForLeave" | "fall" | "pinnedEnemy"> = {},
+): PropView {
   const sheet = sheets.get(prop.sprite)!;
   let animator: Animator | null = null;
   if (animated) {
@@ -1097,6 +1276,7 @@ function worldToScreen(x: number, y: number): [number, number] {
 }
 
 window.addEventListener("keydown", (e) => {
+  if (e.code in WASD && mouse.locked) wasdHeld.add(e.code);
   if (e.code === "KeyT") game.reset();
   if (isMapKey(e) && mouse.locked) {
     e.preventDefault();
@@ -1121,6 +1301,9 @@ window.addEventListener("keydown", (e) => {
   const digit = /^Digit([1-9])$/.exec(e.code);
   if (digit) inventory.select(Number(digit[1]) - 1);
 });
+
+window.addEventListener("keyup", (e) => wasdHeld.delete(e.code));
+window.addEventListener("blur", () => wasdHeld.clear());
 
 // The map book opens with ` (and M). On Spanish keyboards ` is a dead key:
 // the browser reports it as "Dead" instead of "`", so that counts too.

@@ -44,6 +44,15 @@ void juego_velocidad_tiempo(float factor);
 // puerta de arriba.
 void juego_prueba_puertas(void);
 
+// El jugador tira la lanza hacia (dx, dy) (ver enemigos_lanza). Devuelve el
+// hueco del enemigo que mato (-1: ninguno); juego_lanza_cae() dice donde
+// quedo la lanza.
+int juego_lanzar(float dx, float dy);
+Direccion juego_lanza_cae(void);
+
+// Le saca la lanza al enemigo `i` clavado a un muro (ver enemigos_desclavar).
+void juego_desclavar(int i);
+
 // Medusa de prueba (los ataques del jugador le pegan)
 const Entity *juego_medusa(void);
 

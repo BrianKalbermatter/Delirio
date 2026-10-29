@@ -23,6 +23,9 @@ export interface ItemKind {
 // as carried, and big on a diagonal for the inventory.
 export const WEAPON_HELD_FRAME = 1;
 export const WEAPON_ICON_FRAME = 2;
+// A thrown weapon (the spear) stuck in the ground, after a throw to the right
+// or to the left: the point where it goes in is the bottom centre.
+export const WEAPON_STUCK_FRAME = { right: 3, left: 4 };
 
 const POTION_NAMES = ["rombo", "frasco", "tubo_u", "retorta", "cono", "cubo"];
 
@@ -75,6 +78,17 @@ export const ITEMS: Record<string, ItemKind> = {
     pickupWithKey: true,
     weapon: { grip: { x: 23, y: 40 } },
     light: { inner: 90, outer: 300 },
+  },
+  // Brian's spear (sprites/Armas/Lanza1_Arma.aseprite), carried upright like
+  // the torch. The grip is in the trimmed drawing (art/armas.py).
+  spear: {
+    id: "spear",
+    name: "Spear",
+    sprite: "lanza",
+    frame: 0,
+    icon: WEAPON_ICON_FRAME,
+    pickupWithKey: true,
+    weapon: { grip: { x: 14, y: 39 } },
   },
 };
 

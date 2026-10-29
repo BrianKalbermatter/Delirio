@@ -55,6 +55,7 @@ EMSCRIPTEN_KEEPALIVE float web_enemigo_mira_y(int i) { return enemigo(i)->mira.y
 EMSCRIPTEN_KEEPALIVE float web_enemigo_dir_x(int i) { return enemigo(i)->entidad.dir.x; }
 EMSCRIPTEN_KEEPALIVE float web_enemigo_dir_y(int i) { return enemigo(i)->entidad.dir.y; }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_estado(int i) { return enemigo(i)->entidad.estados; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_clavado(int i) { return enemigo(i)->clavado; }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_animo(int i) { return enemigo(i)->animo; }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_vida(int i) { return enemigo(i)->entidad.vida; }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_vida_max(int i) { return enemigo(i)->entidad.vidaMAX; }
@@ -115,6 +116,10 @@ EMSCRIPTEN_KEEPALIVE float web_reloj_luz(void) { return reloj_luz(juego_reloj())
 EMSCRIPTEN_KEEPALIVE float web_reloj_sol(void) { return reloj_sol(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE void web_velocidad_tiempo(float factor) { juego_velocidad_tiempo(factor); }
 EMSCRIPTEN_KEEPALIVE void web_prueba_puertas(void) { juego_prueba_puertas(); }
+EMSCRIPTEN_KEEPALIVE int web_lanzar(float dx, float dy) { return juego_lanzar(dx, dy); }
+EMSCRIPTEN_KEEPALIVE float web_lanza_cae_x(void) { return juego_lanza_cae().x; }
+EMSCRIPTEN_KEEPALIVE float web_lanza_cae_y(void) { return juego_lanza_cae().y; }
+EMSCRIPTEN_KEEPALIVE void web_desclavar(int i) { juego_desclavar(i); }
 EMSCRIPTEN_KEEPALIVE int web_reloj_compuertas(void) { return reloj_compuertas_abiertas(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE float web_reloj_cambio_compuertas_ms(void) { return reloj_proximo_cambio_compuertas(juego_reloj()); }
 

@@ -7,6 +7,10 @@ import createModule from "./generated/game.js";
 // Same order as `enum estados` in src/entidad.h.
 export const STATE = ["QUIETO", "CAMINANDO", "ATACANDO", "CORRIENDO", "MUERTO"] as const;
 
+// Same order as `enum clavado` in src/mecanicas/enemigos.h: the wall face a
+// spear pinned a dead enemy to, named by where it faces (null: not pinned).
+export const PINNED = [null, "front", "left", "right"] as const;
+
 // Same order as `enum fase` in src/mecanicas/mecanica.h.
 export const PHASE = ["DIA", "TARDE", "NOCHE"] as const;
 
@@ -62,6 +66,7 @@ export interface EnemyState {
   dirX: number; // where it moves
   dirY: number;
   state: number; // index into STATE
+  pinned: (typeof PINNED)[number]; // dead, pinned to a wall facing this way
   mood: (typeof MOOD)[number];
   life: number;
   lifeMax: number;
@@ -127,6 +132,12 @@ export interface GameWasm {
   // Testing aid: clock 15 s before the gates start closing (normal speed),
   // player in front of the top gate.
   testGates(): void;
+  // The player throws the spear towards (dirX, dirY): it kills the first enemy
+  // in its way, pinned to the wall behind it when there is one. Says which
+  // enemy it killed (its slot, -1 if none) and where the spear ends up (world px).
+  throwSpear(dirX: number, dirY: number): { enemy: number; x: number; y: number };
+  // Pulls the spear out of the pinned enemy in `slot`: it drops dead.
+  unpin(slot: number): void;
   useAbility(id: number): void; // instant abilities
   holdAbility(id: number, held: boolean): void; // held abilities (run, block)
   abilities(): AbilityState[];
@@ -197,6 +208,9 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const medusaLife = num("web_medusa_vida", 0);
   const medusaLifeMax = num("web_medusa_vida_max", 0);
   const reset = call("web_reset", 0);
+  const spear = num("web_lanzar", 2);
+  const spearX = num("web_lanza_cae_x", 0);
+  const spearY = num("web_lanza_cae_y", 0);
   const life = num("web_jugador_vida", 0);
   const lifeMax = num("web_jugador_vida_max", 0);
   const enemyMax = num("web_enemigos_max", 0)();
@@ -210,6 +224,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
       "dir_x",
       "dir_y",
       "estado",
+      "clavado",
       "animo",
       "vida",
       "vida_max",
@@ -252,6 +267,8 @@ export async function loadGameWasm(): Promise<GameWasm> {
     update,
     setTimeSpeed: call("web_velocidad_tiempo", 1),
     testGates: call("web_prueba_puertas", 0),
+    throwSpear: (dirX, dirY) => ({ enemy: spear(dirX, dirY), x: spearX(), y: spearY() }),
+    unpin: call("web_desclavar", 1),
     player: () => ({ x: x(), y: y(), dirX: dirX(), dirY: dirY(), state: state() }),
     playerStats: () => ({ deaths: deaths(), delirium: delirium(), life: life(), lifeMax: lifeMax() }),
     enemies: () => {
@@ -267,6 +284,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
           dirX: enemy.dir_x(i),
           dirY: enemy.dir_y(i),
           state: enemy.estado(i),
+          pinned: PINNED[enemy.clavado(i)] ?? null,
           mood: MOOD[enemy.animo(i)] ?? "DEAMBULA",
           life: enemy.vida(i),
           lifeMax: enemy.vida_max(i),

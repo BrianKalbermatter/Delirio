@@ -166,6 +166,22 @@ void juego_prueba_puertas(void){
   printf("Prueba: las puertas se empiezan a cerrar en %.0f s\n", antes / 1000.0f);
 }
 
+#define ALCANCE_LANZA 320.0f
+static Direccion lanza_cae;
+
+int juego_lanzar(float dx, float dy){
+  lanza_cae = jugador.entidad.posicion;
+  if (jugador_muerto(&jugador)) return -1;
+  return enemigos_lanza(&enemigos, &laberinto, jugador.entidad.posicion, (Direccion){dx, dy}, ALCANCE_LANZA,
+                        &lanza_cae);
+}
+
+Direccion juego_lanza_cae(void){ return lanza_cae; }
+
+void juego_desclavar(int i){
+  if (i >= 0 && i < ENEMIGOS_MAX) enemigos_desclavar(&enemigos, i);
+}
+
 const Entity *juego_medusa(void){ return &medusa; }
 const Enemigos *juego_enemigos(void){ return &enemigos; }
 int juego_auto_ataques(void){ return auto_ataques; }

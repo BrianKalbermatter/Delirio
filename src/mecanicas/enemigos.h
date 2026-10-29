@@ -32,6 +32,15 @@
 #define MANADAS_MAX 6
 #define MANADA_MAX 4   // enemigos por manada, como mucho
 
+// Contra que cara de un muro lo clavo una lanza (solo las que el juego
+// muestra: la de adelante y los costados). El enemigo mira hacia el tiro.
+typedef enum clavado {
+  CLAVADO_NO,
+  CLAVADO_FRENTE, // contra la cara de adelante: mira a la camara
+  CLAVADO_IZQ,    // contra el costado izquierdo de un muro: mira a la izquierda
+  CLAVADO_DER     // contra el costado derecho: mira a la derecha
+} Clavado;
+
 // Lo que tiene ganas de hacer.
 typedef enum animo {
   ANIMO_DEAMBULA, // no ve al jugador: camina al azar (o vuelve a su ronda)
@@ -53,6 +62,7 @@ typedef struct enemigo {
   int lado;            // +1 o -1: de que costado rodea al jugador
   float golpeado_ms;   // > 0 justo despues de recibir un golpe (para el parpadeo)
   float muerto_ms;     // > 0 mientras esta MUERTO: cuenta hasta desaparecer
+  Clavado clavado;     // muerto clavado a un muro por una lanza
   float reaparece_ms;  // > 0 mientras el hueco espera a otro enemigo
   // Con quien anda (-1: con nadie). Se mantiene aunque muera y reaparezca.
   int ronda;           // indice en Enemigos.rondas
@@ -110,6 +120,20 @@ int enemigos_golpe_jugador(Enemigos *e, const Jugador *j, float alcance, int dan
 // Golpe al suelo: a todos los que esten a `radio` pixeles, y los que quedan
 // vivos alrededor escapan del susto. Devuelve a cuantos les pego.
 int enemigos_golpe_suelo(Enemigos *e, Direccion centro, float radio, int danio);
+
+// Una lanza tirada desde `desde` hacia `hacia` (unitario): vuela derecho
+// hasta `alcance` pixeles o hasta un muro, y mata al primer vivo que cruza.
+// Lo arrastra en el sentido del tiro (por su eje mas largo) hasta el primer
+// muro: si es la cara de adelante o un costado lo deja clavado ahi; si no
+// llega a un muro o seria la cara de atras (que no se ve), cae muerto donde
+// estaba. Deja en `cae` donde queda la lanza en el piso (a los pies del que
+// mato, o donde termino el vuelo). Devuelve el hueco del que mato, o -1.
+int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion hacia, float alcance,
+                   Direccion *cae);
+
+// Le sacan la lanza al enemigo `i` clavado: se cae y desaparece como
+// cualquier muerto.
+void enemigos_desclavar(Enemigos *e, int i);
 
 // El vivo mas cercano a `pies`, si esta a `radio` pixeles o menos: devuelve 1
 // y deja en `hacia` la direccion (unitaria) para mirarlo. 0 si no hay.

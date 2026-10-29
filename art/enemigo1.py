@@ -9,7 +9,13 @@ Enemigo1_Anim.aseprite.
 The frame layout copies Personaje_2_Anim (263 frames of 64x96, same tags and
 durations) so the game can drive the enemy with the player's animator:
 idle/walk/run in 8 directions, roll (the imp curls into a ball) to the right
-and left, and death (the limbs drop, the torch falls and goes out).
+and left, and death (the limbs drop, the torch falls and goes out). After those, it
+gets pinned to a wall by a spear that goes through its belly (pinned_hit_*
+then the pinned_* loop): only against the faces the game draws, so facing
+front (the wall's front face behind it), left or right (a side face). Bloody,
+after Brian's retouch of the first front frame: the wall cracks around the
+spearhead, blood sprays, runs down the body and pools on the floor, the eyes
+squeeze shut, the torch goes out and the feet are gone.
 
 The body comes from Brian's Enemigo1.aseprite (42x64, front view). Each part
 is an ellipsoid in 3D (forward, left, up), ray cast in the game's
@@ -18,6 +24,7 @@ outlined in black on its own, so the floating parts stay separate.
 """
 import math
 import os
+import random
 import sys
 
 from PIL import Image
@@ -33,6 +40,12 @@ EYE = (217, 87, 99)
 FLAME = [(214, 92, 30), (246, 160, 44), (251, 242, 54), (255, 252, 200)]
 SMOKE = [(92, 88, 96), (132, 128, 134), (176, 172, 176)]
 SHADOW = (0, 0, 0, 80)
+SHAFT = FLAME[1]
+BLOOD = (171, 24, 38)
+CRACK = (176, 172, 176)
+
+# Faces of the wall the game shows: the front, and one side or the other.
+PIN_DIRS = ["front", "left", "right"]
 
 # Frame layout of Personaje_2_Anim: (tag, frames, ms per frame).
 DIRS = ["front", "right", "left", "back",
@@ -45,7 +58,9 @@ LAYOUT = ([(f"idle_{d}", 6, 150) for d in DIRS]
           + [("roll_start_right", 11, 70), ("roll_right", 8, 60),
              ("roll_end_right", 8, 70), ("roll_start_left", 11, 70),
              ("roll_left", 8, 60), ("roll_end_left", 8, 70),
-             ("death", 33, 80)])
+             ("death", 33, 80)]
+          + [(f"pinned_hit_{d}", 10, 70) for d in PIN_DIRS]
+          + [(f"pinned_{d}", 8, 110) for d in PIN_DIRS])
 
 # Facing angle in the world plane (x right, y away from the camera).
 ANGLE = {"right": 0, "up_right": 45, "back": 90, "up_left": 135, "left": 180,
@@ -67,6 +82,14 @@ FREE_HAND = (1.0, 11.5, 15.5)
 STAFF_DOWN, STAFF_UP = 21.0, 18.0
 STAFF_TILT = (-0.08, -0.14, 1.0)  # top leans back and out, like the drawing
 ROLL_CENTER_U = 14.0
+# Pinned, per facing: where the spearhead enters the wall (forward, left, up;
+# it stays put while the body is pushed), how far the spear sticks out past
+# the belly, and the seed of its cracks and blood. From the front it goes in
+# above the head, so it reads as a straight line down the body, as drawn.
+SPEAR = {"front": ((-9.0, 0.0, 37.0), 21.0, 1),
+         "left": ((-8.5, -1.3, 11.0), 25.0, 2),
+         "right": ((-8.5, -1.3, 11.0), 25.0, 3)}
+PIN_RISE = 3.0               # the body hangs this high off the floor
 # Death: how far forward each part lands (by part index; the head rolls off).
 DRIFT = {0: 9.0, 2: -5.0}
 
@@ -111,6 +134,16 @@ class Pose:
         self.fall = 0.0         # death: 0 floating, 1 everything on the floor
         self.torch_fall = 0.0   # death: the torch tips over
         self.smoke = 0.0        # death: smoke puff 0..1 (rising)
+        self.pain = False       # eyes squeezed shut, red under them
+        self.spear = None       # pinned: the facing in SPEAR
+        self.shift = 0.0        # whole body pushed forward (the spear's push)
+        self.rise = 0.0         # whole body lifted (hanging from the spear)
+        self.wobble = 0.0       # spear tail shake, px sideways
+        self.crack = 0.0        # cracks and blood on the wall 0..1
+        self.bleed = 0.0        # blood on the body 0..1
+        self.pool = 0.0         # blood pool on the floor 0..1
+        self.spray = 0.0        # blood flying off the wound 0..1 (0: none)
+        self.drip = None        # phase 0..1 of the drops falling to the pool
         self.__dict__.update(kw)
 
 
@@ -129,6 +162,7 @@ class Imp:
 
     def local(self, f, l, u, spin=True):
         """Applies lean (around the feet) and the roll spin (around the belly)."""
+        f, u = f + self.p.shift, u + self.p.rise
         f, l, u = self.pitch(f, l, u, self.p.lean, 0.0)
         if spin and self.p.spin:
             f, l, u = self.pitch(f, l, u, self.p.spin, ROLL_CENTER_U)
@@ -264,7 +298,18 @@ def head_eyes(pose):
             # inner corner, as drawn. `out` points away from the nose on screen.
             out = 1 if part.ax[1][0] * side > 0 else -1
             wide = facing > 0.5
-            if pose.blink:
+            if pose.pain:
+                # Squeezed shut, with red under them, as Brian drew it.
+                cells = [(ex + 2 * out, ey), (ex + out, ey), (ex, ey), (ex - out, ey),
+                         (ex + out, ey + 1), (ex, ey + 1), (ex - out, ey + 1)]
+                red = [(ex - 2 * out, ey + 1), (ex + out, ey + 2), (ex, ey + 2),
+                       (ex - out, ey + 2), (ex - 2 * out, ey + 2), (ex, ey + 3),
+                       (ex - out, ey + 3), (ex - 2 * out, ey + 3)]
+                for c in red:
+                    if 0 <= c[0] < FW and 0 <= c[1] < FH and px[c][3] and px[c][:3] != OUTLINE:
+                        px[c] = EYE + (255,)
+                glint = None
+            elif pose.blink:
                 cells = [(ex + k, ey) for k in range(-1, 2 if wide else 1)]
                 glint = None
             else:
@@ -337,7 +382,7 @@ def draw_imp(angle, pose):
     bc = fallen(imp, 0, 0, body_u, BODY_HALF_H, p.fall, 2)
     layers.append(Part(bc, BODY_R, axes, pants_tone, BODY_HALF_H))
 
-    for side in (1, -1):
+    for side in (1, -1) if not p.spear else ():
         slide, lift = p.feet[side]
         fu = lerp(FOOT_C[2] + lift, 8.0, curl)
         ff = lerp(FOOT_C[0] + slide, 2.0, curl)
@@ -347,6 +392,7 @@ def draw_imp(angle, pose):
 
     # Hands: the free one swings, the torch hand holds the staff.
     hand_pts = {}
+    spear = pinned_spear(imp, body_u) if p.spear else None
     for side, rest in ((1, FREE_HAND), (-1, TORCH_HAND)):
         swing, lift = p.hands[side]
         hf = lerp(rest[0] + swing, 4.0, curl)
@@ -358,10 +404,14 @@ def draw_imp(angle, pose):
 
     images = [(part.depth(), part.render()) for part in layers]
     images += torch(imp, hand_pts[-1], layers[-1])
+    if spear:
+        images += spear_layers(spear, layers[1], p)
 
     cv = Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
     for _, img in sorted(images, key=lambda e: -e[0]):
         cv.alpha_composite(img)
+    if spear:
+        wound(cv, spear, p)
     return cv
 
 
@@ -406,6 +456,189 @@ def torch(imp, grip_local, hand):
         smoke(fl, tx, ty, p.smoke)
     out.append((dot(top, VIEW) - 50, fl))
     return out
+
+
+def pinned_spear(imp, body_u):
+    """World points where the spearhead enters the wall, where the spear
+    crosses the belly and where it ends. The tail shakes sideways by `wobble`."""
+    p = imp.p
+    wall, out, _ = SPEAR[p.spear]
+    belly = (p.shift, 0.0, body_u + p.rise)
+    d = norm(tuple(b - w for b, w in zip(belly, wall)))
+    tail = tuple(b + k * out for b, k in zip(belly, d))
+    side = norm((-d[1], d[0], 0.0))
+    tail = tuple(t + k * p.wobble for t, k in zip(tail, side))
+    return imp.world(*wall), imp.world(*belly), imp.world(*tail)
+
+
+def spear_layers(spear, body, p):
+    """The shaft in two pieces, behind and in front of the body (the one
+    behind ends in the spearhead), the cracked and bloody wall around the
+    head, and the pool on the floor under everything."""
+    wall, belly, tail = spear
+    body_depth = body.depth()
+    rng = random.Random(SPEAR[p.spear][2])
+    w, b = screen(*wall), screen(*belly)
+    out = []
+    back = Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
+    shaft(back, w, b)
+    spearhead(back, w, b)
+    outline(back)
+    front = Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
+    shaft(front, b, screen(*tail))
+    outline(front)
+    out += [(body_depth + 1, back), (body_depth - 1, front)]
+    if p.crack > 0:
+        img = Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
+        # The side faces only take cracks on their own side of the spearhead.
+        keep = None if p.spear == "front" else (1 if w[0] > CX else -1)
+        cracks(img, w, p.crack, rng, keep)
+        wall_blood(img, w, p.crack, p.bleed, rng, keep)
+        out.append((body_depth + 2, img))
+    if p.pool > 0:
+        img = Image.new("RGBA", (FW, FH), (0, 0, 0, 0))
+        pool(img, b[0], p.pool, rng)
+        out.append((1000.0, img))
+    return out
+
+
+def put(px, x, y, col):
+    x, y = int(round(x)), int(round(y))
+    if 0 <= x < FW and 0 <= y < FH:
+        px[x, y] = col + (255,)
+
+
+def shaft(img, a, b):
+    """A 2 px shaft from a to b, in the torch's orange."""
+    px = img.load()
+    (x0, y0), (x1, y1) = a, b
+    steps = int(max(abs(x1 - x0), abs(y1 - y0)) * 2) + 1
+    steep = abs(y1 - y0) > abs(x1 - x0)
+    for i in range(steps + 1):
+        x = lerp(x0, x1, i / steps)
+        y = lerp(y0, y1, i / steps)
+        for k in (0, 1):
+            put(px, x + k if steep else x, y if steep else y + k, SHAFT)
+
+
+def spearhead(img, wall, belly):
+    """The broad leaf of the head, half sunk in the wall at `wall`."""
+    px = img.load()
+    dx, dy = belly[0] - wall[0], belly[1] - wall[1]
+    m = math.hypot(dx, dy) or 1.0
+    dx, dy = dx / m, dy / m
+    for k, half in enumerate((0.5, 1.5, 2.0, 2.0, 1.5, 1.0)):
+        cx, cy = wall[0] + dx * (k - 1) + 0.5, wall[1] + dy * (k - 1)
+        for j in range(-int(half * 2), int(half * 2) + 1):
+            put(px, cx - dy * j / 2, cy + dx * j / 2, SHAFT)
+
+
+def cracks(img, at, amount, rng, keep):
+    """Crooked cracks running out of the hole, black and grey, that grow with
+    `amount`. The paths are fixed by `rng`, so they only grow frame to frame."""
+    px = img.load()
+    x0, y0 = at
+    for k in range(9):
+        ang = k / 9 * 2 * math.pi + rng.uniform(-0.3, 0.3)
+        length = rng.uniform(10, 18)
+        col = OUTLINE if k % 2 == 0 else CRACK
+        x, y = x0, y0
+        path = []
+        for _ in range(int(length)):
+            ang += rng.uniform(-0.45, 0.45)
+            x, y = x + math.cos(ang), y + math.sin(ang) * 0.8
+            path.append((x, y))
+        fork = rng.randrange(2, max(3, len(path)))
+        fang = ang + rng.choice((-1, 1)) * 0.9
+        twig = [(path[fork - 1][0] + math.cos(fang) * s, path[fork - 1][1] + math.sin(fang) * s * 0.8)
+                for s in range(1, 5)]
+        shown = int(len(path) * amount)
+        for i, (x, y) in enumerate(path[:shown] + (twig if shown > fork else [])):
+            if keep and (x - x0) * keep < -1:
+                continue
+            put(px, x, y, col)
+
+
+def wall_blood(img, at, amount, bleed, rng, keep):
+    """Blood splashed around the hole, specks around it and runs down the wall."""
+    px = img.load()
+    x0, y0 = at
+    r = 2.0 + 2.5 * amount
+    for y in range(int(y0 - r - 1), int(y0 + r + 2)):
+        for x in range(int(x0 - r - 1), int(x0 + r + 2)):
+            if math.hypot(x + 0.5 - x0, (y + 0.5 - y0) * 1.2) <= r * rng.uniform(0.7, 1.15):
+                put(px, x, y, BLOOD)
+    specks = [(rng.uniform(-9, 9), rng.uniform(-7, 5)) for _ in range(14)]
+    for dx, dy in specks[:int(14 * amount)]:
+        if keep and dx * keep < -1:
+            continue
+        put(px, x0 + dx, y0 + dy, BLOOD)
+    for dx, length in ((rng.uniform(-2, -1), rng.uniform(5, 9)), (rng.uniform(1, 2.5), rng.uniform(8, 13))):
+        for k in range(int(length * bleed)):
+            put(px, x0 + dx, y0 + r + k, BLOOD)
+
+
+def pool(img, x0, amount, rng):
+    """A puddle of blobs on the floor under the wound, and drops around it."""
+    px = img.load()
+    blobs = [(rng.uniform(-10, 12), rng.uniform(1, 9), rng.uniform(2.0, 4.5)) for _ in range(6)]
+    for k, (dx, dy, r) in enumerate(blobs):
+        r *= amount * (1.0 if k < 3 else ease(amount * 1.5 - 0.3))
+        cx, cy = x0 + dx * amount, BASE_Y - 2 + dy * 0.6
+        for y in range(int(cy - r), int(cy + r) + 2):
+            for x in range(int(cx - r * 1.8), int(cx + r * 1.8) + 2):
+                if ((x + 0.5 - cx) / (r * 1.8 + 0.01)) ** 2 + ((y + 0.5 - cy) / (r * 0.8 + 0.01)) ** 2 <= 1:
+                    put(px, x, y, BLOOD)
+    drops = [(rng.uniform(-18, 18), rng.uniform(-3, 9)) for _ in range(8)]
+    for dx, dy in drops[:int(8 * amount)]:
+        put(px, x0 + dx, BASE_Y + dy * 0.6, BLOOD)
+
+
+def wound(cv, spear, p):
+    """Blood on whatever is drawn around the belly (body, shaft), running
+    down from the wound, plus the spray and the drops falling to the pool."""
+    px = cv.load()
+    rng = random.Random(SPEAR[p.spear][2] * 7)
+    wx, wy = screen(*spear[1])
+
+    def on_body(x, y):
+        x, y = int(round(x)), int(round(y))
+        return 0 <= x < FW and 0 <= y < FH and px[x, y][3] and px[x, y][:3] != OUTLINE
+
+    r = 1.5 + 3.0 * p.bleed
+    for y in range(int(wy - r - 1), int(wy + r + 2)):
+        for x in range(int(wx - r - 1), int(wx + r + 2)):
+            d = math.hypot(x + 0.5 - wx, y + 0.5 - wy)
+            if d <= r * rng.uniform(0.6, 1.1) and on_body(x, y):
+                put(px, x, y, EYE if d < r * 0.35 and rng.random() < 0.5 else BLOOD)
+    for k in range(6):
+        dx, length = rng.uniform(-4, 4), rng.uniform(4, 14)
+        for j in range(int(length * p.bleed)):
+            if on_body(wx + dx, wy + j):
+                put(px, wx + dx, wy + j, BLOOD)
+    specks = [(rng.uniform(-9, 9), rng.uniform(-8, 8)) for _ in range(12)]
+    for dx, dy in specks[:int(12 * p.bleed)]:
+        if on_body(wx + dx, wy + dy):
+            put(px, wx + dx, wy + dy, BLOOD)
+
+    # Spray: drops thrown out of the wound that fall as they fly.
+    flight = [(rng.uniform(0, 2 * math.pi), rng.uniform(8, 20), rng.random() < 0.3) for _ in range(16)]
+    if 0 < p.spray < 1:
+        t = p.spray
+        for ang, speed, big in flight:
+            x = wx + math.cos(ang) * speed * t
+            y = wy + math.sin(ang) * speed * t * 0.7 + 14 * t * t
+            if y < BASE_Y + 4:
+                put(px, x, y, BLOOD)
+                if big:
+                    put(px, x, y + 1, BLOOD)
+    # Drops falling from under the wound into the pool.
+    if p.drip is not None:
+        for k, dx in enumerate((-1, 1, 2)):
+            u = (p.drip + k / 3) % 1.0
+            y = lerp(wy + 4, BASE_Y - 1, u * u)
+            put(px, wx + dx, y, BLOOD)
+            put(px, wx + dx, y + 1, BLOOD)
 
 
 def flame(img, x, y, size, t, lag):
@@ -553,23 +786,62 @@ def pose_death(i, n):
                 smoke=0.25 + 0.75 * t if t < 1 else 0.0)
 
 
+def pose_pinned_hit(i, n, direction):
+    """The spear hits: blood sprays, the body is thrown back against the wall,
+    which cracks, bounces on it and is left hanging, bleeding into a pool;
+    the torch goes out."""
+    t = i / (n - 1)
+    push = [8.0, 3.0, 0.0][i] if i < 3 else 0.0
+    shake = math.exp(-t * 3.5)
+    whip = -0.3 if i == 2 else -0.06 - 0.12 * shake * math.cos(i * 1.9)
+    fly = 5 * shake
+    return Pose(spear=direction, shift=push, rise=PIN_RISE * ease(i / 3),
+                lean=whip, head_tilt=0.35 * shake * math.sin(i * 1.7),
+                eyes_open=1.0, pain=i >= 1, bob=-1 if i == 2 else 0,
+                hands={1: (-3.0 * shake, fly), -1: (-2.0 * shake, fly * 0.6)},
+                wobble=3.0 * shake * math.cos(i * 2.6),
+                crack=ease(i / 2), bleed=0.25 + 0.75 * ease(i / 8),
+                spray=(i + 1) / 6 if i < 5 else 0.0,
+                pool=0.8 * ease((i - 2) / 7) if i >= 2 else 0.0,
+                drip=(t * 2) % 1.0 if i >= 3 else None,
+                flame=max(0.0, 1 - i / 3), flame_t=t * 3, flame_lag=0.8 * shake,
+                smoke=(i - 2) / 8 if i >= 2 else 0.0)
+
+
+def pose_pinned(i, n, direction):
+    """Hanging dead from the spear: twitches now and then, blood dripping."""
+    t = i / n
+    twitch = 1.0 if i in (2, 3) else 0.0
+    return Pose(spear=direction, rise=PIN_RISE, lean=-0.06, pain=True,
+                head_tilt=0.04 * math.sin(t * 2 * math.pi),
+                hands={1: (0.0, twitch), -1: (0.0, -1.0 if i == 5 else 0.0)},
+                wobble=0.3 * twitch, crack=1.0, bleed=1.0, pool=0.8, drip=t,
+                flame=0.0)
+
+
 POSES = {"idle": pose_idle, "walk": pose_walk, "run": pose_run,
          "roll_start": pose_roll_start, "roll_end": pose_roll_end,
          "roll": pose_roll, "death": pose_death}
+PIN_POSES = {"pinned_hit": pose_pinned_hit, "pinned": pose_pinned}
 
 
 def frames():
     """Yields (enemy layer, shadow layer, ms) for the 263 frames in order."""
     for tag, n, ms in LAYOUT:
         kind, direction = "death", "down_right"
-        for k in ("roll_start", "roll_end", "roll", "idle", "walk", "run"):
+        for k in ("roll_start", "roll_end", "roll", "idle", "walk", "run",
+                  "pinned_hit", "pinned"):
             if tag.startswith(k + "_"):
                 kind, direction = k, tag[len(k) + 1:]
                 break
         for i in range(n):
-            pose = POSES[kind](i, n)
+            if kind.startswith("pinned"):
+                pose = PIN_POSES[kind](i, n, direction)
+            else:
+                pose = POSES[kind](i, n)
             img = draw_imp(ANGLE[direction], pose)
-            yield img, shadow(lerp(1.0, 0.8, pose.curl)), ms
+            hang = pose.rise / PIN_RISE * 0.15
+            yield img, shadow(lerp(1.0, 0.8, pose.curl) - hang), ms
 
 
 def main():

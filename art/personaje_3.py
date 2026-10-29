@@ -4,9 +4,11 @@ Personaje_P_3.aseprite (one frame, three-quarter view facing left).
 The character is a small 3D model built from that drawing, rendered in the
 game's three-quarter view in all 8 directions. Nothing is mirrored: the
 costume is asymmetric, like the drawing:
-- left arm bare (green skin with brown wraps), right arm in a black sleeve;
-- right leg bare and wrapped, left leg in black;
-- a white bird-skull mask with a long beak, a black tunic and a brown collar;
+- arms, legs, hands and feet all in black (Brian's retouch of idle_front);
+- a strap across the black tunic, green over brown, from the left shoulder
+  down to the right hip, and a thinner brown one from the right shoulder that
+  meets it on the chest;
+- a white bird-skull mask with a long beak and a brown collar;
 - a red crest with pink streaks along the top of the head.
 Since the left views are rendered and not mirrored, a weapon always stays in
 the right hand.
@@ -120,16 +122,35 @@ def flat(color):
     return lambda p, lam, n: np.tile(np.array(color), (len(p), 1))
 
 
-def skin(p, lam, n):
-    return pick(lam < 0.12, SKIN_DARK, SKIN)
+# The straps, as planes through the middle of the torso (TORSO_C, in units of
+# TORSO_R): a strap is where the surface crosses its plane. The sash runs from
+# the left shoulder down to the right hip and on round the back; the brace
+# comes down from the right shoulder to meet it on the chest.
+# Each plane: its normal (toward the strap's upper edge), a point it goes
+# through and half the strap's width, all in torso units.
+SASH = unit((0.0, -0.7, 1.0))
+SASH_AT = np.array([0.0, 0.0, -0.37])
+SASH_HALF = 0.21
+BRACE = unit((0.0, 0.64, 1.7))
+BRACE_AT = np.array([0.0, -1.36, 0.48])
+BRACE_HALF = 0.1
 
 
-def wrapped(p, lam, n):
-    """Bare limb wrapped in bandages: diagonal brown bands along the long axis."""
-    around = np.arctan2(p[:, 2], p[:, 1])
-    band = np.mod(p[:, 0] * 1.5 + around * 0.3, 1.0) < 0.5
-    out = pick(lam < 0.12, SKIN_DARK, SKIN)
-    return np.where(band[:, None], np.array(WRAP), out)
+def tunic(center, radii):
+    """Black tunic with the straps, for a part with the torso's axes centred
+    at `center` (torso frame) with these radii."""
+    offset = (np.asarray(center) - TORSO_C) / TORSO_R
+    stretch = np.asarray(radii) / TORSO_R
+
+    def material(p, lam, n):
+        q = p * stretch + offset             # the same point, in torso units
+        sash = (q - SASH_AT) @ SASH
+        on_sash = np.abs(sash) < SASH_HALF
+        on_brace = (np.abs((q - BRACE_AT) @ BRACE) < BRACE_HALF) & (sash > 0) & (q[:, 0] > -0.2)
+        out = pick(on_brace, WRAP, BLACK)
+        return np.where(on_sash[:, None], np.where((sash > 0)[:, None], np.array(SKIN), np.array(WRAP)), out)
+
+    return material
 
 
 def collar(p, lam, n):
@@ -191,6 +212,8 @@ HIP_U, HIP_L = 19.0, 4.6
 SHOULDER_U, SHOULDER_L = 31.0, 9.2
 UPPER_ARM, FOREARM = 7.0, 6.5
 NECK_U = 35.5
+TORSO_C, TORSO_R = np.array([0.3, 0.0, 26.5]), np.array([5.4, 8.8, 9.4])
+SKIRT_C, SKIRT_R = (0.0, 0.0, 19.5), (5.0, 7.6, 4.2)
 HEAD_C = (-1.5, 0.0, 43.0)
 
 
@@ -304,21 +327,16 @@ class Model:
             ankle = (0.5 + ff, s * (HIP_L + 0.8), 2.6 + fu)
             knee = two_bone(hip, ankle, THIGH, SHIN)
             legs[side] = (hip, knee, ankle)
-            mat = wrapped if side == "r" else flat(BLACK)
-            self.segment(hip, knee, 4.2, 4.2, mat, f"thigh_{side}")
-            self.segment(knee, ankle, 3.8, 3.8, mat, f"shin_{side}")
+            self.segment(hip, knee, 4.2, 4.2, flat(BLACK), f"thigh_{side}")
+            self.segment(knee, ankle, 3.8, 3.8, flat(BLACK), f"shin_{side}")
             toe = add(ankle, rot_y((3.2, 0.0, -0.6), pose.foot_pitch[side]))
-            self.segment(ankle, toe, 2.6, 1.8, skin if side == "r" else flat(BLACK), f"foot_{side}", extra=1.2)
-            # Black claws at the tip of the bare foot.
-            if side == "r":
-                tip = add(ankle, rot_y((5.0, 0.0, -0.9), pose.foot_pitch[side]))
-                self.ellipsoid(tip, [(1, 0, 0), (0, 1, 0), (0, 0, 1)], (1.2, 2.4, 0.9), flat(BLACK), "claws_r")
+            self.segment(ankle, toe, 2.6, 1.8, flat(BLACK), f"foot_{side}", extra=1.2)
 
-        # Torso (black tunic) and a skirt over the hips.
-        self.ellipsoid(self.torso((0.3, 0.0, 26.5)), [self.torso_dir(v) for v in ((1, 0, 0), (0, 1, 0), (0, 0, 1))],
-                       (5.4, 8.8, 9.4), flat(BLACK), "torso")
-        self.ellipsoid(self.torso((0.0, 0.0, 19.5)), [self.torso_dir(v) for v in ((1, 0, 0), (0, 1, 0), (0, 0, 1))],
-                       (5.0, 7.6, 4.2), flat(BLACK), "skirt")
+        # Torso (black tunic with the straps) and a skirt over the hips.
+        self.ellipsoid(self.torso(tuple(TORSO_C)), [self.torso_dir(v) for v in ((1, 0, 0), (0, 1, 0), (0, 0, 1))],
+                       tuple(TORSO_R), tunic(TORSO_C, TORSO_R), "torso")
+        self.ellipsoid(self.torso(SKIRT_C), [self.torso_dir(v) for v in ((1, 0, 0), (0, 1, 0), (0, 0, 1))],
+                       SKIRT_R, tunic(SKIRT_C, SKIRT_R), "skirt")
         self.ellipsoid(self.torso((0.6, 0.0, NECK_U)), [self.torso_dir(v) for v in ((1, 0, 0), (0, 1, 0), (0, 0, 1))],
                        (5.2, 6.2, 2.6), collar, "collar")
 
@@ -335,10 +353,9 @@ class Model:
             fore = self.torso_dir(fore)
             wrist = add(elbow, scale(fore, FOREARM))
             hand = add(wrist, scale(fore, 1.6))
-            mat = wrapped if side == "l" else flat(BLACK)
-            self.segment(sh, elbow, 2.8, 2.8, mat, f"upper_{side}")
-            self.segment(elbow, wrist, 2.5, 2.5, mat, f"fore_{side}")
-            hand_mat = flat(BLACK) if side == "r" else skin
+            self.segment(sh, elbow, 2.8, 2.8, flat(BLACK), f"upper_{side}")
+            self.segment(elbow, wrist, 2.5, 2.5, flat(BLACK), f"fore_{side}")
+            hand_mat = flat(BLACK)
             self.ellipsoid(hand, [fore, (0, 1, 0) if abs(fore[1]) < 0.9 else (1, 0, 0), np.cross(fore, (0, 1, 0)) if abs(fore[1]) < 0.9 else (0, 0, 1)],
                            (2.0, 2.2, 2.0) if pose.fist[side] else (2.4, 2.0, 1.7), hand_mat, f"hand_{side}")
             if side == "l" and not pose.fist[side]:

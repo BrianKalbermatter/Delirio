@@ -2,15 +2,15 @@
 // abilities fire once per key press; held ones stay on while the key is down.
 import { ABILITY } from "../wasm/game-wasm";
 
-// Key code -> instant ability.
+// Key code -> instant ability. W A S D move the player (main.ts).
 export const INSTANT_KEYS: Record<string, number> = {
   KeyQ: ABILITY.ATAQUE_LIGERO,
-  KeyW: ABILITY.ATAQUE_RAPIDO,
+  KeyZ: ABILITY.ATAQUE_RAPIDO,
   KeyE: ABILITY.ATAQUE_LARGO,
   KeyR: ABILITY.ATAQUE_CRITICO,
-  KeyA: ABILITY.APOYO,
-  KeyS: ABILITY.PARRY,
-  KeyD: ABILITY.ULTI,
+  KeyC: ABILITY.APOYO,
+  KeyV: ABILITY.PARRY,
+  KeyB: ABILITY.ULTI,
   Space: ABILITY.SALTAR,
 };
 
@@ -23,12 +23,12 @@ export const HELD_KEYS: Record<string, number> = {
 // Label shown in the panel for each ability (block is on the right button).
 export const ABILITY_KEY_LABEL: Record<number, string> = {
   [ABILITY.ATAQUE_LIGERO]: "Q",
-  [ABILITY.ATAQUE_RAPIDO]: "W",
+  [ABILITY.ATAQUE_RAPIDO]: "Z",
   [ABILITY.ATAQUE_LARGO]: "E",
   [ABILITY.ATAQUE_CRITICO]: "R",
-  [ABILITY.APOYO]: "A",
-  [ABILITY.PARRY]: "S",
-  [ABILITY.ULTI]: "D",
+  [ABILITY.APOYO]: "C",
+  [ABILITY.PARRY]: "V",
+  [ABILITY.ULTI]: "B",
   [ABILITY.BLOQUEAR]: "R-click",
   [ABILITY.SALTAR]: "Space",
   [ABILITY.CORRER]: "Shift",
