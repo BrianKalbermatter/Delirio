@@ -7,8 +7,8 @@ art in the browser. Design notes: [`concept/Mecanicas.md`](concept/Mecanicas.md)
 
 Link: **https://briankalbermatter.github.io/Delirio/**
 
-Nothing to download: one click and you are in. Click **Play**, then left click
-to walk (controls below). The build is updated on every push to `main`; if you
+Nothing to download: one click and you are in. Click **Play**, then walk
+with **W A S D** (controls below). The build is updated on every push to `main`; if you
 still see the old one, reload with **Ctrl + Shift + R**.
 Days last 6 real minutes and nights 16 (press **F** to speed up the clock).
 
@@ -16,16 +16,16 @@ Days last 6 real minutes and nights 16 (press **F** to speed up the clock).
 
 | Input | Action |
 |---|---|
-| Left click (hold) | Walk to the cursor |
+| W A S D | Walk |
 | Mouse | Aim: the character always looks at the cursor |
 | Shift (hold) | Run |
-| Space | Jump (Q · W · E · R also hit in the air) |
-| Right click (hold) | Block |
-| S | Parry |
-| Q · W · E · R | Light, quick, long and critical attack |
-| A | Support |
-| D | Punch the ground: dirt flies and the screen shakes |
-| E | Pick up the branch, weapon or torch at your feet |
+| Space | Jump |
+| Right click (hold) | With the spear in the right hand: wind up and aim at the cursor; release once the bar under your feet is full to throw it. Without it: block |
+| V | Parry |
+| C | Support |
+| R | Punch the ground: dirt flies and the screen shakes |
+| E | Pick up the branch, weapon, torch or spear at your feet |
+| — | Attacks have no key: next to an enemy you swing at it on your own |
 | 1-9 or click a slot | Select an inventory slot |
 | Double click a slot | Use it: drink a potion, open the map book, hold a weapon or the torch |
 | Drag a slot onto a body square | Put it there (helmet, armor, pants, right or left hand) |
@@ -54,24 +54,42 @@ lost behind it.
 
 ## Your character and the inventory
 
-You play Brian's Personaje_3, drawn in the 8 directions. Near the start lie
-an **axe** and a **torch**. Pick them up with **E**: they go to the
-inventory (16 slots, in the **Inventory** tab of the side panel). Double click
-one, or drag it onto a hand, to hold it. The right hand swings, the left one
-carries. The torch burns with an animated flame and lights up much more
-around you, by night and by day. Potions give back 30 life.
+You play Brian's Personaje_3 (masked, with a strap across the black tunic),
+drawn in the 8 directions. Near the start lie an **axe**, a **torch** and a
+**spear**. Pick them up with **E**: the axe and the torch go to the
+inventory (16 slots, in the **Inventory** tab of the side panel); double
+click one, or drag it onto a hand, to hold it. The right hand swings, the
+left one carries. The torch burns with an animated flame and lights up much
+more around you, by night and by day. Potions give back 30 life.
+
+### The spear
+
+The spear always goes straight to your right hand, the throwing one. Hold
+the **right button**: your character winds up far back and turns to the
+cursor while a bar under your feet charges. Let go once it is full and it
+throws, all out (let go earlier and it calls it off). Nothing cuts a throw
+short: keys pressed meanwhile wait for it to end.
+
+The spear flies straight and kills the first enemy in its way, then carries
+it on to where its flight ends. If that is the front or a side of a wall,
+the enemy stays **pinned to it**, bleeding, the wall cracked around the
+spearhead. Otherwise it drops dead where it was hit. The spear sticks in the
+ground where it ends up, pointing the way you threw it, and you have to go
+and pick it up again; pulling it out of a pinned body drops the body.
 
 ## Enemies
 
-Out in the maze roam the level 1 enemies (Brian's Enemigo1): dumb and
-scared, but they want you dead. Without seeing you they wander at random.
+Out in the maze roam the level 1 enemies, Brian's **Espartano1**: spartans
+with a bronze helmet, a blue crest and a blue cape, a bit taller than you.
+Dumb and scared, but they want you dead. Without seeing you they wander at random.
 Once they see you they keep their distance and circle you the long way
 round, running off if you come close, while they work up the nerve. Turn
 your back on them or get busy swinging and they gather courage faster. When
-they have enough they rush in, hit once and flee again. Hit them back (Q · W
-· E · R), or punch the ground (D) to hurt every one around you and scare
-the rest. Blocking or jumping dodges their hit. Your life is the red bar at
-the top left.
+they have enough they rush in, hit once and flee again. Blocking or jumping
+dodges their hit; punch the ground (**R**) to hurt every one around you and
+scare the rest. Your life is the red bar at the top left. They die one of
+three bloody ways, by where they face: knocked back, slumped over on their
+side or face down, with a pool of blood growing under the body.
 
 Fewer of them roam now, but not alone: some **hunt in packs** of 3 or 4
 that follow a leader towards you, and some stand in **chatting circles**
@@ -81,9 +99,10 @@ so you can sneak up on them; but if one spots you or gets hit, the whole
 circle comes for you. Once they calm down they walk back and pick up the
 chat again. A pack goes after you together too.
 
-Get an enemy right next to you and your character **swings at it on its
-own** (the light attack, turned to face it). It only does it to enemies,
-and your clicks keep working as before.
+You never attack with a key: get an enemy close and your character **swings
+at it on its own**, once a second, one enemy at a time. The one it is after
+has a **white ring** on the floor around it; it sticks to that one while it
+lives and stays near, then moves on to the next.
 
 **Bushes**, like League of Legends' brush, grow next to every circle and
 here and there in the square and the corridors. Walk in and you turn
@@ -108,6 +127,8 @@ read from its Aseprite file and recoloured to the square's greens.
 | Bushes to hide in (3 variants, tags `viento_0..2`; the first frame of each is the bush at rest) | `art/arbusto.py` (placeholder, to repaint) | `python3 art/arbusto.py client/public/sprites` |
 | Wind on the big tree (its `idle` tag) | `art/arbol_viento.lua` → `sprites/Arboles/Arbol1_pintado.aseprite` (rebuilds the wind from the first frame; rerun after retouching it) | `Aseprite -b --script-param file=Arbol1_pintado.aseprite --script arbol_viento.lua`, then `bash client/scripts/export-sprites.sh` |
 | Shadow under the big tree | `art/sombra_arbol.py` → `client/public/sprites/sombra_arbol.png` | `python3 art/sombra_arbol.py client/public/sprites` |
-| Player (Personaje_3, every animation in 8 directions), its weapons in either hand, slam dirt | `art/personaje_3.py` + `art/personaje_3_build.py` + `art/armas.py` (weapons: `WEAPONS`) | `bash art/armas_build.sh` (also writes `Personaje_3_Anim.aseprite`) |
+| Player (Personaje_3, every animation in 8 directions, the spear throw), its weapons in either hand, slam dirt; the weapons as items (lying, held, icon; the spear also flying and stuck in the ground, in 16 directions) | `art/personaje_3.py` + `art/personaje_3_build.py` + `art/armas.py` (weapons: `WEAPONS`) | `bash art/armas_build.sh` (also writes `Personaje_3_Anim.aseprite`). Its sheets are packed (`armas.write_packed_sheet`: each frame cut to its pixels, repeats stored once) to keep them small on the GPU |
+| Enemy (Espartano1: idle/walk/run in 8 directions, roll, three deaths, pinned to a wall) | `Espartano1.aseprite` + `art/espartano.py` (built on `personaje_3.py`, blood from `art/enemigo1.py`) | `python3 art/espartano.py <dir>`, then `Aseprite -b --script-param dir=<dir> --script-param out=Espartano1_Anim.aseprite --script-param body=Espartano --script art/bicho_aseprite.lua`; sheet with `bash client/scripts/export-sprites.sh` |
+| Old enemy (Enemigo1, not used now) | `art/enemigo1.py` | Same as Espartano1, with `body=Enemigo` |
 | Torch fire | `art/antorcha_fuego.py` | `python3 art/antorcha_fuego.py` |
 | Aseprite sprites to sheets | `client/scripts/export-sprites.sh` | `bash client/scripts/export-sprites.sh` |
