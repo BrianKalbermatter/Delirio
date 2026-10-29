@@ -8,9 +8,9 @@ ASEPRITE="/mnt/c/Program Files (x86)/Steam/steamapps/common/Aseprite/Aseprite.ex
 SRC_DIR="/mnt/c/Users/brian/sprites"
 PUBLIC="$(cd "$(dirname "$0")/.." && pwd)/public"
 
-# name -> source path relative to SRC_DIR
+# name -> source path relative to SRC_DIR. Not the players: art/armas.py and
+# art/armas_build.sh build them with their weapon animations.
 declare -A SPRITES=(
-  [personaje_2]="PersonajePrincipales/Personaje_2_Anim.aseprite"
   [enemigo_1]="Enemigos/Enemigo1/Enemigo1_Anim.aseprite"
   [arbol_1]="Arboles/Arbol1_pintado.aseprite"
   [flores]="Laberinto/Terreno/Flores_viento.aseprite"
@@ -26,8 +26,15 @@ declare -A ASSET_SPRITES=(
   [ramas]="Plaza/Ramas.aseprite"
 )
 
-# Exports one source as <OUT_LABEL>/<out>.{png,json}, into OUT_WIN; extra
-# arguments (like --ignore-layer) go to Aseprite before the input file.
+# Aseprite cannot write into WSL (\\wsl.localhost paths), so sheets go to a
+# Windows temp folder first and are copied to public from there.
+TMP="/mnt/c/Users/brian/AppData/Local/Temp/claude_sprites/export"
+rm -rf "$TMP"
+mkdir -p "$TMP"
+TMP_WIN="$(wslpath -w "$TMP")"
+
+# Exports one source as <OUT_LABEL>/<out>.{png,json}; extra arguments (like
+# --ignore-layer) go to Aseprite before the input file.
 export_sheet() {
   local out="$1" src="$2"
   shift 2
@@ -36,18 +43,18 @@ export_sheet() {
   (
     cd "$SRC_DIR/$(dirname "$src")"
     "$ASEPRITE" -b "$@" "$(basename "$src")" \
-      --sheet "$OUT_WIN\\$out.png" \
-      --data "$OUT_WIN\\$out.json" \
+      --sheet "$TMP_WIN\\$out.png" \
+      --data "$TMP_WIN\\$out.json" \
       --format json-array \
       --list-tags \
       --sheet-type packed \
       </dev/null
   )
-  echo "Exported $out -> $OUT_LABEL/$out.{png,json}"
+  cp "$TMP/$out.png" "$TMP/$out.json" "$PUBLIC/$OUT_LABEL/"
+  echo "Exported $out -> public/$OUT_LABEL/$out.{png,json}"
 }
 
-OUT_LABEL="public/sprites"
-OUT_WIN="$(wslpath -w "$PUBLIC/sprites")"
+OUT_LABEL="sprites"
 for name in "${!SPRITES[@]}"; do
   src="${SPRITES[$name]}"
   # shellcheck disable=SC2206 # ARGS values are meant to split into words
@@ -61,8 +68,8 @@ for name in "${!SPRITES[@]}"; do
   fi
 done
 
-OUT_LABEL="public/assets"
-OUT_WIN="$(wslpath -w "$PUBLIC/assets")"
+OUT_LABEL="assets"
 for name in "${!ASSET_SPRITES[@]}"; do
   export_sheet "$name" "${ASSET_SPRITES[$name]}"
 done
+rm -rf "$TMP"
