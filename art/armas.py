@@ -54,7 +54,7 @@ WEAPONS = [
      "scale": 0.9, "carry_w": 150},
     # Brian's spear (sprites/Armas/Lanza1_Arma.aseprite): drawn on a diagonal on
     # a big canvas, so it is trimmed to its pixels (grip in canvas pixels).
-    # Thrown, it sticks in the ground (stuck: item frames 3 and 4).
+    # Thrown, it flies and sticks in the ground (stuck: see item_sheet).
     {"id": "lanza", "aseprite": "..\\Armas\\Lanza1_Arma.aseprite", "grip": (98, 84), "angle": 45, "edge": "ccw",
      "scale": 0.75, "carry_w": 150, "trim": True, "stuck": True},
 ]
@@ -200,6 +200,13 @@ class Weapon:
         mirrored = self.img.transpose(Image.FLIP_LEFT_RIGHT)
         as_drawn = (self.upscale(self.img), self.grip, spec["angle"])
         flipped = (self.upscale(mirrored), (w - 1 - self.grip[0], self.grip[1]), -spec["angle"])
+        self.drawn = as_drawn
+        # Along the weapon (grip -> head), how far its pixels reach toward the
+        # head and back toward the tail, in source px.
+        b = math.radians(spec["angle"])
+        along = [(x - self.grip[0]) * math.sin(b) - (y - self.grip[1]) * math.cos(b)
+                 for y in range(self.img.height) for x in range(w) if self.img.getpixel((x, y))[3]]
+        self.head_reach, self.tail_reach = max(along), min(along)
         # The variant with the edge on the clockwise side, for the swings.
         self.swing = flipped if spec["edge"] == "ccw" else as_drawn
         # The one the far-hand animations end on: mirrored into the left view it
@@ -238,6 +245,38 @@ class Weapon:
                 dx, dy = (x + 0.5 - at[0]) / self.scale, (y + 0.5 - at[1]) / self.scale
                 sx = grip[0] + 0.5 + dx * cos + dy * sin
                 sy = grip[1] + 0.5 - dx * sin + dy * cos
+                bx, by = int(sx * 8), int(sy * 8)
+                if 0 <= bx < bw and 0 <= by < bh and big[bx, by][3]:
+                    px[x, y] = big[bx, by]
+
+
+    def paste_along(self, dst, at, axis, cut_beyond=None):
+        """Draws the weapon as drawn, its grip on `at` and grip -> head along
+        the screen vector `axis`, whose length is the share of the weapon's
+        length that shows (1: all of it; less when it points toward or away
+        from the camera). Its width stays. Parts further than `cut_beyond`
+        source px toward the head are left out (buried)."""
+        big_img, grip, base = self.drawn
+        big = big_img.load()
+        bw, bh = big_img.size
+        length = math.hypot(*axis)
+        ax, ay = axis[0] / length, axis[1] / length
+        nx, ny = -ay, ax  # the axis turned 90 degrees clockwise on screen
+        b = math.radians(base)
+        ux, uy = math.sin(b), -math.cos(b)  # grip -> head in the drawing
+        vx, vy = math.cos(b), math.sin(b)  # ...turned 90 degrees clockwise
+        px = dst.load()
+        for y in range(at[1] - self.radius, at[1] + self.radius):
+            for x in range(at[0] - self.radius, at[0] + self.radius):
+                if not (0 <= x < dst.width and 0 <= y < dst.height):
+                    continue
+                dx, dy = x + 0.5 - at[0], y + 0.5 - at[1]
+                along = (dx * ax + dy * ay) / (length * self.scale)
+                if cut_beyond is not None and along > cut_beyond:
+                    continue
+                across = (dx * nx + dy * ny) / self.scale
+                sx = grip[0] + 0.5 + ux * along + vx * across
+                sy = grip[1] + 0.5 + uy * along + vy * across
                 bx, by = int(sx * 8), int(sy * 8)
                 if 0 <= bx < bw and 0 <= by < bh and big[bx, by][3]:
                     px[x, y] = big[bx, by]
@@ -427,49 +466,89 @@ def inventory_icon(weapon, angle_deg, spec_angle):
 
 
 ICON_ANGLE = 45  # head up and to the right
-# Stuck in the ground after a throw: head down, leaning this much off the
-# vertical, this many px of it buried, with some dirt around.
-STUCK_LEAN = 35
-STUCK_BURIED = 7
+# A thrown weapon, in THROW_DIRS directions on the floor: direction k goes
+# k * 360 / THROW_DIRS degrees clockwise from the right (the game's x right, y
+# down). The floor maps straight to the screen, a height goes up the screen.
+THROW_DIRS = 16
+# Stuck in the ground: head first, tilted down STUCK_PITCH degrees from the
+# floor (so the tail points back up toward the thrower), the head buried
+# STUCK_BURIED source px deep, with some dirt around.
+STUCK_PITCH = 60
+STUCK_BURIED = 12
+STUCK_MIN_LENGTH = 0.55
 STUCK_DIRT = [(82, 75, 36), (102, 57, 49), (0, 0, 0)]
+SPEED_LINES = [(255, 255, 255), (0x6F, 0x6A, 0x72)]
 
 
-def stuck_in_ground(weapon, lean):
-    """The weapon stuck in the floor, head down, leaning `lean` degrees
-    (positive: thrown to the right, so the tail points back up to the left).
-    Cropped so the point where it enters the ground is the bottom centre."""
+def throw_dir(k):
+    a = 2 * math.pi * k / THROW_DIRS
+    return math.cos(a), math.sin(a)
+
+
+def stuck_in_ground(weapon, k):
+    """The weapon stuck in the floor after a throw in direction k. Cropped so
+    the point where it enters the ground is the bottom centre."""
+    dx, dy = throw_dir(k)
+    c, s = math.cos(math.radians(STUCK_PITCH)), math.sin(math.radians(STUCK_PITCH))
+    axis = (dx * c, dy * c + s)  # forward along the floor, and down into it
+    # Pointing away from the camera it would shrink to a stub: never below STUCK_MIN_LENGTH.
+    length = min(1.0, max(STUCK_MIN_LENGTH, math.hypot(*axis)))
+    axis = (axis[0] / math.hypot(*axis) * length, axis[1] / math.hypot(*axis) * length)
     size = 2 * weapon.radius + 4
     img = Image.new("RGBA", (size, size))
-    weapon.paste(img, (size // 2, size // 2), 180 - lean)
+    cut = weapon.head_reach - STUCK_BURIED
+    weapon.paste_along(img, (size // 2, size // 2), axis, cut_beyond=cut)
+    ex = int(round(size // 2 + axis[0] * weapon.scale * cut))
+    ey = int(round(size // 2 + axis[1] * weapon.scale * cut))
     px = img.load()
-    rows = [y for y in range(size) if any(px[x, y][3] for x in range(size))]
-    ground = rows[-1] - STUCK_BURIED
-    for y in range(ground + 1, size):
-        for x in range(size):
-            px[x, y] = (0, 0, 0, 0)
-    xs = [x for x in range(size) if px[x, ground][3]]
-    entry = (min(xs) + max(xs)) // 2
-    for dx, color in ((-3, 0), (-2, 1), (-1, 2), (1, 2), (2, 1), (3, 0)):
-        px[entry + dx, ground] = STUCK_DIRT[color] + (255,)
+    for ddx, color in ((-3, 0), (-2, 1), (-1, 2), (0, 2), (1, 2), (2, 1), (3, 0)):
+        px[ex + ddx, ey] = STUCK_DIRT[color] + (255,)
     box = img.getchannel("A").getbbox()
-    half = max(entry - box[0], box[2] - 1 - entry)
-    return img.crop((entry - half, box[1], entry + half + 1, ground + 1))
+    half = max(ex - box[0], box[2] - 1 - ex)
+    return img.crop((ex - half, box[1], ex + half + 1, ey + 1))
+
+
+def in_flight(weapon, k):
+    """The weapon flying level in direction k, with speed lines behind it.
+    Square, the weapon's middle at the centre."""
+    dx, dy = throw_dir(k)
+    size = 2 * weapon.radius + 4
+    c = size // 2
+    img = Image.new("RGBA", (size, size))
+    mid = (weapon.head_reach + weapon.tail_reach) / 2 * weapon.scale
+    weapon.paste_along(img, (int(round(c - dx * mid)), int(round(c - dy * mid))), (dx, dy))
+    px = img.load()
+    tail = (weapon.tail_reach - weapon.head_reach) / 2 * weapon.scale  # back from the middle
+    for off, start, length in ((0, 2, 16), (-2, 4, 10), (2, 5, 9)):
+        for t in range(start, start + length):
+            x = int(round(c + dx * (tail - t) - dy * off))
+            y = int(round(c + dy * (tail - t) + dx * off))
+            if (t - start) % 2 and t > start + length / 2:
+                continue
+            if 0 <= x < size and 0 <= y < size and not px[x, y][3]:
+                px[x, y] = SPEED_LINES[t > start + length / 3] + (255,)
+    box = img.getchannel("A").getbbox()
+    half = max(c - box[0], box[2] - c, c - box[1], box[3] - c)
+    return img.crop((c - half, c - half, c + half, c + half))
 
 
 def item_sheet(weapon, path, spec_angle):
     """Frame 0: lying on the floor. Frame 1: as drawn, to carry. Frame 2: the
-    inventory icon, big and on a diagonal. A weapon that is thrown also has
-    frames 3 and 4: stuck in the ground after a throw to the right and to the
-    left (the point where it goes in at the bottom centre)."""
+    inventory icon, big and on a diagonal. A weapon that is thrown also has,
+    per throw direction k (THROW_DIRS of them): frame 3 + k, stuck in the
+    ground (the point where it goes in at the bottom centre), and frame
+    3 + THROW_DIRS + k, flying (its middle at the centre)."""
     size = 96
     lying = Image.new("RGBA", (size, size))
     weapon.paste(lying, (size // 2 + 12, size // 2), -90)
     lying = lying.crop(lying.getchannel("A").getbbox())
     held = weapon.img
     diagonal = inventory_icon(weapon, ICON_ANGLE, spec_angle)
-    stuck = [stuck_in_ground(weapon, lean) for lean in (STUCK_LEAN, -STUCK_LEAN)] if weapon.stuck else []
-    w = max(img.width for img in [lying, held, diagonal] + stuck)
-    h = max(img.height for img in [lying, held, diagonal] + stuck)
+    dirs = range(THROW_DIRS) if weapon.stuck else []
+    stuck = [stuck_in_ground(weapon, k) for k in dirs]
+    flying = [in_flight(weapon, k) for k in dirs]
+    w = max(img.width for img in [lying, held, diagonal] + stuck + flying)
+    h = max(img.height for img in [lying, held, diagonal] + stuck + flying)
     floor = Image.new("RGBA", (w, h))
     floor.alpha_composite(lying, ((w - lying.width) // 2, h - lying.height))  # rests on the floor
     carried = Image.new("RGBA", (w, h))
@@ -481,7 +560,11 @@ def item_sheet(weapon, path, spec_angle):
         frame = Image.new("RGBA", (w, h))
         frame.alpha_composite(img, ((w - img.width) // 2, h - img.height))  # entry point on the feet line
         frames.append(frame)
-    write_sheet(path, frames, w, h, len(frames), [100] * len(frames), [], weapon.id)
+    for img in flying:
+        frame = Image.new("RGBA", (w, h))
+        frame.alpha_composite(img, ((w - img.width) // 2, (h - img.height) // 2))
+        frames.append(frame)
+    write_sheet(path, frames, w, h, min(8, len(frames)), [100] * len(frames), [], weapon.id)
 
 
 def view_of(tag):

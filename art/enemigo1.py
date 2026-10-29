@@ -411,7 +411,7 @@ def draw_imp(angle, pose):
     for _, img in sorted(images, key=lambda e: -e[0]):
         cv.alpha_composite(img)
     if spear:
-        wound(cv, spear, p)
+        wound(cv, screen(*spear[1]), p, SPEAR[p.spear][2] * 7)
     return cv
 
 
@@ -578,28 +578,30 @@ def wall_blood(img, at, amount, bleed, rng, keep):
             put(px, x0 + dx, y0 + r + k, BLOOD)
 
 
-def pool(img, x0, amount, rng):
-    """A puddle of blobs on the floor under the wound, and drops around it."""
+def pool(img, x0, amount, rng, floor=BASE_Y):
+    """A puddle of blobs on the floor (feet line `floor`) under the wound, and
+    drops around it."""
     px = img.load()
     blobs = [(rng.uniform(-10, 12), rng.uniform(1, 9), rng.uniform(2.0, 4.5)) for _ in range(6)]
     for k, (dx, dy, r) in enumerate(blobs):
         r *= amount * (1.0 if k < 3 else ease(amount * 1.5 - 0.3))
-        cx, cy = x0 + dx * amount, BASE_Y - 2 + dy * 0.6
+        cx, cy = x0 + dx * amount, floor - 2 + dy * 0.6
         for y in range(int(cy - r), int(cy + r) + 2):
             for x in range(int(cx - r * 1.8), int(cx + r * 1.8) + 2):
                 if ((x + 0.5 - cx) / (r * 1.8 + 0.01)) ** 2 + ((y + 0.5 - cy) / (r * 0.8 + 0.01)) ** 2 <= 1:
                     put(px, x, y, BLOOD)
     drops = [(rng.uniform(-18, 18), rng.uniform(-3, 9)) for _ in range(8)]
     for dx, dy in drops[:int(8 * amount)]:
-        put(px, x0 + dx, BASE_Y + dy * 0.6, BLOOD)
+        put(px, x0 + dx, floor + dy * 0.6, BLOOD)
 
 
-def wound(cv, spear, p):
-    """Blood on whatever is drawn around the belly (body, shaft), running
-    down from the wound, plus the spray and the drops falling to the pool."""
+def wound(cv, at, p, seed, floor=BASE_Y):
+    """Blood on whatever is drawn around the wound at pixel `at` (body,
+    shaft), running down from it, plus the spray and the drops falling to the
+    pool on the feet line `floor`. `seed` fixes where the blood goes."""
     px = cv.load()
-    rng = random.Random(SPEAR[p.spear][2] * 7)
-    wx, wy = screen(*spear[1])
+    rng = random.Random(seed)
+    wx, wy = at
 
     def on_body(x, y):
         x, y = int(round(x)), int(round(y))
@@ -628,7 +630,7 @@ def wound(cv, spear, p):
         for ang, speed, big in flight:
             x = wx + math.cos(ang) * speed * t
             y = wy + math.sin(ang) * speed * t * 0.7 + 14 * t * t
-            if y < BASE_Y + 4:
+            if y < floor + 4:
                 put(px, x, y, BLOOD)
                 if big:
                     put(px, x, y + 1, BLOOD)
@@ -636,7 +638,7 @@ def wound(cv, spear, p):
     if p.drip is not None:
         for k, dx in enumerate((-1, 1, 2)):
             u = (p.drip + k / 3) % 1.0
-            y = lerp(wy + 4, BASE_Y - 1, u * u)
+            y = lerp(wy + 4, floor - 1, u * u)
             put(px, wx + dx, y, BLOOD)
             put(px, wx + dx, y + 1, BLOOD)
 

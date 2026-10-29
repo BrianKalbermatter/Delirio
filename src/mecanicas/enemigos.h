@@ -121,23 +121,31 @@ int enemigos_golpe_jugador(Enemigos *e, const Jugador *j, float alcance, int dan
 // vivos alrededor escapan del susto. Devuelve a cuantos les pego.
 int enemigos_golpe_suelo(Enemigos *e, Direccion centro, float radio, int danio);
 
-// Una lanza tirada desde `desde` hacia `hacia` (unitario): vuela derecho
-// hasta `alcance` pixeles o hasta un muro, y mata al primer vivo que cruza.
-// Lo arrastra en el sentido del tiro (por su eje mas largo) hasta el primer
-// muro: si es la cara de adelante o un costado lo deja clavado ahi; si no
-// llega a un muro o seria la cara de atras (que no se ve), cae muerto donde
-// estaba. Deja en `cae` donde queda la lanza en el piso (a los pies del que
-// mato, o donde termino el vuelo). Devuelve el hueco del que mato, o -1.
+// Una lanza tirada desde `desde` hacia `hacia`: vuela derecho hasta
+// `alcance` pixeles o hasta un muro, y mata al primer vivo que cruza. Se lo
+// lleva ensartado hasta donde termina el vuelo: si ahi la lanza da contra la
+// cara de adelante de un muro o contra un costado, lo deja clavado; si no
+// (sin muro, la cara de atras, una esquina, una puerta), cae muerto donde le
+// dio. Deja en `impacto` donde le dio (o donde termino el vuelo) y en `cae`
+// donde queda la lanza en el piso. Con `probar` solo dice que pasaria, sin
+// tocar a nadie. Devuelve el hueco del que mato (o mataria), o -1.
 int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion hacia, float alcance,
-                   Direccion *cae);
+                   int probar, Direccion *impacto, Direccion *cae);
 
 // Le sacan la lanza al enemigo `i` clavado: se cae y desaparece como
 // cualquier muerto.
 void enemigos_desclavar(Enemigos *e, int i);
 
-// El vivo mas cercano a `pies`, si esta a `radio` pixeles o menos: devuelve 1
-// y deja en `hacia` la direccion (unitaria) para mirarlo. 0 si no hay.
+// El vivo mas cercano a `pies`, si esta a `radio` pixeles o menos: devuelve
+// su hueco y deja en `hacia` la direccion (unitaria) para mirarlo. -1 si no hay.
 int enemigos_mas_cercano(const Enemigos *e, Direccion pies, float radio, Direccion *hacia);
+
+// 1 si el enemigo `i` esta vivo.
+int enemigos_vivo(const Enemigos *e, int i);
+
+// Un golpe solo al enemigo `i` (como los del jugador: si sobrevive escapa y
+// su grupo se alerta). Devuelve 1 si le pego.
+int enemigos_golpe_a(Enemigos *e, int i, int danio);
 
 // El jugador ataco: si estaba en un arbusto, se lo ve un ratito.
 void enemigos_delatar(Enemigos *e);

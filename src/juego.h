@@ -44,10 +44,16 @@ void juego_velocidad_tiempo(float factor);
 // puerta de arriba.
 void juego_prueba_puertas(void);
 
-// El jugador tira la lanza hacia (dx, dy) (ver enemigos_lanza). Devuelve el
-// hueco del enemigo que mato (-1: ninguno); juego_lanza_cae() dice donde
-// quedo la lanza.
-int juego_lanzar(float dx, float dy);
+// El jugador tira la lanza hacia (dx, dy) (ver enemigos_lanza; con `probar`
+// solo dice que pasaria). Devuelve el hueco del enemigo que mato (-1:
+// ninguno); juego_lanza_impacto() dice donde le dio y juego_lanza_cae()
+// donde quedo la lanza.
+int juego_lanzar(float dx, float dy, int probar);
+Direccion juego_lanza_impacto(void);
+
+// Mientras el jugador tira la lanza (de apuntar a terminar el tiro) no usa
+// habilidades ni pega solo: el tiro no se corta.
+void juego_lanzando(int si);
 Direccion juego_lanza_cae(void);
 
 // Le saca la lanza al enemigo `i` clavado a un muro (ver enemigos_desclavar).
@@ -62,6 +68,9 @@ const Enemigos *juego_enemigos(void);
 // Cuantas veces pego solo el jugador (un enemigo se le acerco mucho). Sube
 // en uno con cada golpe; la direccion de ese golpe queda en su dir.
 int juego_auto_ataques(void);
+
+// El enemigo al que el jugador le pega solo ahora (-1: ninguno).
+int juego_auto_objetivo(void);
 
 // Le devuelve vida al jugador (una pocion), sin pasarse del maximo.
 void juego_curar(int vida);

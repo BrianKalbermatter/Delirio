@@ -17,6 +17,7 @@
 // E => Enemigo
 // P => Personaje Principal
 
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
@@ -44,9 +45,14 @@ static float velocidad_tiempo = 1.0f; // para probar: acelera solo el reloj
 // Pega solo: si un enemigo vivo esta a esta distancia de sus pies, el
 // jugador se da vuelta hacia el y le tira un ataque ligero. Un poco mas que
 // ALCANCE_GOLPE, y ese golpe llega hasta aca (apunta justo al enemigo).
-#define RADIO_AUTO_ATAQUE 56.0f
+#define RADIO_AUTO_ATAQUE 56.0f // elige al que se acerca a esto, y le pega si esta a esto
+#define AUTO_SUELTA 90.0f       // lo deja de seguir si se aleja mas que esto
+#define AUTO_RITMO_MS 1000.0f   // un golpe solo cada tanto, sea al que sea
 
 static int auto_ataques;          // cuantas veces pego solo (el navegador lo mira)
+static int lanzando;              // tirando la lanza: nada lo interrumpe
+static int auto_objetivo = -1;    // el enemigo al que le pega solo (-1: ninguno)
+static float auto_espera_ms;      // hasta que puede pegar solo de nuevo
 
 // ########################################################
 // Llamadas a las mecanicas
@@ -83,24 +89,52 @@ static void usar_habilidad(int habilidad, float alcance){
 }
 
 void juego_usar_habilidad(int habilidad){
+  if (lanzando) return;
   usar_habilidad(habilidad, ALCANCE_GOLPE);
 }
 
-// Un enemigo muy cerca: se da vuelta hacia el y le pega (solo a enemigos).
-// No toca el destino del mouse: sigue caminando despues del golpe.
-static void auto_atacar(void){
-  if (jugador_muerto(&jugador)) return;
+// El jugador pega solo, nunca con una tecla: a un enemigo a la vez. Elige
+// al que se le acerca y lo sigue mientras viva y no se aleje mas que
+// AUTO_SUELTA. Cada AUTO_RITMO_MS, si lo tiene al alcance, se da vuelta hacia
+// el y le pega solo a el. El ritmo no vuelve a empezar al cambiar de
+// enemigo: el que llega cuando ya puede pegar recibe el golpe enseguida. No
+// toca el destino: sigue caminando despues del golpe.
+static void auto_atacar(float dt_ms){
+  if (auto_espera_ms > 0) auto_espera_ms -= dt_ms;
+  if (jugador_muerto(&jugador) || lanzando){
+    auto_objetivo = -1;
+    return;
+  }
+  Direccion pies = jugador.entidad.posicion;
+  float d = 0;
+  if (auto_objetivo >= 0){
+    Direccion p = enemigos.lista[auto_objetivo].entidad.posicion;
+    d = sqrtf((p.x - pies.x) * (p.x - pies.x) + (p.y - pies.y) * (p.y - pies.y));
+    if (!enemigos_vivo(&enemigos, auto_objetivo) || d > AUTO_SUELTA) auto_objetivo = -1;
+  }
+  if (auto_objetivo < 0){
+    Direccion hacia;
+    auto_objetivo = enemigos_mas_cercano(&enemigos, pies, RADIO_AUTO_ATAQUE, &hacia);
+    if (auto_objetivo < 0) return;
+    Direccion p = enemigos.lista[auto_objetivo].entidad.posicion;
+    d = sqrtf((p.x - pies.x) * (p.x - pies.x) + (p.y - pies.y) * (p.y - pies.y));
+  }
+  if (auto_espera_ms > 0 || d > RADIO_AUTO_ATAQUE) return;
   for (int h = HAB_ATAQUE_LIGERO; h <= HAB_ATAQUE_CRITICO; h++){
     if (jugador_activa(&jugador, h)) return; // ya esta pegando
   }
   if (jugador_activa(&jugador, HAB_SALTAR) || jugador_activa(&jugador, HAB_BLOQUEAR) || jugador_activa(&jugador, HAB_ULTI)) return;
-  if (jugador_recarga_restante(&jugador, HAB_ATAQUE_LIGERO) > 0) return;
-  Direccion hacia;
-  if (!enemigos_mas_cercano(&enemigos, jugador.entidad.posicion, RADIO_AUTO_ATAQUE, &hacia)) return;
-  jugador.entidad.dir = hacia;
+  Direccion p = enemigos.lista[auto_objetivo].entidad.posicion;
+  Direccion hacia = {p.x - pies.x, p.y - pies.y};
+  float largo = sqrtf(hacia.x * hacia.x + hacia.y * hacia.y);
+  if (!jugador_usar(&jugador, HAB_ATAQUE_LIGERO)) return; // recargando: en el proximo paso
+  if (largo > 0) jugador.entidad.dir = (Direccion){hacia.x / largo, hacia.y / largo};
   auto_ataques++;
-  usar_habilidad(HAB_ATAQUE_LIGERO, RADIO_AUTO_ATAQUE);
+  enemigos_golpe_a(&enemigos, auto_objetivo, jugador.entidad.danio + jugador.entidad.items.damage);
+  auto_espera_ms = AUTO_RITMO_MS;
 }
+
+int juego_auto_objetivo(void){ return auto_objetivo; }
 
 void juego_mantener_habilidad(int habilidad, int apretada){
   jugador_mantener(&jugador, habilidad, apretada);
@@ -132,7 +166,7 @@ void juego_actualizar(float dt_ms){
 
   // 3. El jugador: habilidades y movimiento, chocando con el laberinto
   jugador_actualizar(&jugador, &laberinto, dt_ms);
-  auto_atacar();
+  auto_atacar(dt_ms);
 
   // 4. Los enemigos: rodean al jugador y, cuando se animan, le pegan
   if (enemigos_actualizar(&enemigos, &laberinto, &jugador, dt_ms) > 0 && jugador.entidad.vida <= 0){
@@ -167,15 +201,18 @@ void juego_prueba_puertas(void){
 }
 
 #define ALCANCE_LANZA 320.0f
-static Direccion lanza_cae;
+static Direccion lanza_impacto, lanza_cae;
 
-int juego_lanzar(float dx, float dy){
-  lanza_cae = jugador.entidad.posicion;
+int juego_lanzar(float dx, float dy, int probar){
+  lanza_impacto = lanza_cae = jugador.entidad.posicion;
   if (jugador_muerto(&jugador)) return -1;
   return enemigos_lanza(&enemigos, &laberinto, jugador.entidad.posicion, (Direccion){dx, dy}, ALCANCE_LANZA,
-                        &lanza_cae);
+                        probar, &lanza_impacto, &lanza_cae);
 }
 
+void juego_lanzando(int si){ lanzando = si; }
+
+Direccion juego_lanza_impacto(void){ return lanza_impacto; }
 Direccion juego_lanza_cae(void){ return lanza_cae; }
 
 void juego_desclavar(int i){

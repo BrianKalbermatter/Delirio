@@ -12,6 +12,7 @@ PUBLIC="$(cd "$(dirname "$0")/.." && pwd)/public"
 # art/armas_build.sh build them with their weapon animations.
 declare -A SPRITES=(
   [enemigo_1]="Enemigos/Enemigo1/Enemigo1_Anim.aseprite"
+  [espartano_1]="Enemigos/Espartano1/Espartano1_Anim.aseprite"
   [arbol_1]="Arboles/Arbol1_pintado.aseprite"
   [flores]="Laberinto/Terreno/Flores_viento.aseprite"
   [flores_2]="Laberinto/Terreno/Flores2_viento.aseprite"

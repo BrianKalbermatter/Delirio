@@ -1,0 +1,3797 @@
+{ "frames": [
+   {
+    "filename": "Espartano1_Anim 0.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 1.aseprite",
+    "frame": { "x": 64, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 2.aseprite",
+    "frame": { "x": 64, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 3.aseprite",
+    "frame": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 4.aseprite",
+    "frame": { "x": 128, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 5.aseprite",
+    "frame": { "x": 128, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 6.aseprite",
+    "frame": { "x": 192, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 7.aseprite",
+    "frame": { "x": 256, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 8.aseprite",
+    "frame": { "x": 256, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 9.aseprite",
+    "frame": { "x": 192, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 10.aseprite",
+    "frame": { "x": 320, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 11.aseprite",
+    "frame": { "x": 320, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 12.aseprite",
+    "frame": { "x": 384, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 13.aseprite",
+    "frame": { "x": 448, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 14.aseprite",
+    "frame": { "x": 448, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 15.aseprite",
+    "frame": { "x": 384, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 16.aseprite",
+    "frame": { "x": 512, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 17.aseprite",
+    "frame": { "x": 512, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 18.aseprite",
+    "frame": { "x": 576, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 19.aseprite",
+    "frame": { "x": 640, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 20.aseprite",
+    "frame": { "x": 640, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 21.aseprite",
+    "frame": { "x": 576, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 22.aseprite",
+    "frame": { "x": 704, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 23.aseprite",
+    "frame": { "x": 704, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 24.aseprite",
+    "frame": { "x": 768, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 25.aseprite",
+    "frame": { "x": 832, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 26.aseprite",
+    "frame": { "x": 832, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 27.aseprite",
+    "frame": { "x": 768, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 28.aseprite",
+    "frame": { "x": 896, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 29.aseprite",
+    "frame": { "x": 896, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 30.aseprite",
+    "frame": { "x": 960, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 31.aseprite",
+    "frame": { "x": 1024, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 32.aseprite",
+    "frame": { "x": 1024, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 33.aseprite",
+    "frame": { "x": 960, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 34.aseprite",
+    "frame": { "x": 1088, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 35.aseprite",
+    "frame": { "x": 1088, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 36.aseprite",
+    "frame": { "x": 1152, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 37.aseprite",
+    "frame": { "x": 1216, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 38.aseprite",
+    "frame": { "x": 1216, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 39.aseprite",
+    "frame": { "x": 1152, "y": 0, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 40.aseprite",
+    "frame": { "x": 0, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 41.aseprite",
+    "frame": { "x": 0, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 42.aseprite",
+    "frame": { "x": 64, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 43.aseprite",
+    "frame": { "x": 128, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 44.aseprite",
+    "frame": { "x": 128, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 45.aseprite",
+    "frame": { "x": 64, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 46.aseprite",
+    "frame": { "x": 192, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 47.aseprite",
+    "frame": { "x": 192, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 150
+   },
+   {
+    "filename": "Espartano1_Anim 48.aseprite",
+    "frame": { "x": 256, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 49.aseprite",
+    "frame": { "x": 320, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 50.aseprite",
+    "frame": { "x": 384, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 51.aseprite",
+    "frame": { "x": 448, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 52.aseprite",
+    "frame": { "x": 512, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 53.aseprite",
+    "frame": { "x": 576, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 54.aseprite",
+    "frame": { "x": 640, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 55.aseprite",
+    "frame": { "x": 704, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 56.aseprite",
+    "frame": { "x": 768, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 57.aseprite",
+    "frame": { "x": 832, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 58.aseprite",
+    "frame": { "x": 896, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 59.aseprite",
+    "frame": { "x": 960, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 60.aseprite",
+    "frame": { "x": 1024, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 61.aseprite",
+    "frame": { "x": 1088, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 62.aseprite",
+    "frame": { "x": 1152, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 63.aseprite",
+    "frame": { "x": 1216, "y": 96, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 64.aseprite",
+    "frame": { "x": 0, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 65.aseprite",
+    "frame": { "x": 64, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 66.aseprite",
+    "frame": { "x": 128, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 67.aseprite",
+    "frame": { "x": 192, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 68.aseprite",
+    "frame": { "x": 256, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 69.aseprite",
+    "frame": { "x": 320, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 70.aseprite",
+    "frame": { "x": 384, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 71.aseprite",
+    "frame": { "x": 448, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 72.aseprite",
+    "frame": { "x": 512, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 73.aseprite",
+    "frame": { "x": 576, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 74.aseprite",
+    "frame": { "x": 640, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 75.aseprite",
+    "frame": { "x": 704, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 76.aseprite",
+    "frame": { "x": 768, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 77.aseprite",
+    "frame": { "x": 832, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 78.aseprite",
+    "frame": { "x": 896, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 79.aseprite",
+    "frame": { "x": 960, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 80.aseprite",
+    "frame": { "x": 1024, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 81.aseprite",
+    "frame": { "x": 1088, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 82.aseprite",
+    "frame": { "x": 1152, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 83.aseprite",
+    "frame": { "x": 1216, "y": 192, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 84.aseprite",
+    "frame": { "x": 0, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 85.aseprite",
+    "frame": { "x": 64, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 86.aseprite",
+    "frame": { "x": 128, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 87.aseprite",
+    "frame": { "x": 192, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 88.aseprite",
+    "frame": { "x": 256, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 89.aseprite",
+    "frame": { "x": 320, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 90.aseprite",
+    "frame": { "x": 384, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 91.aseprite",
+    "frame": { "x": 448, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 92.aseprite",
+    "frame": { "x": 512, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 93.aseprite",
+    "frame": { "x": 576, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 94.aseprite",
+    "frame": { "x": 640, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 95.aseprite",
+    "frame": { "x": 704, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 96.aseprite",
+    "frame": { "x": 768, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 97.aseprite",
+    "frame": { "x": 832, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 98.aseprite",
+    "frame": { "x": 896, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 99.aseprite",
+    "frame": { "x": 960, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 100.aseprite",
+    "frame": { "x": 1024, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 101.aseprite",
+    "frame": { "x": 1088, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 102.aseprite",
+    "frame": { "x": 1152, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 103.aseprite",
+    "frame": { "x": 1216, "y": 288, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 104.aseprite",
+    "frame": { "x": 0, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 105.aseprite",
+    "frame": { "x": 64, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 106.aseprite",
+    "frame": { "x": 128, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 107.aseprite",
+    "frame": { "x": 192, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 108.aseprite",
+    "frame": { "x": 256, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 109.aseprite",
+    "frame": { "x": 320, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 110.aseprite",
+    "frame": { "x": 384, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 111.aseprite",
+    "frame": { "x": 448, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 112.aseprite",
+    "frame": { "x": 512, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 113.aseprite",
+    "frame": { "x": 576, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 114.aseprite",
+    "frame": { "x": 640, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 115.aseprite",
+    "frame": { "x": 704, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 116.aseprite",
+    "frame": { "x": 768, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 117.aseprite",
+    "frame": { "x": 832, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 118.aseprite",
+    "frame": { "x": 896, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 119.aseprite",
+    "frame": { "x": 960, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 120.aseprite",
+    "frame": { "x": 1024, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 121.aseprite",
+    "frame": { "x": 1088, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 122.aseprite",
+    "frame": { "x": 1152, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 123.aseprite",
+    "frame": { "x": 1216, "y": 384, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 124.aseprite",
+    "frame": { "x": 0, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 125.aseprite",
+    "frame": { "x": 64, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 126.aseprite",
+    "frame": { "x": 128, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 127.aseprite",
+    "frame": { "x": 192, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 128.aseprite",
+    "frame": { "x": 256, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 129.aseprite",
+    "frame": { "x": 320, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 130.aseprite",
+    "frame": { "x": 384, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 131.aseprite",
+    "frame": { "x": 448, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 132.aseprite",
+    "frame": { "x": 512, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 133.aseprite",
+    "frame": { "x": 576, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 134.aseprite",
+    "frame": { "x": 640, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 135.aseprite",
+    "frame": { "x": 704, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 136.aseprite",
+    "frame": { "x": 768, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 137.aseprite",
+    "frame": { "x": 832, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 138.aseprite",
+    "frame": { "x": 896, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 139.aseprite",
+    "frame": { "x": 960, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 140.aseprite",
+    "frame": { "x": 1024, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 141.aseprite",
+    "frame": { "x": 1088, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 142.aseprite",
+    "frame": { "x": 1152, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 143.aseprite",
+    "frame": { "x": 1216, "y": 480, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 144.aseprite",
+    "frame": { "x": 0, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 145.aseprite",
+    "frame": { "x": 64, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 146.aseprite",
+    "frame": { "x": 128, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 147.aseprite",
+    "frame": { "x": 192, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 148.aseprite",
+    "frame": { "x": 256, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 149.aseprite",
+    "frame": { "x": 320, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 150.aseprite",
+    "frame": { "x": 384, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 151.aseprite",
+    "frame": { "x": 448, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 152.aseprite",
+    "frame": { "x": 512, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 153.aseprite",
+    "frame": { "x": 576, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 154.aseprite",
+    "frame": { "x": 640, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 155.aseprite",
+    "frame": { "x": 704, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 156.aseprite",
+    "frame": { "x": 768, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 157.aseprite",
+    "frame": { "x": 832, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 158.aseprite",
+    "frame": { "x": 896, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 159.aseprite",
+    "frame": { "x": 960, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 160.aseprite",
+    "frame": { "x": 1024, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 161.aseprite",
+    "frame": { "x": 1088, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 162.aseprite",
+    "frame": { "x": 1152, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 163.aseprite",
+    "frame": { "x": 1216, "y": 576, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 164.aseprite",
+    "frame": { "x": 0, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 165.aseprite",
+    "frame": { "x": 64, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 166.aseprite",
+    "frame": { "x": 128, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 167.aseprite",
+    "frame": { "x": 192, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 168.aseprite",
+    "frame": { "x": 256, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 169.aseprite",
+    "frame": { "x": 320, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 170.aseprite",
+    "frame": { "x": 384, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 171.aseprite",
+    "frame": { "x": 448, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 172.aseprite",
+    "frame": { "x": 512, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 173.aseprite",
+    "frame": { "x": 576, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 174.aseprite",
+    "frame": { "x": 640, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 175.aseprite",
+    "frame": { "x": 704, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 176.aseprite",
+    "frame": { "x": 768, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 177.aseprite",
+    "frame": { "x": 832, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 178.aseprite",
+    "frame": { "x": 896, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 179.aseprite",
+    "frame": { "x": 960, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 180.aseprite",
+    "frame": { "x": 1024, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 181.aseprite",
+    "frame": { "x": 1088, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 182.aseprite",
+    "frame": { "x": 1152, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 183.aseprite",
+    "frame": { "x": 1216, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 184.aseprite",
+    "frame": { "x": 0, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 185.aseprite",
+    "frame": { "x": 64, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 186.aseprite",
+    "frame": { "x": 128, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 187.aseprite",
+    "frame": { "x": 128, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 188.aseprite",
+    "frame": { "x": 192, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 189.aseprite",
+    "frame": { "x": 256, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 190.aseprite",
+    "frame": { "x": 320, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 191.aseprite",
+    "frame": { "x": 384, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 192.aseprite",
+    "frame": { "x": 448, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 193.aseprite",
+    "frame": { "x": 512, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 194.aseprite",
+    "frame": { "x": 576, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 195.aseprite",
+    "frame": { "x": 640, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 196.aseprite",
+    "frame": { "x": 704, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 197.aseprite",
+    "frame": { "x": 768, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 198.aseprite",
+    "frame": { "x": 832, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 199.aseprite",
+    "frame": { "x": 896, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 200.aseprite",
+    "frame": { "x": 960, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 201.aseprite",
+    "frame": { "x": 1024, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 202.aseprite",
+    "frame": { "x": 768, "y": 672, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 203.aseprite",
+    "frame": { "x": 1088, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 204.aseprite",
+    "frame": { "x": 1152, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 205.aseprite",
+    "frame": { "x": 1216, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 206.aseprite",
+    "frame": { "x": 0, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 207.aseprite",
+    "frame": { "x": 64, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 208.aseprite",
+    "frame": { "x": 128, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 209.aseprite",
+    "frame": { "x": 192, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 210.aseprite",
+    "frame": { "x": 256, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 211.aseprite",
+    "frame": { "x": 320, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 212.aseprite",
+    "frame": { "x": 384, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 213.aseprite",
+    "frame": { "x": 448, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 214.aseprite",
+    "frame": { "x": 448, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 215.aseprite",
+    "frame": { "x": 512, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 216.aseprite",
+    "frame": { "x": 576, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 217.aseprite",
+    "frame": { "x": 640, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 218.aseprite",
+    "frame": { "x": 704, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 219.aseprite",
+    "frame": { "x": 768, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 220.aseprite",
+    "frame": { "x": 832, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 221.aseprite",
+    "frame": { "x": 896, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 60
+   },
+   {
+    "filename": "Espartano1_Anim 222.aseprite",
+    "frame": { "x": 960, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 223.aseprite",
+    "frame": { "x": 1024, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 224.aseprite",
+    "frame": { "x": 1088, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 225.aseprite",
+    "frame": { "x": 1152, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 226.aseprite",
+    "frame": { "x": 1216, "y": 864, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 227.aseprite",
+    "frame": { "x": 0, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 228.aseprite",
+    "frame": { "x": 64, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 229.aseprite",
+    "frame": { "x": 1088, "y": 768, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 230.aseprite",
+    "frame": { "x": 128, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 231.aseprite",
+    "frame": { "x": 192, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 232.aseprite",
+    "frame": { "x": 256, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 233.aseprite",
+    "frame": { "x": 320, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 234.aseprite",
+    "frame": { "x": 384, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 235.aseprite",
+    "frame": { "x": 448, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 236.aseprite",
+    "frame": { "x": 512, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 237.aseprite",
+    "frame": { "x": 576, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 238.aseprite",
+    "frame": { "x": 640, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 239.aseprite",
+    "frame": { "x": 704, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 240.aseprite",
+    "frame": { "x": 768, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 241.aseprite",
+    "frame": { "x": 832, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 242.aseprite",
+    "frame": { "x": 896, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 243.aseprite",
+    "frame": { "x": 960, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 244.aseprite",
+    "frame": { "x": 1024, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 245.aseprite",
+    "frame": { "x": 1088, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 246.aseprite",
+    "frame": { "x": 1152, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 247.aseprite",
+    "frame": { "x": 1216, "y": 960, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 248.aseprite",
+    "frame": { "x": 0, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 249.aseprite",
+    "frame": { "x": 64, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 250.aseprite",
+    "frame": { "x": 128, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 251.aseprite",
+    "frame": { "x": 192, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 252.aseprite",
+    "frame": { "x": 256, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 253.aseprite",
+    "frame": { "x": 320, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 254.aseprite",
+    "frame": { "x": 384, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 255.aseprite",
+    "frame": { "x": 448, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 256.aseprite",
+    "frame": { "x": 512, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 257.aseprite",
+    "frame": { "x": 576, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 258.aseprite",
+    "frame": { "x": 640, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 259.aseprite",
+    "frame": { "x": 704, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 70
+   },
+   {
+    "filename": "Espartano1_Anim 260.aseprite",
+    "frame": { "x": 768, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 261.aseprite",
+    "frame": { "x": 832, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 262.aseprite",
+    "frame": { "x": 896, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 263.aseprite",
+    "frame": { "x": 960, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 264.aseprite",
+    "frame": { "x": 1024, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 265.aseprite",
+    "frame": { "x": 1088, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 266.aseprite",
+    "frame": { "x": 1152, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 267.aseprite",
+    "frame": { "x": 1216, "y": 1056, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 268.aseprite",
+    "frame": { "x": 0, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 269.aseprite",
+    "frame": { "x": 64, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 270.aseprite",
+    "frame": { "x": 128, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 271.aseprite",
+    "frame": { "x": 192, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 272.aseprite",
+    "frame": { "x": 256, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 273.aseprite",
+    "frame": { "x": 320, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 274.aseprite",
+    "frame": { "x": 384, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 275.aseprite",
+    "frame": { "x": 448, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 276.aseprite",
+    "frame": { "x": 512, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 277.aseprite",
+    "frame": { "x": 576, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 278.aseprite",
+    "frame": { "x": 640, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 279.aseprite",
+    "frame": { "x": 704, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 280.aseprite",
+    "frame": { "x": 768, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 281.aseprite",
+    "frame": { "x": 832, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 282.aseprite",
+    "frame": { "x": 896, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 283.aseprite",
+    "frame": { "x": 960, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 110
+   },
+   {
+    "filename": "Espartano1_Anim 284.aseprite",
+    "frame": { "x": 1024, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 285.aseprite",
+    "frame": { "x": 1088, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 286.aseprite",
+    "frame": { "x": 1152, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 287.aseprite",
+    "frame": { "x": 1216, "y": 1152, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 288.aseprite",
+    "frame": { "x": 0, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 289.aseprite",
+    "frame": { "x": 64, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 290.aseprite",
+    "frame": { "x": 128, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 291.aseprite",
+    "frame": { "x": 192, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 292.aseprite",
+    "frame": { "x": 256, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 293.aseprite",
+    "frame": { "x": 320, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 294.aseprite",
+    "frame": { "x": 384, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 295.aseprite",
+    "frame": { "x": 448, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 296.aseprite",
+    "frame": { "x": 512, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 297.aseprite",
+    "frame": { "x": 576, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 298.aseprite",
+    "frame": { "x": 640, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 299.aseprite",
+    "frame": { "x": 704, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 300.aseprite",
+    "frame": { "x": 768, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 301.aseprite",
+    "frame": { "x": 832, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 302.aseprite",
+    "frame": { "x": 896, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 303.aseprite",
+    "frame": { "x": 960, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 304.aseprite",
+    "frame": { "x": 1024, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 305.aseprite",
+    "frame": { "x": 1088, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 306.aseprite",
+    "frame": { "x": 1152, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 307.aseprite",
+    "frame": { "x": 1216, "y": 1248, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 308.aseprite",
+    "frame": { "x": 0, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 309.aseprite",
+    "frame": { "x": 64, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 310.aseprite",
+    "frame": { "x": 128, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 311.aseprite",
+    "frame": { "x": 192, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 312.aseprite",
+    "frame": { "x": 256, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 313.aseprite",
+    "frame": { "x": 320, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 314.aseprite",
+    "frame": { "x": 384, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 315.aseprite",
+    "frame": { "x": 448, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 316.aseprite",
+    "frame": { "x": 512, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 317.aseprite",
+    "frame": { "x": 576, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 318.aseprite",
+    "frame": { "x": 640, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 319.aseprite",
+    "frame": { "x": 704, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 320.aseprite",
+    "frame": { "x": 768, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 321.aseprite",
+    "frame": { "x": 832, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 322.aseprite",
+    "frame": { "x": 896, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 323.aseprite",
+    "frame": { "x": 960, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 324.aseprite",
+    "frame": { "x": 1024, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 325.aseprite",
+    "frame": { "x": 1088, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 326.aseprite",
+    "frame": { "x": 1152, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 327.aseprite",
+    "frame": { "x": 1216, "y": 1344, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 328.aseprite",
+    "frame": { "x": 0, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 329.aseprite",
+    "frame": { "x": 64, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 330.aseprite",
+    "frame": { "x": 128, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 331.aseprite",
+    "frame": { "x": 192, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 332.aseprite",
+    "frame": { "x": 256, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 333.aseprite",
+    "frame": { "x": 320, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 334.aseprite",
+    "frame": { "x": 384, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 335.aseprite",
+    "frame": { "x": 448, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 336.aseprite",
+    "frame": { "x": 512, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 337.aseprite",
+    "frame": { "x": 576, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 338.aseprite",
+    "frame": { "x": 640, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 339.aseprite",
+    "frame": { "x": 704, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 340.aseprite",
+    "frame": { "x": 768, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 341.aseprite",
+    "frame": { "x": 832, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 342.aseprite",
+    "frame": { "x": 896, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 343.aseprite",
+    "frame": { "x": 960, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 344.aseprite",
+    "frame": { "x": 1024, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 345.aseprite",
+    "frame": { "x": 1088, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 346.aseprite",
+    "frame": { "x": 1152, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 347.aseprite",
+    "frame": { "x": 1216, "y": 1440, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 348.aseprite",
+    "frame": { "x": 0, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 349.aseprite",
+    "frame": { "x": 64, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 350.aseprite",
+    "frame": { "x": 128, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 351.aseprite",
+    "frame": { "x": 192, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 352.aseprite",
+    "frame": { "x": 256, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 353.aseprite",
+    "frame": { "x": 320, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 354.aseprite",
+    "frame": { "x": 384, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 355.aseprite",
+    "frame": { "x": 448, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 356.aseprite",
+    "frame": { "x": 512, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 357.aseprite",
+    "frame": { "x": 576, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 358.aseprite",
+    "frame": { "x": 640, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 359.aseprite",
+    "frame": { "x": 704, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 360.aseprite",
+    "frame": { "x": 768, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 361.aseprite",
+    "frame": { "x": 832, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 362.aseprite",
+    "frame": { "x": 896, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 363.aseprite",
+    "frame": { "x": 960, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 364.aseprite",
+    "frame": { "x": 1024, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 365.aseprite",
+    "frame": { "x": 1088, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 366.aseprite",
+    "frame": { "x": 1152, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 367.aseprite",
+    "frame": { "x": 1216, "y": 1536, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 368.aseprite",
+    "frame": { "x": 0, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 369.aseprite",
+    "frame": { "x": 64, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 370.aseprite",
+    "frame": { "x": 128, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 371.aseprite",
+    "frame": { "x": 192, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 372.aseprite",
+    "frame": { "x": 192, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 373.aseprite",
+    "frame": { "x": 256, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 374.aseprite",
+    "frame": { "x": 320, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 375.aseprite",
+    "frame": { "x": 384, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 376.aseprite",
+    "frame": { "x": 448, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 377.aseprite",
+    "frame": { "x": 512, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 378.aseprite",
+    "frame": { "x": 576, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 379.aseprite",
+    "frame": { "x": 640, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 380.aseprite",
+    "frame": { "x": 704, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 381.aseprite",
+    "frame": { "x": 768, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 382.aseprite",
+    "frame": { "x": 832, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 383.aseprite",
+    "frame": { "x": 896, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 384.aseprite",
+    "frame": { "x": 960, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 385.aseprite",
+    "frame": { "x": 1024, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 386.aseprite",
+    "frame": { "x": 1088, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 387.aseprite",
+    "frame": { "x": 1152, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 388.aseprite",
+    "frame": { "x": 1216, "y": 1632, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 389.aseprite",
+    "frame": { "x": 0, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 390.aseprite",
+    "frame": { "x": 64, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 391.aseprite",
+    "frame": { "x": 128, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 392.aseprite",
+    "frame": { "x": 192, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 393.aseprite",
+    "frame": { "x": 256, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 394.aseprite",
+    "frame": { "x": 320, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 395.aseprite",
+    "frame": { "x": 384, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 396.aseprite",
+    "frame": { "x": 448, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 397.aseprite",
+    "frame": { "x": 512, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 398.aseprite",
+    "frame": { "x": 576, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 399.aseprite",
+    "frame": { "x": 640, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 400.aseprite",
+    "frame": { "x": 704, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 401.aseprite",
+    "frame": { "x": 768, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 402.aseprite",
+    "frame": { "x": 832, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 403.aseprite",
+    "frame": { "x": 896, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 404.aseprite",
+    "frame": { "x": 960, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 405.aseprite",
+    "frame": { "x": 1024, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 406.aseprite",
+    "frame": { "x": 1088, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 407.aseprite",
+    "frame": { "x": 1152, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 408.aseprite",
+    "frame": { "x": 1216, "y": 1728, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 409.aseprite",
+    "frame": { "x": 0, "y": 1824, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 410.aseprite",
+    "frame": { "x": 64, "y": 1824, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 411.aseprite",
+    "frame": { "x": 128, "y": 1824, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 412.aseprite",
+    "frame": { "x": 192, "y": 1824, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 413.aseprite",
+    "frame": { "x": 256, "y": 1824, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 414.aseprite",
+    "frame": { "x": 320, "y": 1824, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   },
+   {
+    "filename": "Espartano1_Anim 415.aseprite",
+    "frame": { "x": 384, "y": 1824, "w": 64, "h": 96 },
+    "rotated": false,
+    "trimmed": false,
+    "spriteSourceSize": { "x": 0, "y": 0, "w": 64, "h": 96 },
+    "sourceSize": { "w": 64, "h": 96 },
+    "duration": 80
+   }
+ ],
+ "meta": {
+  "app": "https://www.aseprite.org/",
+  "version": "1.3.18.6-x64",
+  "image": "espartano_1.png",
+  "format": "RGBA8888",
+  "size": { "w": 1280, "h": 1920 },
+  "scale": "1",
+  "frameTags": [
+   { "name": "idle_front", "from": 0, "to": 5, "direction": "forward", "color": "#000000ff" },
+   { "name": "idle_right", "from": 6, "to": 11, "direction": "forward", "color": "#000000ff" },
+   { "name": "idle_left", "from": 12, "to": 17, "direction": "forward", "color": "#000000ff" },
+   { "name": "idle_back", "from": 18, "to": 23, "direction": "forward", "color": "#000000ff" },
+   { "name": "idle_down_right", "from": 24, "to": 29, "direction": "forward", "color": "#000000ff" },
+   { "name": "idle_down_left", "from": 30, "to": 35, "direction": "forward", "color": "#000000ff" },
+   { "name": "idle_up_right", "from": 36, "to": 41, "direction": "forward", "color": "#000000ff" },
+   { "name": "idle_up_left", "from": 42, "to": 47, "direction": "forward", "color": "#000000ff" },
+   { "name": "walk_right", "from": 48, "to": 55, "direction": "forward", "color": "#000000ff" },
+   { "name": "walk_left", "from": 56, "to": 63, "direction": "forward", "color": "#000000ff" },
+   { "name": "walk_back", "from": 64, "to": 71, "direction": "forward", "color": "#000000ff" },
+   { "name": "walk_front", "from": 72, "to": 79, "direction": "forward", "color": "#000000ff" },
+   { "name": "walk_down_right", "from": 80, "to": 87, "direction": "forward", "color": "#000000ff" },
+   { "name": "walk_down_left", "from": 88, "to": 95, "direction": "forward", "color": "#000000ff" },
+   { "name": "walk_up_right", "from": 96, "to": 103, "direction": "forward", "color": "#000000ff" },
+   { "name": "walk_up_left", "from": 104, "to": 111, "direction": "forward", "color": "#000000ff" },
+   { "name": "run_right", "from": 112, "to": 119, "direction": "forward", "color": "#000000ff" },
+   { "name": "run_left", "from": 120, "to": 127, "direction": "forward", "color": "#000000ff" },
+   { "name": "run_back", "from": 128, "to": 135, "direction": "forward", "color": "#000000ff" },
+   { "name": "run_front", "from": 136, "to": 143, "direction": "forward", "color": "#000000ff" },
+   { "name": "run_down_right", "from": 144, "to": 151, "direction": "forward", "color": "#000000ff" },
+   { "name": "run_down_left", "from": 152, "to": 159, "direction": "forward", "color": "#000000ff" },
+   { "name": "run_up_right", "from": 160, "to": 167, "direction": "forward", "color": "#000000ff" },
+   { "name": "run_up_left", "from": 168, "to": 175, "direction": "forward", "color": "#000000ff" },
+   { "name": "roll_start_right", "from": 176, "to": 186, "direction": "forward", "color": "#000000ff" },
+   { "name": "roll_right", "from": 187, "to": 194, "direction": "forward", "color": "#000000ff" },
+   { "name": "roll_end_right", "from": 195, "to": 202, "direction": "forward", "color": "#000000ff" },
+   { "name": "roll_start_left", "from": 203, "to": 213, "direction": "forward", "color": "#000000ff" },
+   { "name": "roll_left", "from": 214, "to": 221, "direction": "forward", "color": "#000000ff" },
+   { "name": "roll_end_left", "from": 222, "to": 229, "direction": "forward", "color": "#000000ff" },
+   { "name": "pinned_hit_front", "from": 230, "to": 239, "direction": "forward", "color": "#000000ff" },
+   { "name": "pinned_hit_left", "from": 240, "to": 249, "direction": "forward", "color": "#000000ff" },
+   { "name": "pinned_hit_right", "from": 250, "to": 259, "direction": "forward", "color": "#000000ff" },
+   { "name": "pinned_front", "from": 260, "to": 267, "direction": "forward", "color": "#000000ff" },
+   { "name": "pinned_left", "from": 268, "to": 275, "direction": "forward", "color": "#000000ff" },
+   { "name": "pinned_right", "from": 276, "to": 283, "direction": "forward", "color": "#000000ff" },
+   { "name": "death_front", "from": 284, "to": 316, "direction": "forward", "color": "#000000ff" },
+   { "name": "death_right", "from": 317, "to": 349, "direction": "forward", "color": "#000000ff" },
+   { "name": "death_left", "from": 350, "to": 382, "direction": "forward", "color": "#000000ff" },
+   { "name": "death_back", "from": 383, "to": 415, "direction": "forward", "color": "#000000ff" }
+  ]
+ }
+}

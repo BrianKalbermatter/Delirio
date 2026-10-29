@@ -14,7 +14,14 @@ import { Character } from "./domain/character";
 import { directionFromVector, vectorOf } from "./domain/facing";
 import { Equipment, type EquipSlot } from "./domain/equipment";
 import { Inventory } from "./domain/inventory";
-import { type ItemKind, ITEMS, WEAPON_STUCK_FRAME } from "./domain/items";
+import {
+  flightFrame,
+  type ItemKind,
+  ITEMS,
+  SPEAR_FLIGHT_SPEED,
+  stuckFrame,
+  throwDirIndex,
+} from "./domain/items";
 import { ITEM_SPRITES, placeItems, type Prop, WEAPON_ITEMS } from "./domain/level-items";
 import { Square } from "./domain/square";
 import { placeSampleTree, sampleTrunkBox } from "./domain/sample-tree";
@@ -51,7 +58,7 @@ import { GameLog } from "./infrastructure/ui/game-log";
 import { SideTabs } from "./infrastructure/ui/side-tabs";
 import { MapBook } from "./infrastructure/ui/map-book";
 import { PauseMenu } from "./infrastructure/ui/pause-menu";
-import { ABILITY, loadGameWasm, STATE } from "./infrastructure/wasm/game-wasm";
+import { ABILITY, type EnemyState, loadGameWasm, type PlayerCover, STATE } from "./infrastructure/wasm/game-wasm";
 
 // The canvas fills the whole game area. Its internal resolution adapts to the
 // area so that it is always shown at an integer scale: every pixel the same
@@ -112,7 +119,15 @@ const SLAM_SHAKE_PX = 3;
 const THROW_HOLD_MS = 260;
 const THROW_RELEASE_MS = 440;
 const SPEAR_CHARGE_MS = 600;
+// The spear leaves the hand this high, and flies level at it until it hits
+// (an enemy, at the belly) or comes down where its flight ends.
+const SPEAR_HAND_HEIGHT = 30; // px over the feet
+const SPEAR_HIT_HEIGHT = 14;
+const SPEAR_HAND_AHEAD = 12; // px ahead of the feet
 const SPEAR_BAR_WIDTH = 24;
+// The ring under the enemy the player swings at on its own, around its feet.
+const FOCUS_RING_RX = 13; // px
+const FOCUS_RING_RY = 5;
 const SPEAR_BAR_BELOW_FEET = 6; // px
 const SPEAR_BAR_CHARGING = 0x8b93af;
 const SPEAR_BAR_READY = 0xfbb954;
@@ -207,8 +222,9 @@ const [
   loadMazeTiles(`${BASE}assets/maze_tiles`),
   // The torch's fire (art/antorcha_fuego.py), drawn on its flame.
   loadSpriteSheet(`${BASE}sprites/antorcha_fuego`),
-  // Brian's Enemigo1, the level 1 enemy (sprites/Enemigos/Enemigo1).
-  loadSpriteSheet(`${BASE}sprites/enemigo_1`),
+  // Brian's Espartano1, the level 1 enemy (art/espartano.py,
+  // sprites/Enemigos/Espartano1).
+  loadSpriteSheet(`${BASE}sprites/espartano_1`),
   loadBigTreeArt(),
   loadSpriteSheet(`${BASE}sprites/flores`),
   loadSpriteSheet(`${BASE}sprites/flores_2`),
@@ -350,10 +366,14 @@ const maze = new MazeRenderer(app.renderer, standing, map, mazeTiles, square);
 const enemyViews = new EnemyViews(standing, enemySheet);
 const targetMarker = new TargetMarker();
 const sunShadow = new Sprite({ tint: 0x000000 });
-ground.addChild(maze.floor, bigTree.ground, targetMarker.view, sunShadow, jumpShadow);
+// The white ring under the enemy the player swings at on its own.
+const focusRing = new Graphics();
+ground.addChild(maze.floor, bigTree.ground, targetMarker.view, focusRing, sunShadow, jumpShadow);
 const lighting = new Lighting(canvas.width, canvas.height);
 const keyPrompt = createKeyPrompt();
 const spearBar = new Graphics();
+const spearSprite = new Sprite();
+standing.addChild(spearSprite);
 const abilityEffects = new AbilityEffects();
 const hud = new Hud();
 app.stage.addChild(
@@ -443,12 +463,18 @@ new AbilityKeys(
   window,
   () => mouse.locked,
   (ability) => {
-    // E over a branch or a weapon picks it up instead of attacking.
-    if (ability === ABILITY.ATAQUE_LARGO && pickUpWithKey()) return;
-    game.useAbility(ability);
+    // Throwing the spear is not cut short: the last key pressed waits for it.
+    if (spearThrow) queuedAbility = ability;
+    else useAbility(ability);
   },
   (ability, held) => game.holdAbility(ability, held),
 );
+// An ability pressed while throwing the spear, used once the throw is over.
+let queuedAbility: number | null = null;
+
+function useAbility(ability: number): void {
+  game.useAbility(ability);
+}
 let blocking = false;
 let medusaWasAlive = true;
 
@@ -464,7 +490,19 @@ let spearThrow: {
   ms: number;
   dirX: number; // where it is thrown (unit), fixed on release
   dirY: number;
-  landed?: { x: number; y: number; enemy: number };
+  released?: boolean;
+} | null = null;
+// The spear in the air: from where the hand let it go to where it hits (an
+// enemy) or ends its flight, at SPEAR_FLIGHT_SPEED. `thrown` once C did the
+// throw, on arrival (an enemy hit then is carried on to the wall).
+let flyingSpear: {
+  from: { x: number; y: number; z: number };
+  to: { x: number; y: number; z: number };
+  ms: number;
+  totalMs: number;
+  dirX: number;
+  dirY: number;
+  thrown?: { enemy: number; x: number; y: number };
 } | null = null;
 
 // Copies the C grid when the maze changed. Returns true if it did.
@@ -566,6 +604,7 @@ function update(dtMs: number): void {
   }
   pickUpItems();
   updateSpearThrow(dtMs);
+  updateFlyingSpear(dtMs);
 
   playerAnimator.play(player.animationTag, !player.isDead && !player.isActing);
   const jumpArtMs = player.jumpArtMs;
@@ -629,7 +668,7 @@ function keyPickupInReach(): PropView | undefined {
   return nearest;
 }
 
-// E: picks up the item in reach. False when there is none, so E attacks.
+// E: picks up the item in reach. False when there is none.
 function pickUpWithKey(): boolean {
   const view = keyPickupInReach();
   if (!view) return false;
@@ -695,13 +734,13 @@ function aimFromBody(): { x: number; y: number } | null {
 }
 
 // Right button with the spear: held, it winds up and aims at the cursor;
-// released once charged, it throws. The spear lets go at THROW_RELEASE_MS and
-// is left stuck where it lands once the animation ends.
+// released once charged, it throws. At THROW_RELEASE_MS the spear leaves the
+// hand and flies (updateFlyingSpear); the body follows through after it.
 function updateSpearThrow(dtMs: number): void {
-  // Something else took over the body (dying, a swing, a jump): no throw.
-  if (spearThrow && (player.isDead || !holdsSpear() || !player.animationTag.startsWith("throw_"))) {
+  // Only dying (or losing the spear before letting it go) stops a throw.
+  if (spearThrow && (player.isDead || (!spearThrow.released && !holdsSpear()))) {
     if (player.animationTag.startsWith("throw_")) player.endAction();
-    spearThrow = null;
+    endThrow();
   }
   if (!spearThrow) {
     const canAim = holdsSpear() && !player.isDead && !player.isActing && !player.isJumping;
@@ -714,6 +753,7 @@ function updateSpearThrow(dtMs: number): void {
     player.startAction("throw", Number.POSITIVE_INFINITY, artMs, directionFromVector(aim.x, aim.y));
     playerAnimator.restart();
     spearThrow = { phase: "aim", ms: 0, dirX: aim.x, dirY: aim.y };
+    game.setThrowing(true);
     return;
   }
   spearThrow.ms += dtMs;
@@ -723,36 +763,110 @@ function updateSpearThrow(dtMs: number): void {
     if (mouse.rightHeld) return;
     if (spearThrow.ms < SPEAR_CHARGE_MS || !aim) {
       player.endAction(); // let go before it charged: no throw
-      spearThrow = null;
+      endThrow();
       return;
     }
     spearThrow = { phase: "throw", ms: THROW_HOLD_MS, dirX: aim.x, dirY: aim.y };
     return;
   }
-  if (!spearThrow.landed && spearThrow.ms >= THROW_RELEASE_MS) {
-    spearThrow.landed = game.throwSpear(spearThrow.dirX, spearThrow.dirY);
-    gameLog.log(spearThrow.landed.enemy >= 0 ? "The spear hits!" : "The spear misses.");
+  if (!spearThrow.released && spearThrow.ms >= THROW_RELEASE_MS) {
+    spearThrow.released = true;
+    equipment.take("rightHand"); // it is in the air now, not in the hand
+    const { dirX, dirY } = spearThrow;
+    const aim = game.throwSpear(dirX, dirY, true); // where it is going to hit
+    const hit = aim.enemy >= 0;
+    launchSpear(
+      { x: player.x + dirX * SPEAR_HAND_AHEAD, y: player.y + dirY * SPEAR_HAND_AHEAD, z: SPEAR_HAND_HEIGHT },
+      { x: aim.hitX, y: aim.hitY, z: hit ? SPEAR_HIT_HEIGHT : 0 },
+      dirX,
+      dirY,
+    );
   }
   if (spearThrow.ms < animationDurationMs(playerSheet, "throw_right")) return;
-  // The throw is over: the spear leaves the hand and lies where it landed.
   player.endAction();
-  const landed = spearThrow.landed!;
-  const dirX = spearThrow.dirX;
+  endThrow();
+}
+
+// The throw is over (or called off): the body is free again, and what was
+// pressed meanwhile goes now.
+function endThrow(): void {
   spearThrow = null;
-  equipment.take("rightHand");
+  game.setThrowing(false);
+  const ability = queuedAbility;
+  queuedAbility = null;
+  if (ability !== null && !player.isDead) useAbility(ability);
+}
+
+function launchSpear(
+  from: { x: number; y: number; z: number },
+  to: { x: number; y: number; z: number },
+  dirX: number,
+  dirY: number,
+): void {
+  const far = Math.hypot(to.x - from.x, to.y - from.y);
+  flyingSpear = { from, to, ms: 0, totalMs: (far / SPEAR_FLIGHT_SPEED) * 1000, dirX, dirY };
+}
+
+// Moves the spear in the air. On arrival C does the throw: an enemy still in
+// its way dies (carried to the wall, see EnemyViews); if it moved away the
+// spear flies on to where it ends up. Then it sticks there, to be picked up.
+function updateFlyingSpear(dtMs: number): void {
+  if (!flyingSpear) return;
+  flyingSpear.ms += dtMs;
+  if (flyingSpear.ms < flyingSpear.totalMs) return;
+  const { to, dirX, dirY } = flyingSpear;
+  if (!flyingSpear.thrown) {
+    const thrown = game.throwSpear(dirX, dirY);
+    gameLog.log(thrown.enemy >= 0 ? "The spear hits!" : "The spear misses.");
+    if (thrown.enemy < 0 && Math.hypot(thrown.x - to.x, thrown.y - to.y) > 2) {
+      launchSpear(to, { x: thrown.x, y: thrown.y, z: 0 }, dirX, dirY);
+      flyingSpear.thrown = thrown;
+      return;
+    }
+    flyingSpear.thrown = thrown;
+  }
+  const { enemy, x, y } = flyingSpear.thrown;
+  flyingSpear = null;
   propViews.push(
     addProp(
       {
         sprite: ITEMS.spear.sprite,
-        frame: dirX >= 0 ? WEAPON_STUCK_FRAME.right : WEAPON_STUCK_FRAME.left,
-        x: Math.round(landed.x),
-        y: Math.round(landed.y),
+        frame: stuckFrame(throwDirIndex(dirX, dirY)),
+        x: Math.round(x),
+        y: Math.round(y),
         pickup: ITEMS.spear,
       },
       false,
-      { pinnedEnemy: landed.enemy >= 0 ? landed.enemy : undefined },
+      { pinnedEnemy: enemy >= 0 ? enemy : undefined },
     ),
   );
+}
+
+// A white ring on the floor around the enemy the player is about to swing at
+// on its own (C focuses one at a time), unless it is out of sight in a bush.
+function showFocusRing(enemies: EnemyState[], cover: PlayerCover): void {
+  const focus = enemies.find((e) => e.slot === cover.autoTarget);
+  focusRing.visible = focus !== undefined && (focus.bush < 0 || focus.bush === cover.bush);
+  if (!focus || !focusRing.visible) return;
+  const pulse = 1 + 0.08 * Math.sin(performance.now() / 150);
+  focusRing
+    .clear()
+    .ellipse(Math.round(focus.x), Math.round(focus.y), FOCUS_RING_RX * pulse, FOCUS_RING_RY * pulse)
+    .stroke({ color: 0xffffff, width: 1, alpha: 0.9 });
+}
+
+// The spear in the air, level, pointing where it flies.
+function showFlyingSpear(): void {
+  spearSprite.visible = flyingSpear !== null;
+  if (!flyingSpear) return;
+  const { from, to, ms, totalMs, dirX, dirY } = flyingSpear;
+  const p = totalMs > 0 ? Math.min(1, ms / totalMs) : 1;
+  const x = from.x + (to.x - from.x) * p;
+  const y = from.y + (to.y - from.y) * p;
+  const z = from.z + (to.z - from.z) * p;
+  const frame = sheets.get(ITEMS.spear.sprite)!.frames[flightFrame(throwDirIndex(dirX, dirY))];
+  placeFrame(spearSprite, frame, x, y - z + frame.h / 2); // the frame has the spear's middle at its centre
+  spearSprite.zIndex = depthOf(y, DEPTH.prop);
 }
 
 // While aiming the spear, its charge under the feet: filling, then gold once
@@ -964,6 +1078,7 @@ function draw(): void {
   const cover = game.cover();
   const enemies = game.enemies();
   enemyViews.show(enemies, enemyAnimMs, cover.bush);
+  showFocusRing(enemies, cover);
   enemyAnimMs = 0;
   bigTree.show(playerBody());
   targetMarker.show(target, performance.now());
@@ -972,6 +1087,7 @@ function draw(): void {
     showProp(v);
     if (v.pinnedEnemy !== undefined && pinned.has(v.pinnedEnemy)) v.sprite.visible = false;
   }
+  showFlyingSpear();
   showPlayer(cover.hidden ? HIDDEN_ALPHA : 1);
 
   // Screen space.
@@ -1005,7 +1121,7 @@ function showControlsHint(root: HTMLElement): void {
   const hint = document.createElement("p");
   hint.className = "hint";
   hint.textContent =
-    "W A S D: move · Spear in the right hand: hold the right button to aim (the bar under the feet charges), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Q Z E R: attack (also in the air) · C: support · V: parry · Space: jump · B: punch the ground · F: clock speed · G: test gates · Esc: menu";
+    "W A S D: move · Spear in the right hand: hold the right button to aim (the bar under the feet charges), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Next to an enemy: swings at it on its own, one at a time (white ring) · C: support · V: parry · Space: jump · R: punch the ground · F: clock speed · G: test gates · Esc: menu";
   root.appendChild(hint);
 }
 
@@ -1277,6 +1393,7 @@ function worldToScreen(x: number, y: number): [number, number] {
 
 window.addEventListener("keydown", (e) => {
   if (e.code in WASD && mouse.locked) wasdHeld.add(e.code);
+  if (e.code === "KeyE" && mouse.locked && !e.repeat) pickUpWithKey();
   if (e.code === "KeyT") game.reset();
   if (isMapKey(e) && mouse.locked) {
     e.preventDefault();

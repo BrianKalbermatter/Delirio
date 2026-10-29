@@ -81,6 +81,7 @@ EMSCRIPTEN_KEEPALIVE int web_jugador_arbusto(void) {
 EMSCRIPTEN_KEEPALIVE int web_jugador_escondido(void) { return enemigos_jugador_escondido(juego_enemigos()); }
 // Cuantas veces pego solo (sube con cada golpe; mira hacia web_jugador_dir_*)
 EMSCRIPTEN_KEEPALIVE int web_jugador_auto_ataques(void) { return juego_auto_ataques(); }
+EMSCRIPTEN_KEEPALIVE int web_jugador_objetivo(void) { return juego_auto_objetivo(); }
 
 // Destino (para verificar desde el navegador que el click llego a C)
 EMSCRIPTEN_KEEPALIVE int web_hay_destino(void) { return juego_hay_destino(); }
@@ -116,10 +117,13 @@ EMSCRIPTEN_KEEPALIVE float web_reloj_luz(void) { return reloj_luz(juego_reloj())
 EMSCRIPTEN_KEEPALIVE float web_reloj_sol(void) { return reloj_sol(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE void web_velocidad_tiempo(float factor) { juego_velocidad_tiempo(factor); }
 EMSCRIPTEN_KEEPALIVE void web_prueba_puertas(void) { juego_prueba_puertas(); }
-EMSCRIPTEN_KEEPALIVE int web_lanzar(float dx, float dy) { return juego_lanzar(dx, dy); }
+EMSCRIPTEN_KEEPALIVE int web_lanzar(float dx, float dy, int probar) { return juego_lanzar(dx, dy, probar); }
+EMSCRIPTEN_KEEPALIVE float web_lanza_impacto_x(void) { return juego_lanza_impacto().x; }
+EMSCRIPTEN_KEEPALIVE float web_lanza_impacto_y(void) { return juego_lanza_impacto().y; }
 EMSCRIPTEN_KEEPALIVE float web_lanza_cae_x(void) { return juego_lanza_cae().x; }
 EMSCRIPTEN_KEEPALIVE float web_lanza_cae_y(void) { return juego_lanza_cae().y; }
 EMSCRIPTEN_KEEPALIVE void web_desclavar(int i) { juego_desclavar(i); }
+EMSCRIPTEN_KEEPALIVE void web_lanzando(int si) { juego_lanzando(si); }
 EMSCRIPTEN_KEEPALIVE int web_reloj_compuertas(void) { return reloj_compuertas_abiertas(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE float web_reloj_cambio_compuertas_ms(void) { return reloj_proximo_cambio_compuertas(juego_reloj()); }
 

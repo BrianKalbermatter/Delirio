@@ -23,9 +23,21 @@ export interface ItemKind {
 // as carried, and big on a diagonal for the inventory.
 export const WEAPON_HELD_FRAME = 1;
 export const WEAPON_ICON_FRAME = 2;
-// A thrown weapon (the spear) stuck in the ground, after a throw to the right
-// or to the left: the point where it goes in is the bottom centre.
-export const WEAPON_STUCK_FRAME = { right: 3, left: 4 };
+// A thrown weapon (the spear) in THROW_DIRS directions (art/armas.py
+// item_sheet): direction k goes k * 360 / THROW_DIRS degrees clockwise from
+// the right. Stuck in the ground after a throw (the point where it goes in at
+// the bottom centre), and flying level (its middle at the centre).
+export const THROW_DIRS = 16;
+export const stuckFrame = (k: number) => 3 + k;
+export const flightFrame = (k: number) => 3 + THROW_DIRS + k;
+// How fast a thrown spear flies, and carries a skewered enemy to the wall.
+export const SPEAR_FLIGHT_SPEED = 900; // px/s
+
+// The throw direction (0..THROW_DIRS-1) closest to (dx, dy).
+export function throwDirIndex(dx: number, dy: number): number {
+  const k = Math.round((Math.atan2(dy, dx) / (2 * Math.PI)) * THROW_DIRS);
+  return ((k % THROW_DIRS) + THROW_DIRS) % THROW_DIRS;
+}
 
 const POTION_NAMES = ["rombo", "frasco", "tubo_u", "retorta", "cono", "cubo"];
 

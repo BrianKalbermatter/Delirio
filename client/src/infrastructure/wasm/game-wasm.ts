@@ -89,6 +89,7 @@ export interface PlayerCover {
   bush: number; // the bush the player stands in, -1 if none
   hidden: boolean; // in a bush and not given away by attacking
   autoAttacks: number; // goes up by one every time the player swings on its own
+  autoTarget: number; // the enemy (slot) it swings at on its own, one at a time; -1 if none
 }
 
 export interface PlayerState {
@@ -133,11 +134,20 @@ export interface GameWasm {
   // player in front of the top gate.
   testGates(): void;
   // The player throws the spear towards (dirX, dirY): it kills the first enemy
-  // in its way, pinned to the wall behind it when there is one. Says which
-  // enemy it killed (its slot, -1 if none) and where the spear ends up (world px).
-  throwSpear(dirX: number, dirY: number): { enemy: number; x: number; y: number };
+  // in its way and carries it to where the flight ends, pinned there when it
+  // is a wall face that shows. Says which enemy it killed (its slot, -1 if
+  // none), where it hit it (or where the flight ended) and where the spear
+  // ends up (world px). With `dryRun` it only says what would happen.
+  throwSpear(
+    dirX: number,
+    dirY: number,
+    dryRun?: boolean,
+  ): { enemy: number; hitX: number; hitY: number; x: number; y: number };
   // Pulls the spear out of the pinned enemy in `slot`: it drops dead.
   unpin(slot: number): void;
+  // While throwing the spear (aiming included) C uses no ability and does
+  // not swing on its own: nothing cuts the throw short.
+  setThrowing(throwing: boolean): void;
   useAbility(id: number): void; // instant abilities
   holdAbility(id: number, held: boolean): void; // held abilities (run, block)
   abilities(): AbilityState[];
@@ -208,7 +218,10 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const medusaLife = num("web_medusa_vida", 0);
   const medusaLifeMax = num("web_medusa_vida_max", 0);
   const reset = call("web_reset", 0);
-  const spear = num("web_lanzar", 2);
+  const spear = num("web_lanzar", 3);
+  const setThrowing = call("web_lanzando", 1);
+  const spearHitX = num("web_lanza_impacto_x", 0);
+  const spearHitY = num("web_lanza_impacto_y", 0);
   const spearX = num("web_lanza_cae_x", 0);
   const spearY = num("web_lanza_cae_y", 0);
   const life = num("web_jugador_vida", 0);
@@ -241,6 +254,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const playerBush = num("web_jugador_arbusto", 0);
   const playerHidden = num("web_jugador_escondido", 0);
   const autoAttacks = num("web_jugador_auto_ataques", 0);
+  const autoTarget = num("web_jugador_objetivo", 0);
 
   return {
     start,
@@ -267,8 +281,12 @@ export async function loadGameWasm(): Promise<GameWasm> {
     update,
     setTimeSpeed: call("web_velocidad_tiempo", 1),
     testGates: call("web_prueba_puertas", 0),
-    throwSpear: (dirX, dirY) => ({ enemy: spear(dirX, dirY), x: spearX(), y: spearY() }),
+    throwSpear: (dirX, dirY, dryRun = false) => {
+      const enemy = spear(dirX, dirY, dryRun ? 1 : 0);
+      return { enemy, hitX: spearHitX(), hitY: spearHitY(), x: spearX(), y: spearY() };
+    },
     unpin: call("web_desclavar", 1),
+    setThrowing: (throwing) => setThrowing(throwing ? 1 : 0),
     player: () => ({ x: x(), y: y(), dirX: dirX(), dirY: dirY(), state: state() }),
     playerStats: () => ({ deaths: deaths(), delirium: delirium(), life: life(), lifeMax: lifeMax() }),
     enemies: () => {
@@ -297,7 +315,12 @@ export async function loadGameWasm(): Promise<GameWasm> {
       return list;
     },
     bushes: () => Array.from({ length: bushCount() }, (_, i) => ({ x: bushX(i), y: bushY(i), radius: bushRadius(i) })),
-    cover: () => ({ bush: playerBush(), hidden: playerHidden() === 1, autoAttacks: autoAttacks() }),
+    cover: () => ({
+      bush: playerBush(),
+      hidden: playerHidden() === 1,
+      autoAttacks: autoAttacks(),
+      autoTarget: autoTarget(),
+    }),
     heal: call("web_curar", 1),
     targetInC: () => (hasTarget() ? { x: targetX(), y: targetY() } : null),
     clock: () => ({

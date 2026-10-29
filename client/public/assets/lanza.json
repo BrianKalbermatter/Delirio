@@ -5,108 +5,768 @@
    "frame": {
     "x": 0,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "sourceSize": {
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "duration": 100
   },
   {
    "filename": "lanza 1",
    "frame": {
-    "x": 58,
+    "x": 90,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "sourceSize": {
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "duration": 100
   },
   {
    "filename": "lanza 2",
    "frame": {
-    "x": 116,
+    "x": 180,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "sourceSize": {
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "duration": 100
   },
   {
    "filename": "lanza 3",
    "frame": {
-    "x": 174,
+    "x": 270,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "sourceSize": {
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "duration": 100
   },
   {
    "filename": "lanza 4",
    "frame": {
-    "x": 232,
+    "x": 360,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "rotated": false,
    "trimmed": false,
    "spriteSourceSize": {
     "x": 0,
     "y": 0,
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
    },
    "sourceSize": {
-    "w": 58,
-    "h": 54
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 5",
+   "frame": {
+    "x": 450,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 6",
+   "frame": {
+    "x": 540,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 7",
+   "frame": {
+    "x": 630,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 8",
+   "frame": {
+    "x": 0,
+    "y": 90,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 9",
+   "frame": {
+    "x": 90,
+    "y": 90,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 10",
+   "frame": {
+    "x": 180,
+    "y": 90,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 11",
+   "frame": {
+    "x": 270,
+    "y": 90,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 12",
+   "frame": {
+    "x": 360,
+    "y": 90,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 13",
+   "frame": {
+    "x": 450,
+    "y": 90,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 14",
+   "frame": {
+    "x": 540,
+    "y": 90,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 15",
+   "frame": {
+    "x": 630,
+    "y": 90,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 16",
+   "frame": {
+    "x": 0,
+    "y": 180,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 17",
+   "frame": {
+    "x": 90,
+    "y": 180,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 18",
+   "frame": {
+    "x": 180,
+    "y": 180,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 19",
+   "frame": {
+    "x": 270,
+    "y": 180,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 20",
+   "frame": {
+    "x": 360,
+    "y": 180,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 21",
+   "frame": {
+    "x": 450,
+    "y": 180,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 22",
+   "frame": {
+    "x": 540,
+    "y": 180,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 23",
+   "frame": {
+    "x": 630,
+    "y": 180,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 24",
+   "frame": {
+    "x": 0,
+    "y": 270,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 25",
+   "frame": {
+    "x": 90,
+    "y": 270,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 26",
+   "frame": {
+    "x": 180,
+    "y": 270,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 27",
+   "frame": {
+    "x": 270,
+    "y": 270,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 28",
+   "frame": {
+    "x": 360,
+    "y": 270,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 29",
+   "frame": {
+    "x": 450,
+    "y": 270,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 30",
+   "frame": {
+    "x": 540,
+    "y": 270,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 31",
+   "frame": {
+    "x": 630,
+    "y": 270,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 32",
+   "frame": {
+    "x": 0,
+    "y": 360,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 33",
+   "frame": {
+    "x": 90,
+    "y": 360,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
+   },
+   "duration": 100
+  },
+  {
+   "filename": "lanza 34",
+   "frame": {
+    "x": 180,
+    "y": 360,
+    "w": 90,
+    "h": 90
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 90,
+    "h": 90
+   },
+   "sourceSize": {
+    "w": 90,
+    "h": 90
    },
    "duration": 100
   }
@@ -116,8 +776,8 @@
   "image": "lanza.png",
   "format": "RGBA8888",
   "size": {
-   "w": 290,
-   "h": 54
+   "w": 720,
+   "h": 450
   },
   "scale": "1",
   "frameTags": []

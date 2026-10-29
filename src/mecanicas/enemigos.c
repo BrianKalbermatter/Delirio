@@ -27,7 +27,6 @@
 #define MAX_ATACANTES 2
 #define MUERTE_MS 2640.0f   // la animacion de morir (33 frames de 80 ms)
 #define CLAVADO_MS 20000.0f // cuanto queda clavado al muro antes de desaparecer
-#define LANZA_EMPUJE 96.0f  // hasta donde lo arrastra la lanza buscando un muro
 #define LANZA_ESPALDA 9.0f  // de sus pies a la cara del muro (art/enemigo1.py SPEAR)
 #define LANZA_ANCHO 16.0f   // a esta distancia de la linea del vuelo le da
 #define REAPARECE_MS 6000.0f
@@ -424,16 +423,26 @@ int enemigos_golpe_jugador(Enemigos *e, const Jugador *j, float alcance, int dan
 }
 
 int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion hacia, float alcance,
-                   Direccion *cae){
+                   int probar, Direccion *impacto, Direccion *cae){
   Direccion tiro = unitario(hacia);
-  // Hasta donde vuela: el alcance o el primer muro
+  // Vuela derecho hasta el alcance o el primer muro (o puerta). Del tile en
+  // el que estaba al del muro sale que cara del muro alcanzo.
   float vuelo = 0;
+  int col = 0, fila = 0, antes_col = 0, antes_fila = 0, pared = 0;
   while (vuelo < alcance){
-    float x = desde.x + tiro.x * (vuelo + 4.0f), y = desde.y + tiro.y * (vuelo + 4.0f);
-    if (laberinto_es_muro(lab, (int)(x / LAB_TILE), (int)(y / LAB_TILE))) break;
-    vuelo += 4.0f;
+    float x = desde.x + tiro.x * (vuelo + 2.0f), y = desde.y + tiro.y * (vuelo + 2.0f);
+    col = (int)(x / LAB_TILE);
+    fila = (int)(y / LAB_TILE);
+    if (laberinto_es_muro(lab, col, fila)){
+      pared = !laberinto_es_puerta(lab, col, fila);
+      antes_col = (int)((desde.x + tiro.x * vuelo) / LAB_TILE);
+      antes_fila = (int)((desde.y + tiro.y * vuelo) / LAB_TILE);
+      break;
+    }
+    vuelo += 2.0f;
   }
-  *cae = (Direccion){desde.x + tiro.x * vuelo, desde.y + tiro.y * vuelo};
+  Direccion fin = {desde.x + tiro.x * vuelo, desde.y + tiro.y * vuelo};
+  *impacto = *cae = fin;
   // El primero que cruza en la linea del vuelo
   int mejor = -1;
   float mejor_d = vuelo;
@@ -450,40 +459,30 @@ int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion
   }
   if (mejor < 0) return -1;
   Enemigo *en = &e->lista[mejor];
-  Direccion pies = en->entidad.posicion;
+  *impacto = *cae = en->entidad.posicion;
+  if (probar) return mejor;
   herir(e, en, en->entidad.vida);
-  *cae = pies;
 
-  // Sin esquinas: lo lleva derecho por el eje en el que va mas el tiro
-  Direccion paso;
+  // Se lo lleva ensartado hasta donde termina el vuelo. Clavado solo contra
+  // las caras que se ven: la de adelante (venia de abajo) o un costado; no
+  // contra la de atras, una esquina (entro en diagonal) ni una puerta.
+  if (!pared) return mejor;
+  int dc = col - antes_col, df = fila - antes_fila;
   Clavado lado;
-  if (fabsf(tiro.y) >= fabsf(tiro.x)){
-    if (tiro.y > 0) return mejor; // contra la cara de atras de un muro: no se ve
-    paso = (Direccion){0, -1};
-    lado = CLAVADO_FRENTE;
-  } else if (tiro.x > 0){
-    paso = (Direccion){1, 0};
-    lado = CLAVADO_IZQ;
-  } else {
-    paso = (Direccion){-1, 0};
-    lado = CLAVADO_DER;
-  }
-  for (float d = 0; d <= LANZA_EMPUJE; d += 2.0f){
-    float x = pies.x + paso.x * (d + LANZA_ESPALDA);
-    float y = pies.y + paso.y * (d + LANZA_ESPALDA);
-    int col = (int)(x / LAB_TILE), fila = (int)(y / LAB_TILE);
-    if (laberinto_es_puerta(lab, col, fila)) return mejor;
-    if (!laberinto_es_muro(lab, col, fila)) continue;
-    if (lado == CLAVADO_FRENTE) pies.y = (fila + 1) * LAB_TILE + LANZA_ESPALDA;
-    else if (lado == CLAVADO_IZQ) pies.x = col * LAB_TILE - LANZA_ESPALDA;
-    else pies.x = (col + 1) * LAB_TILE + LANZA_ESPALDA;
-    en->entidad.posicion = pies;
-    *cae = (Direccion){pies.x - paso.x * 10.0f, pies.y - paso.y * 10.0f}; // a sus pies, del lado del tiro
-    en->mira = (Direccion){-paso.x, -paso.y};
-    en->clavado = lado;
-    en->muerto_ms = CLAVADO_MS;
-    return mejor;
-  }
+  if (dc == 0 && df == -1) lado = CLAVADO_FRENTE;
+  else if (dc == 1 && df == 0) lado = CLAVADO_IZQ;
+  else if (dc == -1 && df == 0) lado = CLAVADO_DER;
+  else return mejor;
+  Direccion pies = fin;
+  if (lado == CLAVADO_FRENTE) pies.y = (fila + 1) * LAB_TILE + LANZA_ESPALDA;
+  else if (lado == CLAVADO_IZQ) pies.x = col * LAB_TILE - LANZA_ESPALDA;
+  else pies.x = (col + 1) * LAB_TILE + LANZA_ESPALDA;
+  Direccion mira = {(float)-dc, (float)-df};
+  en->entidad.posicion = pies;
+  *cae = (Direccion){pies.x + mira.x * 10.0f, pies.y + mira.y * 10.0f}; // a sus pies, del lado del tiro
+  en->mira = mira;
+  en->clavado = lado;
+  en->muerto_ms = CLAVADO_MS;
   return mejor;
 }
 
@@ -492,6 +491,15 @@ void enemigos_desclavar(Enemigos *e, int i){
   if (!en->activo || en->clavado == CLAVADO_NO) return;
   en->clavado = CLAVADO_NO;
   en->muerto_ms = MUERTE_MS;
+}
+
+int enemigos_vivo(const Enemigos *e, int i){
+  return i >= 0 && i < ENEMIGOS_MAX && vivo(&e->lista[i]);
+}
+
+int enemigos_golpe_a(Enemigos *e, int i, int danio){
+  if (i < 0 || i >= ENEMIGOS_MAX) return 0;
+  return herir(e, &e->lista[i], danio);
 }
 
 int enemigos_golpe_suelo(Enemigos *e, Direccion centro, float radio, int danio){
@@ -521,11 +529,11 @@ int enemigos_mas_cercano(const Enemigos *e, Direccion pies, float radio, Direcci
       mejor_d = d;
     }
   }
-  if (mejor < 0) return 0;
+  if (mejor < 0) return -1;
   Direccion p = e->lista[mejor].entidad.posicion;
   *hacia = unitario((Direccion){p.x - pies.x, p.y - pies.y});
   if (largo(*hacia) == 0) *hacia = (Direccion){0, 1}; // encima suyo: hacia abajo
-  return 1;
+  return mejor;
 }
 
 void enemigos_delatar(Enemigos *e){
