@@ -45,6 +45,7 @@ import { type Box, loadMazeTiles, MazeRenderer, type View } from "./infrastructu
 import {
   animationDurationMs,
   DEFAULT_ANIMATION,
+  drawFrame,
   type Frame,
   loadImage,
   loadSpriteSheet,
@@ -964,8 +965,7 @@ function paintDoll(now: number): void {
   let index = 0;
   while (t >= frames[index].durationMs) t -= frames[index++].durationMs;
   const draw = (sheet: SpriteSheet, x: number, y: number) => {
-    const f = sheet.animations.get(tag)![index];
-    ctx.drawImage(sheet.image, f.x, f.y, f.w, f.h, x, y, f.w, f.h);
+    drawFrame(ctx, sheet, sheet.animations.get(tag)![index], x, y);
   };
   const held = HANDS.filter((hand) => equipment.slots[hand]);
   const fx = (hand: Hand) => weaponFx.get(equipment.slots[hand]!.id)![hand];

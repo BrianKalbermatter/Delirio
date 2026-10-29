@@ -18,7 +18,8 @@ Animations (tag_<direction>, frames x ms):
   game draws the spear flying), follows through and recovers.
 - death 33x80 (one direction, down_left like the drawing).
 
-Output (client/public):
+Output (client/public), every sheet packed (armas.write_packed_sheet: each
+frame cut down to its pixels, repeated ones stored once):
 - sprites/personaje_3: the body, bare hands (claws open).
 - sprites/personaje_3_armado: the same frames gripping with the right hand,
   and the right arm in the carry pose in idle/walk/run/jump.
@@ -57,8 +58,6 @@ FX = 128
 FX_OFFSET = (32, 32)
 DIRT_W, DIRT_H = 160, 128
 DIRT_OFFSET = (48, 32)
-COLUMNS = 16
-FX_COLUMNS = 24  # the weapon overlays have a frame per body frame
 DOWN = (0.0, 0.0, -1.0)
 
 # The swing smear in the drawing's colours: grey inside, white at the edge.
@@ -575,12 +574,12 @@ def main(weapon_dir_path, public, frames_dir):
             floor[tag] = ((int(hand[0]), int(hand[1])), screen_angle(weapon_dir(grab, w)), not edge_clockwise(grab, w))
 
     W, H = p3.W, p3.H
-    armas.write_sheet(f"{public}/sprites/personaje_3", sheet.free, W, H, COLUMNS, sheet.ms, sheet.tags, "personaje_3")
-    armas.write_sheet(f"{public}/sprites/personaje_3_armado", sheet.armed, W, H, COLUMNS, sheet.ms, sheet.tags,
-                      "personaje_3_armado")
+    armas.write_packed_sheet(f"{public}/sprites/personaje_3", sheet.free, sheet.ms, sheet.tags, "personaje_3")
+    armas.write_packed_sheet(f"{public}/sprites/personaje_3_armado", sheet.armed, sheet.ms, sheet.tags,
+                             "personaje_3_armado")
     for suffix, frames in (("armado_izq", sheet.armed_l), ("armado_ambas", sheet.armed_both)):
-        armas.write_sheet(f"{public}/sprites/personaje_3_{suffix}", frames, W, H, COLUMNS, sheet.ms, sheet.tags,
-                          f"personaje_3_{suffix}")
+        armas.write_packed_sheet(f"{public}/sprites/personaje_3_{suffix}", frames, sheet.ms, sheet.tags,
+                                 f"personaje_3_{suffix}")
 
     for spec in armas.WEAPONS:
         weapon = armas.Weapon(spec, f"{weapon_dir_path}/{spec['id']}.png")
@@ -592,8 +591,8 @@ def main(weapon_dir_path, public, frames_dir):
         left_front, left_back = left_frames(weapon, sheet.models_l, sheet.steps_l)
         for suffix, frames in (("fx", fronts), ("fx_atras", backs), ("fx_izq", left_front),
                                ("fx_izq_atras", left_back)):
-            armas.write_sheet(f"{public}/sprites/{weapon.id}_{suffix}", frames, FX, FX, FX_COLUMNS, sheet.ms,
-                              sheet.tags, f"{weapon.id}_{suffix}")
+            armas.write_packed_sheet(f"{public}/sprites/{weapon.id}_{suffix}", frames, sheet.ms, sheet.tags,
+                                     f"{weapon.id}_{suffix}")
         armas.item_sheet(weapon, f"{public}/assets/{weapon.id}", spec["angle"])
 
     # Slam dirt, per direction, from where the fists hit the floor.
@@ -609,8 +608,8 @@ def main(weapon_dir_path, public, frames_dir):
         dirt_front += f
         dirt_back += bk
     for suffix, frames in (("tierra", dirt_front), ("tierra_atras", dirt_back)):
-        armas.write_sheet(f"{public}/sprites/personaje_3_{suffix}", frames, DIRT_W, DIRT_H, 12,
-                          SLAM_MS * len(DIRS), dirt_tags, f"personaje_3_{suffix}")
+        armas.write_packed_sheet(f"{public}/sprites/personaje_3_{suffix}", frames, SLAM_MS * len(DIRS), dirt_tags,
+                                 f"personaje_3_{suffix}")
 
     os.makedirs(frames_dir, exist_ok=True)
     for i, (a, b) in enumerate(zip(sheet.free, sheet.armed)):

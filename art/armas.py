@@ -455,6 +455,60 @@ def write_sheet(path, cells, cell_w, cell_h, columns, durations, tags, name):
         json.dump({"frames": frames, "meta": meta}, f, indent=1)
 
 
+PACKED_WIDTH = 2048  # px: wide enough for few rows, within any GPU's texture limit
+
+
+def write_packed_sheet(path, cells, durations, tags, name):
+    """Like write_sheet, for big sheets of mostly empty cells (the player and
+    the weapon overlays): each cell is cut down to its drawn pixels, identical
+    cuts are stored once, and they are packed in rows. Each frame's
+    spriteSourceSize says where its cut goes in the cell (sourceSize), and
+    meta.trimFrames tells the game to draw it there. Far less to load into
+    the GPU than a grid of whole cells."""
+    cell_w, cell_h = cells[0].size
+    cuts, frame_cut = {}, []
+    for img in cells:
+        box = img.getchannel("A").getbbox() or (0, 0, 1, 1)  # an empty cell keeps one clear pixel
+        cut = img.crop(box)
+        key = (cut.size, cut.tobytes())
+        cuts.setdefault(key, cut)
+        frame_cut.append((key, box))
+    at, x, y, row_h = {}, 0, 0, 0
+    for key in sorted(cuts, key=lambda k: -cuts[k].height):  # rows of similar heights
+        w, h = cuts[key].size
+        if x + w > PACKED_WIDTH:
+            x, y, row_h = 0, y + row_h + 1, 0
+        at[key] = (x, y)
+        x, row_h = x + w + 1, max(row_h, h)  # a clear pixel between cuts: no bleeding
+    sheet = Image.new("RGBA", (max(at[k][0] + cuts[k].width for k in at), y + row_h))
+    for key, (x, y) in at.items():
+        sheet.paste(cuts[key], (x, y))
+    frames = []
+    for i, (key, box) in enumerate(frame_cut):
+        (x, y), (w, h) = at[key], cuts[key].size
+        frames.append({
+            "filename": f"{name} {i}",
+            "frame": {"x": x, "y": y, "w": w, "h": h},
+            "rotated": False,
+            "trimmed": True,
+            "spriteSourceSize": {"x": box[0], "y": box[1], "w": w, "h": h},
+            "sourceSize": {"w": cell_w, "h": cell_h},
+            "duration": durations[i],
+        })
+    sheet.save(f"{path}.png")
+    meta = {
+        "app": "art/armas.py",
+        "image": f"{path.rsplit('/', 1)[-1]}.png",
+        "format": "RGBA8888",
+        "size": {"w": sheet.width, "h": sheet.height},
+        "scale": "1",
+        "trimFrames": True,
+        "frameTags": [{"name": n, "from": a, "to": b, "direction": "forward"} for n, a, b in tags],
+    }
+    with open(f"{path}.json", "w") as f:
+        json.dump({"frames": frames, "meta": meta}, f, indent=1)
+
+
 def inventory_icon(weapon, angle_deg, spec_angle):
     """The weapon at full size, its head pointing `angle_deg` (clockwise from
     up), cropped to its pixels: the inventory shows it big and on a diagonal.

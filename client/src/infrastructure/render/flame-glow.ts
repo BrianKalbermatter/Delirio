@@ -3,7 +3,7 @@
 // light, so it shows by night and by day. At load time every frame is scanned
 // for the flame's colors and their center is kept.
 import { Container, Sprite, type Texture } from "pixi.js";
-import type { Frame, SpriteSheet } from "./sprite-sheet";
+import { type Frame, framePixels, type SpriteSheet } from "./sprite-sheet";
 import { paintTexture } from "./textures";
 
 type Rgb = [number, number, number];
@@ -62,7 +62,7 @@ export class FlameGlow {
 
 // Center of the pixels of `colors` in the frame, or null when it has none.
 function center(ctx: CanvasRenderingContext2D, frame: Frame, colors: Rgb[]) {
-  const pixels = ctx.getImageData(frame.x, frame.y, frame.w, frame.h).data;
+  const pixels = framePixels(ctx, frame);
   let count = 0;
   let sumX = 0;
   let sumY = 0;

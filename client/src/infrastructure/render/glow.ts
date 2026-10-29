@@ -5,7 +5,7 @@
 // glow nothing. The bloom (the bright mask blurred) and the halo are baked
 // into textures there too, so each frame only moves and fades sprites.
 import { Container, Sprite, type Texture } from "pixi.js";
-import type { Frame, SpriteSheet } from "./sprite-sheet";
+import { type Frame, framePixels, type SpriteSheet } from "./sprite-sheet";
 import { paintTexture } from "./textures";
 
 interface FrameGlow {
@@ -101,7 +101,7 @@ export class Glow {
   }
 
   private extract(sctx: CanvasRenderingContext2D, frame: Frame, [cr, cg, cb]: Rgb): FrameGlow | null {
-    const pixels = sctx.getImageData(frame.x, frame.y, frame.w, frame.h).data;
+    const pixels = framePixels(sctx, frame);
     const dim = new ImageData(frame.w, frame.h);
     const bright = new ImageData(frame.w, frame.h);
 
