@@ -50,6 +50,18 @@ typedef enum animo {
   ANIMO_CHARLA    // en su ronda, charlando y distraido
 } Animo;
 
+// Lo que lleva encima y suelta al morir, ademas de sus monedas. Pocas veces
+// lleva algo (ver BOTIN_*_POR_100 en enemigos.c).
+typedef enum botin {
+  BOTIN_NADA, BOTIN_POCION, BOTIN_ESPADA, BOTIN_RAMA
+} Botin;
+
+// El arma que lleva en la mano (se ve), y que a veces suelta al morir
+// (ver ARMA_*_POR_100 y ARMA_SUELTA_POR_100 en enemigos.c).
+typedef enum arma_enemigo {
+  ARMA_NINGUNA, ARMA_LANZA, ARMA_ANTORCHA, ARMA_HACHA
+} ArmaEnemigo;
+
 typedef struct enemigo {
   Entity entidad;      // posicion = los pies; dir = hacia donde se mueve
   Direccion mira;      // hacia donde mira (al jugador mientras acecha)
@@ -72,6 +84,11 @@ typedef struct enemigo {
   float baile_ms;      // > 0 mientras baila en el medio
   Direccion ajuste;    // se acomoda un poco en su lugar (se balancea)
   float ajuste_ms;     // hasta que se vuelve a acomodar
+  // Lo que suelta al morir (se elige al nacer)
+  Botin botin;
+  int monedas;         // 1 a 3
+  ArmaEnemigo arma;
+  int suelta_arma;     // 1: al morir deja el arma en el piso
 } Enemigo;
 
 // Un grupo charlando en circulo alrededor de `centro`.

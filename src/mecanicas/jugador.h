@@ -45,6 +45,7 @@ typedef enum mejora_id {
   MEJORA_VIDA,        // +VIDA_POR_MEJORA de vida maxima
   MEJORA_MOVILIDAD,   // +MOVILIDAD_POR_MEJORA de velocidad, caminando y saltando
   MEJORA_SALTO_DOBLE, // en el aire, Espacio otra vez salta de nuevo
+  MEJORA_RECOLECCION, // las cosas del piso vienen solas desde mas lejos (lo dibuja el navegador)
   MEJORA_CANTIDAD
 } MejoraId;
 

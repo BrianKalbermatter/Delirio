@@ -42,11 +42,17 @@ interface RowView {
   seen: number; // last frame it was in view
 }
 
-// The see-through circle cut into a wall or gate that covers the player: an
-// inverted stencil mask, so the rest of it stays solid.
+// The see-through circles cut into a wall or gate: an inverted stencil mask on
+// its shape, so the rest of it stays solid. Around the player the wall is
+// gone; around an enemy or an item it hides, a ghost of the wall (the same
+// drawing, sharing its geometry) stays half see-through in the circle.
 interface Hole {
-  shape: Graphics;
+  target: Graphics; // the wall or gate drawing
+  shape: Graphics; // every circle: the inverted mask of `target`
+  ghost: Graphics; // `target` again, faint, masked to the ghost circles
+  ghostMask: Graphics;
   on: boolean;
+  ghostOn: boolean;
 }
 
 interface GateView {
@@ -74,6 +80,10 @@ const GATE_RIM = 0x993d41;
 // Walls and gates in front of the focus (the player) get a round hole around
 // it, so the player is never lost behind them; the rest of them stays solid.
 const SEE_THROUGH_RADIUS = 46; // px from the middle of the body
+// Enemies and items hidden behind a wall get a smaller, subtle window: the
+// wall stays, faint, only around them.
+const GHOST_RADIUS = 20;
+const GHOST_ALPHA = 0.4;
 const VOID_COLOR = 0x000000; // floor under walls, never seen unless something is off
 const FLOOR_SHADOW = 14; // px of shadow cast on the floor at the foot of a wall
 const SHADOW_RGB = [8, 6, 12];
@@ -141,13 +151,45 @@ export class MazeRenderer {
 
   // Shows what is in view: the floor chunks, and the walls and gate leaves,
   // sorted by depth with the rest. Walls and gates in front of `focus` (world
-  // pixels, feet at the bottom) get a round hole around it.
-  show(view: View, focus: Box, leaves: Rect[]): void {
+  // pixels, feet at the bottom) get a round hole around it, and a faint one
+  // around each of `others` (enemies, items) they hide.
+  show(view: View, focus: Box, leaves: Rect[], others: Box[] = []): void {
     this.cameraX = view.left + view.width / 2;
     this.showFloor(view);
     const hiding = this.hidingDepths(view, focus, leaves);
-    this.showWalls(view, focus, hiding);
-    this.showGates(leaves, focus, hiding);
+    const hidden = this.hiddenOthers(view, others, leaves);
+    this.showWalls(view, focus, hiding, hidden);
+    this.showGates(leaves, focus, hiding, hidden);
+  }
+
+  // For each feet line (depth) of walls and gates, the `others` they hide.
+  private hiddenOthers(view: View, others: Box[], leaves: Rect[]): Map<number, Box[]> {
+    const hidden = new Map<number, Box[]>();
+    if (others.length === 0) return hidden;
+    const t = this.map.tileSize;
+    const add = (depthY: number, box: Box) => {
+      const list = hidden.get(depthY) ?? [];
+      if (!list.includes(box)) list.push(box);
+      hidden.set(depthY, list);
+    };
+    const hides = (box: Box, depthY: number, left: number, top: number, right: number, bottom: number) =>
+      depthY > box.bottom && left < box.right && right > box.left && top < box.bottom && bottom > box.top;
+    const { c0, c1, r0, r1 } = this.visibleCells(view, Math.ceil(WALL_HEIGHT / t));
+    for (let row = r0; row <= r1; row++) {
+      const depthY = (row + 1) * t;
+      for (let col = c0; col <= c1; col++) {
+        if (!this.map.isWall(col, row)) continue;
+        const [left, top, right, bottom] = this.wallRect(col, row);
+        for (const box of others) if (hides(box, depthY, left, top, right, bottom)) add(depthY, box);
+      }
+    }
+    for (const leaf of leaves) {
+      const depthY = leaf.y + leaf.h;
+      const left = Math.min(leaf.x, this.lean(leaf.x));
+      const right = Math.max(leaf.x + leaf.w, this.lean(leaf.x + leaf.w));
+      for (const box of others) if (hides(box, depthY, left, leaf.y - WALL_HEIGHT, right, depthY)) add(depthY, box);
+    }
+    return hidden;
   }
 
   // Where the top of a wall at world x is drawn.
@@ -271,7 +313,7 @@ export class MazeRenderer {
 
   // Wall rows in view. Includes rows below the screen, whose raised tops
   // reach up into it.
-  private showWalls(view: View, focus: Box, hiding: Set<number>): void {
+  private showWalls(view: View, focus: Box, hiding: Set<number>, hidden: Map<number, Box[]>): void {
     const t = this.map.tileSize;
     const frame = ++this.frameCount;
     const { c0, c1, r0, r1 } = this.visibleCells(view, Math.ceil(WALL_HEIGHT / t));
@@ -287,7 +329,6 @@ export class MazeRenderer {
       this.drawRow(wall.shape, row, c0, c1);
       const top = row * t - WALL_HEIGHT;
       this.cutHole(
-        wall.root,
         wall.hole,
         hiding.has((row + 1) * t),
         view.left,
@@ -295,25 +336,22 @@ export class MazeRenderer {
         view.left + view.width,
         (row + 1) * t,
         focus,
+        hidden.get((row + 1) * t),
       );
     }
     for (const [row, wall] of this.rows) {
       if (wall.seen === frame) continue;
       wall.root.visible = false;
-      setHole(wall.root, wall.hole, false);
+      setHole(wall.hole, false, false);
       this.spareRows.push(wall);
       this.rows.delete(row);
     }
   }
 
   private createRow(): RowView {
-    const wall: RowView = {
-      root: new Container(),
-      shape: new Graphics(),
-      hole: { shape: new Graphics(), on: false },
-      seen: 0,
-    };
-    wall.root.addChild(wall.shape, wall.hole.shape);
+    const shape = new Graphics();
+    const wall: RowView = { root: new Container(), shape, hole: newHole(shape), seen: 0 };
+    addWithHole(wall.root, wall.hole);
     this.depth.addChild(wall.root);
     return wall;
   }
@@ -374,7 +412,7 @@ export class MazeRenderer {
   // The leaves of the gates of the central square, as low blocks of their
   // exact size (they slide, so they are not whole tiles): iron bars in front,
   // wood on top. They get the hole in front of `focus` like the walls.
-  private showGates(leaves: Rect[], focus: Box, hiding: Set<number>): void {
+  private showGates(leaves: Rect[], focus: Box, hiding: Set<number>, hidden: Map<number, Box[]>): void {
     const h = WALL_HEIGHT;
     let shown = 0;
     for (const leaf of leaves) {
@@ -390,7 +428,6 @@ export class MazeRenderer {
       gate.root.visible = true;
       gate.root.zIndex = depthOf(foot, DEPTH.gate);
       this.cutHole(
-        gate.root,
         gate.hole,
         hiding.has(leaf.y + leaf.h),
         Math.min(x0, top0),
@@ -398,6 +435,7 @@ export class MazeRenderer {
         Math.max(x1, top1),
         foot,
         focus,
+        hidden.get(leaf.y + leaf.h),
       );
 
       const g = gate.shape.clear();
@@ -419,26 +457,22 @@ export class MazeRenderer {
     }
     for (let i = shown; i < this.gates.length; i++) {
       this.gates[i].root.visible = false;
-      setHole(this.gates[i].root, this.gates[i].hole, false);
+      setHole(this.gates[i].hole, false, false);
     }
   }
 
   private createGate(): GateView {
-    const gate: GateView = {
-      root: new Container(),
-      shape: new Graphics(),
-      hole: { shape: new Graphics(), on: false },
-    };
-    gate.root.addChild(gate.shape, gate.hole.shape);
+    const shape = new Graphics();
+    const gate: GateView = { root: new Container(), shape, hole: newHole(shape) };
+    addWithHole(gate.root, gate.hole);
     this.depth.addChild(gate.root);
     return gate;
   }
 
-  // Cuts the see-through circle into `root` (a wall or gate drawn over the
-  // rectangle left..bottom) when it belongs to a line that hides the body
-  // and reaches the circle.
+  // Cuts the see-through circles into a wall or gate drawn over the rectangle
+  // left..bottom: the player's when it belongs to a line that hides the body
+  // and reaches the circle, and a faint one around each of `others` it hides.
   private cutHole(
-    root: Container,
     hole: Hole,
     hides: boolean,
     left: number,
@@ -446,15 +480,27 @@ export class MazeRenderer {
     right: number,
     bottom: number,
     focus: Box,
+    others: Box[] = [],
   ): void {
-    const cx = (focus.left + focus.right) / 2;
-    const cy = (focus.top + focus.bottom) / 2;
-    const nearX = Math.max(left, Math.min(cx, right));
-    const nearY = Math.max(top, Math.min(cy, bottom));
-    const on = hides && Math.hypot(nearX - cx, nearY - cy) < SEE_THROUGH_RADIUS;
-    setHole(root, hole, on);
-    // Whole pixels, so the edge stays crisp like the rest of the art.
-    if (on) hole.shape.clear().circle(Math.round(cx), Math.round(cy), SEE_THROUGH_RADIUS).fill(0xffffff);
+    const reaches = (cx: number, cy: number, radius: number) =>
+      Math.hypot(Math.max(left, Math.min(cx, right)) - cx, Math.max(top, Math.min(cy, bottom)) - cy) < radius;
+    const center = (b: Box) => [Math.round((b.left + b.right) / 2), Math.round((b.top + b.bottom) / 2)] as const;
+    const [px, py] = center(focus);
+    const player = hides && reaches(px, py, SEE_THROUGH_RADIUS);
+    const ghosts = others.map(center).filter(([x, y]) => reaches(x, y, GHOST_RADIUS));
+    setHole(hole, player || ghosts.length > 0, ghosts.length > 0);
+    // Whole pixels, so the edges stay crisp like the rest of the art.
+    if (player || ghosts.length > 0) {
+      const cut = hole.shape.clear();
+      if (player) cut.circle(px, py, SEE_THROUGH_RADIUS);
+      for (const [x, y] of ghosts) cut.circle(x, y, GHOST_RADIUS);
+      cut.fill(0xffffff);
+    }
+    if (ghosts.length > 0) {
+      const faint = hole.ghostMask.clear();
+      for (const [x, y] of ghosts) faint.circle(x, y, GHOST_RADIUS);
+      faint.fill(0xffffff);
+    }
   }
 
   // A face shows only where the floor in front of the wall is open.
@@ -598,9 +644,32 @@ function smooth(t: number): number {
   return t * t * (3 - 2 * t);
 }
 
-function setHole(root: Container, hole: Hole, on: boolean): void {
-  if (hole.on === on) return;
-  hole.on = on;
-  hole.shape.visible = on;
-  root.setMask(on ? { mask: hole.shape, inverse: true } : { mask: null });
+function newHole(target: Graphics): Hole {
+  const ghost = new Graphics(target.context);
+  ghost.alpha = GHOST_ALPHA;
+  ghost.visible = false;
+  const shape = new Graphics();
+  const ghostMask = new Graphics();
+  shape.visible = false;
+  ghostMask.visible = false;
+  return { target, shape, ghost, ghostMask, on: false, ghostOn: false };
+}
+
+function addWithHole(root: Container, hole: Hole): void {
+  root.addChild(hole.target, hole.ghost, hole.shape, hole.ghostMask);
+}
+
+// `cut`: any circle cut out of the drawing. `ghost`: some of them faint.
+function setHole(hole: Hole, cut: boolean, ghost: boolean): void {
+  if (hole.on !== cut) {
+    hole.on = cut;
+    hole.shape.visible = cut;
+    hole.target.setMask(cut ? { mask: hole.shape, inverse: true } : { mask: null });
+  }
+  if (hole.ghostOn !== ghost) {
+    hole.ghostOn = ghost;
+    hole.ghost.visible = ghost;
+    hole.ghostMask.visible = ghost;
+    hole.ghost.setMask(ghost ? { mask: hole.ghostMask } : { mask: null });
+  }
 }

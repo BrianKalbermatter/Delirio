@@ -43,8 +43,10 @@ EMSCRIPTEN_KEEPALIVE int web_jugador_delirio(void) { return juego_jugador_comple
 EMSCRIPTEN_KEEPALIVE int web_jugador_vida(void) { return juego_jugador()->vida; }
 EMSCRIPTEN_KEEPALIVE int web_jugador_vida_max(void) { return juego_jugador()->vidaMAX; }
 // Las mejoras en el orden de MejoraId (mecanicas/jugador.h)
-EMSCRIPTEN_KEEPALIVE void web_cargar_progreso(int nivel, int experiencia, int vida, int movilidad, int salto_doble) {
-  int mejoras[MEJORA_CANTIDAD] = {[MEJORA_VIDA] = vida, [MEJORA_MOVILIDAD] = movilidad, [MEJORA_SALTO_DOBLE] = salto_doble};
+EMSCRIPTEN_KEEPALIVE void web_cargar_progreso(int nivel, int experiencia, int vida, int movilidad, int salto_doble,
+                                               int recoleccion) {
+  int mejoras[MEJORA_CANTIDAD] = {[MEJORA_VIDA] = vida, [MEJORA_MOVILIDAD] = movilidad,
+                                  [MEJORA_SALTO_DOBLE] = salto_doble, [MEJORA_RECOLECCION] = recoleccion};
   juego_cargar_progreso(nivel, experiencia, mejoras);
 }
 EMSCRIPTEN_KEEPALIVE int web_mejorar(int m) { return juego_mejorar(m); }
@@ -63,6 +65,12 @@ EMSCRIPTEN_KEEPALIVE void web_curar(int vida) { juego_curar(vida); }
 EMSCRIPTEN_KEEPALIVE int web_enemigos_max(void) { return ENEMIGOS_MAX; }
 static const Enemigo *enemigo(int i) { return &juego_enemigos()->lista[i]; }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_activo(int i) { return enemigo(i)->activo; }
+// Lo que suelta al morir: Botin (mecanicas/enemigos.h) y cuantas monedas
+EMSCRIPTEN_KEEPALIVE int web_enemigo_botin(int i) { return enemigo(i)->botin; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_monedas(int i) { return enemigo(i)->monedas; }
+// El arma en la mano (ArmaEnemigo) y si la suelta al morir
+EMSCRIPTEN_KEEPALIVE int web_enemigo_arma(int i) { return enemigo(i)->arma; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_suelta_arma(int i) { return enemigo(i)->suelta_arma; }
 EMSCRIPTEN_KEEPALIVE float web_enemigo_x(int i) { return enemigo(i)->entidad.posicion.x; }
 EMSCRIPTEN_KEEPALIVE float web_enemigo_y(int i) { return enemigo(i)->entidad.posicion.y; }
 EMSCRIPTEN_KEEPALIVE float web_enemigo_mira_x(int i) { return enemigo(i)->mira.x; }

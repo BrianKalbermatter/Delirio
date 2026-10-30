@@ -210,6 +210,38 @@ static void cambiar_animo(Enemigo *en, Animo animo){
 }
 
 // Uno nuevo en `lugar`, sin perder con quien anda.
+// De cada 100 que nacen, cuantos llevan cada cosa encima (el resto, nada).
+#define BOTIN_POCION_POR_100 6
+#define BOTIN_ESPADA_POR_100 3
+#define BOTIN_RAMA_POR_100 4
+
+static Botin elegir_botin(Enemigos *e){
+  int tirada = (int)(siguiente(e) % 100);
+  if (tirada < BOTIN_POCION_POR_100) return BOTIN_POCION;
+  tirada -= BOTIN_POCION_POR_100;
+  if (tirada < BOTIN_ESPADA_POR_100) return BOTIN_ESPADA;
+  tirada -= BOTIN_ESPADA_POR_100;
+  if (tirada < BOTIN_RAMA_POR_100) return BOTIN_RAMA;
+  return BOTIN_NADA;
+}
+
+// De cada 100 que nacen, cuantos llevan cada arma; y de los que llevan, cuantos
+// la sueltan al morir (al resto se le rompe o se la queda).
+#define ARMA_LANZA_POR_100 15
+#define ARMA_ANTORCHA_POR_100 10
+#define ARMA_HACHA_POR_100 15
+#define ARMA_SUELTA_POR_100 35
+
+static ArmaEnemigo elegir_arma(Enemigos *e){
+  int tirada = (int)(siguiente(e) % 100);
+  if (tirada < ARMA_LANZA_POR_100) return ARMA_LANZA;
+  tirada -= ARMA_LANZA_POR_100;
+  if (tirada < ARMA_ANTORCHA_POR_100) return ARMA_ANTORCHA;
+  tirada -= ARMA_ANTORCHA_POR_100;
+  if (tirada < ARMA_HACHA_POR_100) return ARMA_HACHA;
+  return ARMA_NINGUNA;
+}
+
 static void nacer(Enemigos *e, Enemigo *en, Direccion lugar, Animo animo){
   int ronda = en->ronda, sitio = en->asiento, manada = en->manada;
   *en = (Enemigo){0};
@@ -223,6 +255,10 @@ static void nacer(Enemigos *e, Enemigo *en, Direccion lugar, Animo animo){
   en->mira = (Direccion){0, 1};
   en->lado = (siguiente(e) & 1) ? 1 : -1;
   en->ajuste_ms = entre(e, 0, 3000.0f);
+  en->botin = elegir_botin(e);
+  en->monedas = 1 + (int)(siguiente(e) % 3);
+  en->arma = elegir_arma(e);
+  en->suelta_arma = en->arma != ARMA_NINGUNA && (int)(siguiente(e) % 100) < ARMA_SUELTA_POR_100;
   nuevo_coraje(e, en);
   cambiar_animo(en, animo);
 }

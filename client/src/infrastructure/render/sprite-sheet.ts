@@ -128,6 +128,43 @@ export async function loadSpriteSheet(basePath: string, options: LoadOptions = {
   };
 }
 
+// A copy of `sheet` with some colours swapped (exact RGB matches), sharing
+// its frames and tags: the player's weapon overlays with the hand in an
+// enemy's skin.
+export function recolorSheet(sheet: SpriteSheet, swaps: [number, number][]): SpriteSheet {
+  const canvas = document.createElement("canvas");
+  canvas.width = sheet.image.width;
+  canvas.height = sheet.image.height;
+  const ctx = canvas.getContext("2d")!;
+  ctx.drawImage(sheet.image, 0, 0);
+  const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+  const px = data.data;
+  const to = new Map(swaps);
+  for (let i = 0; i < px.length; i += 4) {
+    if (px[i + 3] === 0) continue;
+    const swap = to.get((px[i] << 16) | (px[i + 1] << 8) | px[i + 2]);
+    if (swap === undefined) continue;
+    px[i] = swap >> 16;
+    px[i + 1] = (swap >> 8) & 0xff;
+    px[i + 2] = swap & 0xff;
+  }
+  ctx.putImageData(data, 0, 0);
+  const { source } = Texture.from(canvas);
+  const copy = (f: Frame): Frame => ({
+    ...f,
+    texture: new Texture({
+      source,
+      frame: f.texture.frame.clone(),
+      orig: f.texture.orig.clone(),
+      trim: f.texture.trim?.clone(),
+    }),
+  });
+  const frames = sheet.frames.map(copy);
+  const byTexture = new Map(sheet.frames.map((f, i) => [f, frames[i]]));
+  const animations = new Map([...sheet.animations].map(([tag, list]) => [tag, list.map((f) => byTexture.get(f)!)]));
+  return { ...sheet, frames, animations };
+}
+
 // Total playback time of one animation, from the frame durations set in Aseprite.
 export function animationDurationMs(sheet: SpriteSheet, tag: string): number {
   const frames = sheet.animations.get(tag);

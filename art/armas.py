@@ -57,6 +57,10 @@ WEAPONS = [
     # Thrown, it flies and sticks in the ground (stuck: see item_sheet).
     {"id": "lanza", "aseprite": "..\\Armas\\Lanza1_Arma.aseprite", "grip": (98, 84), "angle": 45, "edge": "ccw",
      "scale": 0.75, "carry_w": 150, "trim": True, "stuck": True},
+    # Round shield (sprites/Armas/Escudo_Redondo.aseprite, from art/escudo.py):
+    # held by the middle, carried upright like the torch.
+    {"id": "escudo", "aseprite": "..\\Armas\\Escudo_Redondo.aseprite", "grip": (23, 23), "angle": 0, "edge": "ccw",
+     "scale": 0.5, "carry_w": 150},
 ]
 
 CELL_W, CELL_H = 64, 96

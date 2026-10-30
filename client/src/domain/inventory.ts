@@ -31,6 +31,11 @@ export class Inventory {
     return true;
   }
 
+  // Whether `item` fits: on its stack, or in an empty slot.
+  canAdd(item: ItemKind): boolean {
+    return this.slots.some((s) => s === null || s.item.id === item.id);
+  }
+
   // Takes one item out of a slot (emptying it with the last one) and returns
   // it, or null when the slot is empty.
   removeOne(index: number): ItemKind | null {

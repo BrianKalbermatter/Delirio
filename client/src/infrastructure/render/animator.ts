@@ -84,6 +84,16 @@ export class Animator {
     return frames[this.frameIndex % frames.length];
   }
 
+  // The frame of `tag` in `other` at the same share of the cycle, for a sheet
+  // whose animations have another number of frames (the player's weapon
+  // overlays on an enemy). Null if `other` has no such tag.
+  frameAtShareIn(other: SpriteSheet, tag: string): Frame | null {
+    const mine = this.frames();
+    const frames = other.animations.get(tag);
+    if (!frames || mine.length === 0) return null;
+    return frames[Math.floor((this.frameIndex / mine.length) * frames.length) % frames.length];
+  }
+
   currentFrame(): Frame | null {
     const frames = this.frames();
     return frames.length === 0 ? null : frames[this.frameIndex % frames.length];

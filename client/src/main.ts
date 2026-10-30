@@ -19,6 +19,7 @@ import {
   flightFrame,
   type ItemKind,
   ITEMS,
+  POTION_IDS,
   SPEAR_FLIGHT_SPEED,
   stuckFrame,
   throwDirIndex,
@@ -56,6 +57,7 @@ import {
   loadImage,
   loadSpriteSheet,
   placeFrame,
+  recolorSheet,
   type SpriteSheet,
 } from "./infrastructure/render/sprite-sheet";
 import { UpgradePanel } from "./infrastructure/ui/upgrade-panel";
@@ -85,7 +87,18 @@ const PLAYER_FEET_PADDING = 13;
 // Drawn size of the player, for fading walls and the light position.
 const PLAYER_BODY_WIDTH = 32;
 const PLAYER_BODY_HEIGHT = 62;
+// An enemy's body and an item on the floor, for the faint windows in walls.
+const ENEMY_BODY_WIDTH = 20;
+const ENEMY_BODY_HEIGHT = 58;
+const ITEM_BOX = 16;
 const PICKUP_RADIUS = 22;
+// Coins and items picked up by walking over them glide to the player from
+// this far (more with each level of the Reach skill), slowly at first and
+// faster as they get close.
+const MAGNET_RADIUS = 40; // px from the feet
+const MAGNET_PER_LEVEL = 18;
+const MAGNET_SPEED_MIN = 35; // px/s, at the edge of the radius
+const MAGNET_SPEED_MAX = 260; // px/s, at the feet
 // Items picked up with E (branches): reach from the feet, and the key prompt
 // shown above the head while one is in reach.
 const KEY_PICKUP_RADIUS = 26;
@@ -94,6 +107,7 @@ const PROMPT_ABOVE_HEAD = 6;
 // a short hop out of the hand.
 const DROP_AHEAD = 32;
 const DROP_REACH = 96; // an item dragged onto the map lands at most this far
+const LOOT_SPREAD = 14; // px from a dead enemy to where its loot lands
 const DROP_FALL_MS = 280;
 const DROP_HOP = 16; // px of the hop's peak
 const TARGET_REACHED = 4; // px: the floor marker hides when the player gets this close
@@ -302,6 +316,8 @@ function saveCurrentProgress(): void {
   saveProgress(CHARACTER_ID, { level, xp, upgrades });
   savedXp = xp;
 }
+// Enemy slots alive last frame, to see which ones just died.
+const enemiesAlive = new Set<number>();
 let enemyAnimMs = 0; // game time the enemies' animations have to catch up on
 let seenAutoAttacks = 0; // swings C made on its own (an enemy got too close)
 let deathBannerMs = 0;
@@ -333,12 +349,20 @@ interface PropView {
 }
 const spawn = baseSpawn;
 // Going on, the items lying around are the saved ones (the rest of the props
-// are placed as always).
-const items = placeItems(map, spawn).filter((prop) => !savedWorld || !prop.pickup);
+// are placed as always), plus any start item added to the game after that
+// save was made and found nowhere in it (the shield).
+const NEWER_START_ITEMS = new Set(["shield"]);
+const items = placeItems(map, spawn).filter(
+  (prop) => !savedWorld || !prop.pickup || (NEWER_START_ITEMS.has(prop.pickup.id) && !inSave(savedWorld, prop.pickup.id)),
+);
 let propViews: PropView[] = items.map((prop) => addProp(prop, prop.frame === undefined));
 for (const saved of savedWorld?.floor ?? []) {
   const item = ITEMS[saved.id];
   if (!item) continue;
+  if (item.floorAnimation) {
+    propViews.push(itemOnFloor(item, saved.x, saved.y));
+    continue;
+  }
   const prop: Prop = { sprite: item.sprite, frame: saved.frame, x: saved.x, y: saved.y, pickup: item };
   propViews.push(addProp(prop, saved.frame === undefined));
 }
@@ -411,7 +435,23 @@ const torchGlows: Record<Hand, FlameGlow> = {
 };
 const camera = new Camera(player.x, playerCenterY(), canvas.width, canvas.height);
 const maze = new MazeRenderer(app.renderer, standing, map, mazeTiles, square);
-const enemyViews = new EnemyViews(standing, enemySheet);
+// The enemies hold weapons with the player's right-hand overlays, the hand
+// recoloured from the player's (art/armas.py HAND, HAND_DARK) to the
+// spartan's skin (art/espartano.py).
+const ENEMY_HAND_SWAPS: [number, number][] = [
+  [0xcd683d, 0xeec39a],
+  [0x7a3045, 0xd9a066],
+];
+const enemyWeaponFx = new Map(
+  [...weaponFx].map(([id, hands]) => [
+    id,
+    {
+      front: recolorSheet(hands.rightHand.front, ENEMY_HAND_SWAPS),
+      behind: recolorSheet(hands.rightHand.behind, ENEMY_HAND_SWAPS),
+    },
+  ]),
+);
+const enemyViews = new EnemyViews(standing, enemySheet, (id) => enemyWeaponFx.get(id));
 const targetMarker = new TargetMarker();
 const sunShadow = new Sprite({ tint: 0x000000 });
 // The white ring under the enemy the player swings at on its own.
@@ -647,6 +687,13 @@ function update(dtMs: number): void {
   enemyAnimMs += dtMs; // drawn in draw(), also while paused
   blood.update(dtMs);
   kickUpDust(dtMs);
+  // Enemies that just died leave their loot.
+  for (const enemy of game.enemies()) {
+    const alive = STATE[enemy.state] !== "MUERTO";
+    if (!alive && enemiesAlive.has(enemy.slot)) dropLoot(enemy);
+    if (alive) enemiesAlive.add(enemy.slot);
+    else enemiesAlive.delete(enemy.slot);
+  }
   worldSaveMs += dtMs;
   if (worldSaveMs >= WORLD_SAVE_MS) {
     worldSaveMs = 0;
@@ -744,7 +791,7 @@ function update(dtMs: number): void {
       slamImpactMs = SLAM_IMPACT_MS;
     }
   }
-  pickUpItems();
+  pickUpItems(dtMs);
   updateSpearThrow(dtMs);
   updateFlyingSpear(dtMs);
 
@@ -777,22 +824,51 @@ function update(dtMs: number): void {
   fireAnimator.update(dtMs);
 }
 
-function pickUpItems(): void {
+function pickUpItems(dtMs: number): void {
+  const magnet = MAGNET_RADIUS + MAGNET_PER_LEVEL * (game.playerStats().upgrades[UPGRADE.REACH] ?? 0);
   propViews = propViews.filter((view) => {
     const { prop } = view;
     if (!prop.pickup || prop.pickup.pickupWithKey || view.fall) return true;
-    const near = Math.hypot(prop.x - player.x, prop.y - player.y) <= PICKUP_RADIUS;
+    const far = Math.hypot(prop.x - player.x, prop.y - player.y);
+    const near = far <= PICKUP_RADIUS;
     if (view.waitForLeave) {
       if (!near) view.waitForLeave = false;
       return true;
     }
-    if (!near) return true;
+    if (!near) {
+      if (far <= magnet && !player.isDead && inventory.canAdd(prop.pickup) && clearPath(prop, player)) {
+        pull(view, far, magnet, dtMs);
+      }
+      return true;
+    }
     if (!inventory.add(prop.pickup)) return true; // full: leave it on the floor
     gameLog.log(`Picked up: ${prop.pickup.name}`);
     if (prop.pickup.id === "map_book") gameLog.log("Press ` to open it and draw the maze.");
     view.sprite.destroy();
     return false;
   });
+}
+
+// Moves an item on the floor towards the player's feet, `far` px away.
+function pull(view: PropView, far: number, radius: number, dtMs: number): void {
+  const closeness = 1 - far / radius; // 0 at the edge, 1 at the feet
+  const speed = MAGNET_SPEED_MIN + (MAGNET_SPEED_MAX - MAGNET_SPEED_MIN) * closeness * closeness;
+  const step = Math.min(far, (speed * dtMs) / 1000);
+  view.prop.x += ((player.x - view.prop.x) / far) * step;
+  view.prop.y += ((player.y - view.prop.y) / far) * step;
+  view.sprite.zIndex = depthOf(view.prop.y, DEPTH.prop);
+}
+
+// No wall between two points on the floor (sampled every few px).
+function clearPath(a: { x: number; y: number }, b: { x: number; y: number }): boolean {
+  const steps = Math.ceil(Math.hypot(b.x - a.x, b.y - a.y) / 8);
+  const t = map.tileSize;
+  for (let i = 1; i < steps; i++) {
+    const x = a.x + ((b.x - a.x) * i) / steps;
+    const y = a.y + ((b.y - a.y) * i) / steps;
+    if (map.isWall(Math.floor(x / t), Math.floor(y / t))) return false;
+  }
+  return true;
 }
 
 // The nearest item on the floor that is picked up with E, if one is in reach.
@@ -1173,14 +1249,7 @@ function showKeyPrompt(): void {
 
 // Leaves `item` on the floor at the player's feet.
 function dropAtFeet(item: ItemKind): void {
-  const prop: Prop = {
-    sprite: item.sprite,
-    frame: item.frame,
-    x: Math.round(player.x),
-    y: Math.round(player.y),
-    pickup: item,
-  };
-  propViews.push(addProp(prop, false, { waitForLeave: true }));
+  propViews.push(itemOnFloor(item, Math.round(player.x), Math.round(player.y), { waitForLeave: true }));
   gameLog.log(`No room in the inventory: the ${item.name.toLowerCase()} is on the floor.`);
 }
 
@@ -1210,15 +1279,8 @@ function dropItem(index: number, at?: { x: number; y: number }): void {
     x = Math.round(player.x);
     y = Math.round(player.y);
   }
-  const prop: Prop = {
-    sprite: item.sprite,
-    frame: item.frame,
-    x,
-    y,
-    pickup: item,
-  };
   propViews.push(
-    addProp(prop, false, {
+    itemOnFloor(item, x, y, {
       waitForLeave: true,
       fall: { fromX: player.x, fromY: player.y, ms: DROP_FALL_MS },
     }),
@@ -1250,6 +1312,17 @@ function snapshotWorld(): SavedWorld {
     crafting: crafting.cells.map((item) => item?.id ?? null),
     floor,
   };
+}
+
+// Whether a saved game has `id` anywhere: carried, worn, in the crafting grid
+// or on the floor.
+function inSave(world: SavedWorld, id: string): boolean {
+  return (
+    world.inventory.some((slot) => slot?.id === id) ||
+    Object.values(world.equipment).includes(id) ||
+    world.crafting.includes(id) ||
+    world.floor.some((item) => item.id === id)
+  );
 }
 
 // Puts back what the player carried, wore and had in the crafting grid.
@@ -1297,9 +1370,9 @@ function draw(): void {
     width: canvas.width,
     height: canvas.height,
   };
-  maze.show(view, playerBody(), game.maze.gateLeaves());
   const cover = game.cover();
   const enemies = game.enemies();
+  maze.show(view, playerBody(), game.maze.gateLeaves(), hiddenThings(enemies, cover));
   enemyViews.show(enemies, enemyAnimMs, cover.bush);
   showFocusRing(enemies, cover);
   enemyAnimMs = 0;
@@ -1565,6 +1638,23 @@ function showPlayerGlow(): void {
 }
 
 // Where the player's body is drawn, in world pixels.
+// What a wall in front of it should let show a little: the enemies one can
+// see (alive or dying, not inside a bush the player is not in) and the items
+// lying on the floor. Bodies, world px, feet at the bottom.
+function hiddenThings(enemies: EnemyState[], cover: PlayerCover): Box[] {
+  const things: Box[] = [];
+  for (const e of enemies) {
+    if (e.bush >= 0 && e.bush !== cover.bush) continue;
+    const half = ENEMY_BODY_WIDTH / 2;
+    things.push({ left: e.x - half, top: e.y - ENEMY_BODY_HEIGHT, right: e.x + half, bottom: e.y });
+  }
+  for (const { prop } of propViews) {
+    if (!prop.pickup) continue;
+    things.push({ left: prop.x - ITEM_BOX / 2, top: prop.y - ITEM_BOX, right: prop.x + ITEM_BOX / 2, bottom: prop.y });
+  }
+  return things;
+}
+
 function playerBody(): Box {
   return {
     left: player.x - PLAYER_BODY_WIDTH / 2,
@@ -1575,6 +1665,49 @@ function playerBody(): Box {
 }
 
 // Puts a prop on the floor, as a looping animation or as one fixed frame.
+// `item` lying on the floor at (x, y) to be picked up: its floor frame, or
+// its floor animation looping (a spinning coin).
+function itemOnFloor(
+  item: ItemKind,
+  x: number,
+  y: number,
+  extra: Pick<PropView, "waitForLeave" | "fall"> = {},
+): PropView {
+  const prop: Prop = item.floorAnimation
+    ? { sprite: item.sprite, animation: item.floorAnimation, x, y, pickup: item }
+    : { sprite: item.sprite, frame: item.frame, x, y, pickup: item };
+  return addProp(prop, item.floorAnimation !== undefined, extra);
+}
+
+// What an enemy had on it, thrown out of the body as it dies: its coins
+// always, and now and then an item. Each lands a step away, around it.
+function dropLoot(enemy: EnemyState): void {
+  const drops: ItemKind[] = Array.from({ length: enemy.coins }, () => ITEMS.coin);
+  const carried = lootItem(enemy.loot);
+  if (carried) drops.push(carried);
+  const weapon = enemy.weapon && enemy.dropsWeapon ? ITEMS[enemy.weapon] : null;
+  if (weapon) drops.push(weapon);
+  const turn = Math.random() * Math.PI * 2;
+  drops.forEach((item, k) => {
+    const angle = turn + (k * Math.PI * 2) / drops.length;
+    let x = Math.round(enemy.x + Math.cos(angle) * LOOT_SPREAD);
+    let y = Math.round(enemy.y + Math.sin(angle) * LOOT_SPREAD * 0.6);
+    if (map.isWall(Math.floor(x / map.tileSize), Math.floor(y / map.tileSize))) {
+      x = Math.round(enemy.x);
+      y = Math.round(enemy.y);
+    }
+    propViews.push(itemOnFloor(item, x, y, { fall: { fromX: enemy.x, fromY: enemy.y - 16, ms: DROP_FALL_MS } }));
+  });
+  for (const item of [carried, weapon]) if (item) gameLog.log(`The enemy dropped: ${item.name}!`);
+}
+
+function lootItem(loot: EnemyState["loot"]): ItemKind | null {
+  if (loot === "potion") return ITEMS[POTION_IDS[Math.floor(Math.random() * POTION_IDS.length)]];
+  if (loot === "sword") return ITEMS.enemy_sword;
+  if (loot === "branch") return ITEMS.branch;
+  return null;
+}
+
 function addProp(
   prop: Prop,
   animated: boolean,

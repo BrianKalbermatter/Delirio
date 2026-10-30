@@ -16,6 +16,8 @@ export interface ItemKind {
   weapon?: { grip: { x: number; y: number } };
   // Worn on a body part (see domain/equipment.ts).
   wear?: "head" | "body" | "legs";
+  // Lying on the floor it loops this animation of its sprite (a spinning coin).
+  floorAnimation?: string;
   // Gives light while held: the radii (px) of the lit area at night.
   light?: { inner: number; outer: number };
 }
@@ -54,6 +56,8 @@ export const ITEMS: Record<string, ItemKind> = {
       },
     ]),
   ),
+  // Dropped by every enemy that dies (art/moneda.py), spinning on the floor.
+  coin: { id: "coin", name: "Coin", sprite: "moneda", frame: 0, floorAnimation: "spin" },
   enemy_sword: {
     id: "enemy_sword",
     name: "Enemy sword",
@@ -91,6 +95,17 @@ export const ITEMS: Record<string, ItemKind> = {
     pickupWithKey: true,
     weapon: { grip: { x: 23, y: 40 } },
     light: { inner: 90, outer: 300 },
+  },
+  // Round shield (sprites/Armas/Escudo_Redondo.aseprite, art/escudo.py): held
+  // like a weapon, by the middle; best carried in the left hand.
+  shield: {
+    id: "shield",
+    name: "Round shield",
+    sprite: "escudo",
+    frame: 0,
+    icon: WEAPON_ICON_FRAME,
+    pickupWithKey: true,
+    weapon: { grip: { x: 23, y: 23 } },
   },
   // Brian's spear (sprites/Armas/Lanza1_Arma.aseprite), carried upright like
   // the torch. The grip is in the trimmed drawing (art/armas.py).

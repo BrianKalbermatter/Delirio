@@ -59,6 +59,7 @@ const int MEJORA_TOPE[MEJORA_CANTIDAD] = {
   [MEJORA_VIDA]        = 10,
   [MEJORA_MOVILIDAD]   = 5,
   [MEJORA_SALTO_DOBLE] = 1,
+  [MEJORA_RECOLECCION] = 5,
 };
 
 static void aplicar_mejoras(Jugador *j){

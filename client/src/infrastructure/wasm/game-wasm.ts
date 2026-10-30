@@ -81,7 +81,17 @@ export interface EnemyState {
   group: number;
   talking: boolean; // the one speaking in its chatting circle right now
   bush: number; // the bush it stands in, -1 if none
+  loot: (typeof LOOT)[number]; // what it carries, dropped when it dies
+  coins: number; // coins it drops when it dies
+  weapon: (typeof ENEMY_WEAPON)[number]; // item id of what it holds, or null
+  dropsWeapon: boolean; // leaves it on the floor when it dies
 }
+
+// What an enemy holds, same order as `enum arma_enemigo` in src/mecanicas/enemigos.h.
+export const ENEMY_WEAPON = [null, "spear", "torch", "axe"] as const;
+
+// What an enemy carries, same order as `enum botin` in src/mecanicas/enemigos.h.
+export const LOOT = [null, "potion", "sword", "branch"] as const;
 
 // A bush the player hides in (src/mecanicas/arbustos.c): a circle on the floor.
 export interface Bush {
@@ -109,8 +119,8 @@ export interface PlayerState {
 
 // The upgrades bought with level points, same order as `enum mejora_id` in
 // src/mecanicas/jugador.h.
-export const UPGRADE = { LIFE: 0, MOBILITY: 1, DOUBLE_JUMP: 2 } as const;
-export const UPGRADE_COUNT = 3;
+export const UPGRADE = { LIFE: 0, MOBILITY: 1, DOUBLE_JUMP: 2, REACH: 3 } as const;
+export const UPGRADE_COUNT = 4;
 
 // The maze generated in C (src/mecanicas/laberinto.c).
 export interface MazeInfo {
@@ -277,6 +287,10 @@ export async function loadGameWasm(): Promise<GameWasm> {
       "grupo",
       "habla",
       "arbusto",
+      "botin",
+      "monedas",
+      "arma",
+      "suelta_arma",
     ].map((field) => [field, num(`web_enemigo_${field}`, 1)]),
   );
   const bushCount = num("web_arbustos_cant", 0);
@@ -349,6 +363,10 @@ export async function loadGameWasm(): Promise<GameWasm> {
           group: enemy.grupo(i),
           talking: enemy.habla(i) === 1,
           bush: enemy.arbusto(i),
+          loot: LOOT[enemy.botin(i)] ?? null,
+          coins: enemy.monedas(i),
+          weapon: ENEMY_WEAPON[enemy.arma(i)] ?? null,
+          dropsWeapon: enemy.suelta_arma(i) === 1,
         });
       }
       return list;

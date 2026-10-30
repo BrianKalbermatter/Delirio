@@ -7,6 +7,9 @@
 // against it once and then hangs there bleeding. In a chatting circle the one
 // speaking shows a speech bubble; the dancer's steps play the walk. One
 // inside a bush the player is not in cannot be seen (League of Legends' rule).
+// The weapon it carries (a spear, a torch or an axe) is drawn in its hand like
+// the player's,
+// gone once it dies (it falls to the floor, or not, see dropLoot in main.ts).
 import { Container, Graphics, Sprite } from "pixi.js";
 import { type Direction, directionFromVector } from "../../domain/facing";
 import { SPEAR_FLIGHT_SPEED } from "../../domain/items";
@@ -30,6 +33,15 @@ const BUBBLE_INK = 0x2e222f;
 // pinned_hit_*: 10 frames of 70 ms, then the pinned_* loop.
 const PIN_HIT_MS = 700;
 const TILE = 32; // LAB_TILE in src/mecanicas/laberinto.h
+
+// The weapon it holds is drawn with the player's own overlays for it (the
+// <weapon>_fx sheets of art/armas.py: same size, pose and swing with the
+// steps, in front of the body and behind it), the hand in the enemy's skin.
+// Both canvases are 64x96 with the floor at the same row, so they line up.
+export interface WeaponOverlays {
+  front: SpriteSheet;
+  behind: SpriteSheet;
+}
 
 // The three deaths (art/espartano.py): facing the camera it falls on its back,
 // sideways it slumps over on its side, facing away it falls on its face.
@@ -55,6 +67,8 @@ const MOTION_BY_STATE: Record<(typeof STATE)[number], string> = {
 interface EnemyView {
   root: Container;
   sprite: Sprite;
+  weaponFront: Sprite;
+  weaponBehind: Sprite;
   bar: Graphics;
   bubble: Graphics;
   animator: Animator;
@@ -75,6 +89,7 @@ export class EnemyViews {
   constructor(
     private readonly depth: Container,
     private readonly sheet: SpriteSheet,
+    private readonly weapons: (id: string) => WeaponOverlays | undefined,
   ) {}
 
   // Shows `enemies` as they are now; advances their animations `dtMs`.
@@ -103,6 +118,8 @@ export class EnemyViews {
     const view: EnemyView = {
       root: new Container(),
       sprite: new Sprite(),
+      weaponFront: new Sprite(),
+      weaponBehind: new Sprite(),
       bar: new Graphics(),
       bubble: new Graphics(),
       animator: new Animator(this.sheet),
@@ -112,7 +129,7 @@ export class EnemyViews {
       y: enemy.y,
       slide: null,
     };
-    view.root.addChild(view.sprite, view.bar, view.bubble);
+    view.root.addChild(view.weaponBehind, view.sprite, view.weaponFront, view.bar, view.bubble);
     this.depth.addChild(view.root);
     return view;
   }
@@ -138,9 +155,10 @@ export class EnemyViews {
       view.animator.play(`${view.pinnedMs < PIN_HIT_MS ? "pinned_hit" : "pinned"}_${enemy.pinned}`);
       if (view.slide) view.animator.seek(0); // on the spear, until it hits the wall
       else view.pinnedMs += dtMs;
-    } else {
-      const looking = Math.hypot(enemy.lookX, enemy.lookY) > 0.01;
-      const facing = looking ? directionFromVector(enemy.lookX, enemy.lookY) : "front";
+    }
+    const looking = Math.hypot(enemy.lookX, enemy.lookY) > 0.01;
+    const facing = looking ? directionFromVector(enemy.lookX, enemy.lookY) : "front";
+    if (!enemy.pinned) {
       if (dead) view.animator.play(DEATH_BY_FACING[facing], false);
       else view.animator.play(`${motion}_${facing}`);
     }
@@ -151,6 +169,7 @@ export class EnemyViews {
     if (!frame) return;
     placeFrame(view.sprite, frame, x, y + FEET_PADDING);
     view.sprite.tint = enemy.hitMs > 0 ? HIT_TINT : 0xffffff;
+    this.placeWeapon(view, enemy, `${motion}_${facing}`, x, y, dead || enemy.pinned !== null);
     // Pinned to a side face it stands in the wall's own row: drawn after the
     // wall, so the cracks and the spearhead show on it.
     const side = (enemy.pinned === "left" || enemy.pinned === "right") && !view.slide;
@@ -173,6 +192,22 @@ export class EnemyViews {
     const talking = !dead && enemy.talking;
     view.bubble.visible = talking;
     if (talking) this.drawBubble(view.bubble, enemy.x, enemy.y - BUBBLE_ABOVE_FEET);
+  }
+
+  // The weapon in its hand: the player's overlay frame for this animation, at
+  // the same share of the cycle (the enemy's loops have other frame counts).
+  private placeWeapon(view: EnemyView, enemy: EnemyState, tag: string, x: number, y: number, gone: boolean): void {
+    const fx = enemy.weapon && !gone ? this.weapons(enemy.weapon) : undefined;
+    for (const [sprite, sheet] of [
+      [view.weaponFront, fx?.front],
+      [view.weaponBehind, fx?.behind],
+    ] as const) {
+      const frame = sheet ? view.animator.frameAtShareIn(sheet, tag) : null;
+      sprite.visible = frame !== null;
+      if (!frame) continue;
+      placeFrame(sprite, frame, x, y + FEET_PADDING);
+      sprite.tint = view.sprite.tint;
+    }
   }
 
   // The bubble with its tail at (x, y), its dots lit in turn.

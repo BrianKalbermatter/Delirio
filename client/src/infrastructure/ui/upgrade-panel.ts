@@ -8,6 +8,7 @@ const ROWS: { id: number; name: string; effect: string }[] = [
   { id: UPGRADE.LIFE, name: "Life", effect: "+15 max life" },
   { id: UPGRADE.MOBILITY, name: "Mobility", effect: "+8% walk, run and jump speed" },
   { id: UPGRADE.DOUBLE_JUMP, name: "Double jump", effect: "Space again in the air: jump once more" },
+  { id: UPGRADE.REACH, name: "Reach", effect: "Coins and items on the floor come to you from further away" },
 ];
 
 export class UpgradePanel {
