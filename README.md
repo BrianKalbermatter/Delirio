@@ -10,6 +10,9 @@ Link: **https://briankalbermatter.github.io/Delirio/**
 Nothing to download: one click and you are in. Click **Play**, then walk
 with **W A S D** (controls below). The build is updated on every push to `main`; if you
 still see the old one, reload with **Ctrl + Shift + R**.
+
+Your game is kept in your browser: reload the page and you go on where you
+left off, in the same maze (see [Saving](#saving)).
 Days last 6 real minutes and nights 16 (press **F** to speed up the clock).
 
 ## Controls
@@ -19,21 +22,24 @@ Days last 6 real minutes and nights 16 (press **F** to speed up the clock).
 | W A S D | Walk |
 | Mouse | Aim: the character always looks at the cursor |
 | Shift (hold) | Run |
-| Space | Jump |
-| Right click (hold) | With the spear in the right hand: wind up and aim at the cursor; release once the bar under your feet is full to throw it. Without it: block |
+| Space | Jump · again in the air: double jump (once learned in Skills) |
+| Right click (hold) | With the spear in the right hand: wind up and aim at the cursor while the bar under your feet charges; release to throw it (the fuller the bar, the further it flies). Without it: block |
 | V | Parry |
 | C | Support |
 | R | Punch the ground: dirt flies and the screen shakes |
 | E | Pick up the branch, weapon, torch or spear at your feet |
+| Drag a slot onto another · onto the map | Move it there (same items stack, others swap) · drop it where the cursor is (within reach) |
 | — | Attacks have no key: next to an enemy you swing at it on your own |
 | 1-9 or click a slot | Select an inventory slot |
 | Double click a slot | Use it: drink a potion, open the map book, hold a weapon or the torch |
 | Drag a slot onto a body square | Put it there (helmet, armor, pants, right or left hand) |
 | Right click a slot · a body square | Drop it on the floor · take it off |
 | X | Drop one item of the selected slot |
+| Drag items into the crafting grid · click the result | Craft (Inventory tab, under the player) |
+| **+** in the Skills tab | Spend a level point |
 | Click a tab | Side panel: Technical, Inventory, Skills |
 | `` ` `` | Map book (left click draws, right click erases) |
-| Esc | Pause menu |
+| Esc | Pause menu (also **New game**: a new maze from the base, keeping level and skills) |
 
 Testing keys: **F** speeds up the clock, **G** makes the gates start closing,
 **T** restarts the game.
@@ -47,7 +53,8 @@ the same in every game; only the maze around it changes with the seed.
   same places every game. They are scenery: you walk through them.
 - **The dark forest floor** covers the top-right corner, ready for trees.
 
-Past the gates, the maze keeps its dirt and old stone paving, between low
+Past the gates, the maze floor is pale yellow sand dotted with pebbles,
+with patches of old stone paving, between low
 walls seen in perspective: their sides lean away from the middle of the
 screen, and any wall in front of you opens a round window so you never get
 lost behind it.
@@ -55,8 +62,10 @@ lost behind it.
 ## Your character and the inventory
 
 You play Brian's Personaje_3 (masked, with a strap across the black tunic),
-drawn in the 8 directions. Near the start lie an **axe**, a **torch** and a
-**spear**. Pick them up with **E**: the axe and the torch go to the
+drawn in the 8 directions. Near the start lie an **axe** and a **torch**.
+The **spear** is crafted: pick up three fallen **branches** around the big
+tree and lay them on a diagonal in the crafting grid (Inventory tab, under
+the player). Pick things up with **E**: the axe and the torch go to the
 inventory (16 slots, in the **Inventory** tab of the side panel); double
 click one, or drag it onto a hand, to hold it. The right hand swings, the
 left one carries. The torch burns with an animated flame and lights up much
@@ -66,9 +75,10 @@ more around you, by night and by day. Potions give back 30 life.
 
 The spear always goes straight to your right hand, the throwing one. Hold
 the **right button**: your character winds up far back and turns to the
-cursor while a bar under your feet charges. Let go once it is full and it
-throws, all out (let go earlier and it calls it off). Nothing cuts a throw
-short: keys pressed meanwhile wait for it to end.
+cursor while a bar under your feet charges. Let go and it throws, as far as
+the bar charged: a full bar reaches all the way (it turns gold), a quick
+tap drops it a few steps ahead. Nothing cuts a throw short: keys pressed
+meanwhile wait for it to end.
 
 The spear flies straight and kills the first enemy in its way, then carries
 it on to where its flight ends. If that is the front or a side of a wall,
@@ -87,7 +97,8 @@ round, running off if you come close, while they work up the nerve. Turn
 your back on them or get busy swinging and they gather courage faster. When
 they have enough they rush in, hit once and flee again. Blocking or jumping
 dodges their hit; punch the ground (**R**) to hurt every one around you and
-scare the rest. Your life is the red bar at the top left. They die one of
+scare the rest. Your life is the thick bar over your head (see below); each
+hit spills some of your blood on the floor. They die one of
 three bloody ways, by where they face: knocked back, slumped over on their
 side or face down, with a pool of blood growing under the body.
 
@@ -110,6 +121,59 @@ see-through: enemies cannot see you unless they bump right into you or
 stand in the same bush. Attacking from a bush gives you away for a second.
 Enemies hiding in a bush you are not in are not shown either.
 
+## Life, levels and skills
+
+A thick bar follows you over your head: your **life** (green, red when under
+a third, with the life just lost fading out in pale), your **level** in the
+gold square beside it and, under it, the **experience** to the next one.
+Every enemy you kill gives 25 experience (by hand, with the spear or
+punching the ground); level 1 needs 100, level 2 needs 200, and so on.
+
+Levelling up heals you fully and gives a **point**. Points are spent
+whenever you like, away from the fight, in the **Skills** tab of the side
+panel, with the **+** next to each one:
+
+| Skill | Effect | Max |
+|---|---|---|
+| Life | +15 max life | 10 |
+| Mobility | +8% walk, run and jump speed | 5 |
+| Double jump | Space again in the air jumps once more | 1 |
+
+## Crafting
+
+Under the player in the **Inventory** tab is a 3x3 crafting grid. Drag items
+into its squares (one per square; right click takes one back). When they make
+a recipe's shape (anywhere in the grid, also mirrored) the result shows to
+the right: click it and a bar fills while it is made (right click stops it).
+Then the items are used up and the result goes to the inventory.
+
+| Result | Shape | Time |
+|---|---|---|
+| Spear | 3 branches on a diagonal | 4 s |
+| Torch | a branch on top of another | 3 s |
+| Axe | 2 enemy swords side by side, 2 branches under one of them | 5 s |
+
+## Saving
+
+Everything is kept in your browser (localStorage), per character, so each
+browser has its own game:
+
+- **Level, experience and skills**, as soon as they change.
+- **Where you left off**, every couple of seconds and when the page closes:
+  the maze (its seed and the time of day, so it grows back the same), where
+  you stand, what you carry, wear and have in the crafting grid, and what
+  lies on the floor.
+
+Enemies start over around the base, and anything being crafted is called
+off (its items stay in the grid). **New game** in the pause menu starts a new
+maze from the base, keeping your level and skills. Clearing the site's data
+wipes it all.
+
+## Effects
+
+Walking and running kick up a little dust behind the feet, yours and the
+enemies'.
+
 ## Art
 
 The maze tiles are generated by scripts in [`art/`](art), and the grass tuft is
@@ -117,7 +181,8 @@ read from its Aseprite file and recoloured to the square's greens.
 
 | What | Source | How to rebuild |
 |---|---|---|
-| Maze tiles (floor, grass, walls, gates) | `art/maze_tiles.py` | `python3 art/maze_tiles.py client/public/assets` |
+| Maze tiles (sand floor with pebbles, grass, walls, gates) | `art/maze_tiles.py` | `python3 art/maze_tiles.py client/public/assets` |
+| Inventory icons for items whose sprite does not read at slot size (the spear) | `art/iconos.py` | `python3 art/iconos.py` |
 | Grass tuft, big and small (recoloured) | `Gramilla.aseprite` + `art/gramilla.py` | `python3 art/gramilla.py <Gramilla.aseprite> client/public/sprites` |
 | Sample tree (layers Sombra, Tronco, Copa, Pasto) and loose sticks | `art/arbol.py` + `art/arbol_aseprite.lua` | Layers with `python3 art/arbol.py client/public/sprites <layers_dir>`, then `Aseprite -b --script-param dir=<layers_dir> --script-param out=<arbol_muestra.aseprite> --script-param sticks=<palitos.png> --script arbol_aseprite.lua`. After retouching: `Aseprite -b arbol_muestra.aseprite --save-as client/public/sprites/arbol.png` |
 | Big tree from line art (layers Sombra, Tronco, Copa, Hojas; tags `idle`, `chop`) | `Arboles/Arbol1.aseprite` + `art/pintar_arbol.py` + `art/animar_arbol.py` + `art/arbol_animado_aseprite.lua` | Export the line art to PNG, `python3 art/animar_arbol.py <line_art.png> <dir>`, then `Aseprite -b --script-param dir=<dir> --script-param out=<Arbol1_pintado.aseprite> --script arbol_animado_aseprite.lua`; sheets with `bash client/scripts/export-sprites.sh` |
