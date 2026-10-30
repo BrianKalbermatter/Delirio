@@ -62,7 +62,8 @@ lost behind it.
 ## Your character and the inventory
 
 You play Brian's Personaje_3 (masked, with a strap across the black tunic),
-drawn in the 8 directions. Near the start lie an **axe** and a **torch**.
+drawn in the 8 directions. Near the start lie an **axe**, a **torch** and a
+round **shield** (best in the left hand).
 The **spear** is crafted: pick up three fallen **branches** around the big
 tree and lay them on a diagonal in the crafting grid (Inventory tab, under
 the player). Pick things up with **E**: the axe and the torch go to the
@@ -110,6 +111,12 @@ so you can sneak up on them; but if one spots you or gets hit, the whole
 circle comes for you. Once they calm down they walk back and pick up the
 chat again. A pack goes after you together too.
 
+Some carry a weapon in hand, drawn like yours: a **spear**, an **axe** or a
+**torch**. When one dies it drops 1 to 3 spinning **coins**, now and then
+something it had on it (a potion, a branch, an enemy sword) and, sometimes,
+its weapon. Coins and items you walk over glide to you once you are close
+(further with the **Reach** skill).
+
 You never attack with a key: get an enemy close and your character **swings
 at it on its own**, once a second, one enemy at a time. The one it is after
 has a **white ring** on the floor around it; it sticks to that one while it
@@ -138,6 +145,7 @@ panel, with the **+** next to each one:
 | Life | +15 max life | 10 |
 | Mobility | +8% walk, run and jump speed | 5 |
 | Double jump | Space again in the air jumps once more | 1 |
+| Reach | Coins and items you walk over glide to you from further away (40 px, +18 px a level) | 5 |
 
 ## Crafting
 
@@ -172,7 +180,9 @@ wipes it all.
 ## Effects
 
 Walking and running kick up a little dust behind the feet, yours and the
-enemies'.
+enemies'. A wall in front of you opens a round window around you; one in
+front of an enemy or an item only fades a little around it, so you can tell
+what hides behind it.
 
 ## Art
 
@@ -183,6 +193,8 @@ read from its Aseprite file and recoloured to the square's greens.
 |---|---|---|
 | Maze tiles (sand floor with pebbles, grass, walls, gates) | `art/maze_tiles.py` | `python3 art/maze_tiles.py client/public/assets` |
 | Inventory icons for items whose sprite does not read at slot size (the spear) | `art/iconos.py` | `python3 art/iconos.py` |
+| Round shield (a weapon in `armas.WEAPONS`, held by the middle) | `art/escudo.py` → `sprites/Armas/Escudo_Redondo.aseprite` | `python3 art/escudo.py <escudo.png>`, `Aseprite -b <escudo.png> --save-as Escudo_Redondo.aseprite`, then `bash art/armas_build.sh` |
+| Coin dropped by enemies (tag `spin`) | `art/moneda.py` | `python3 art/moneda.py` |
 | Grass tuft, big and small (recoloured) | `Gramilla.aseprite` + `art/gramilla.py` | `python3 art/gramilla.py <Gramilla.aseprite> client/public/sprites` |
 | Sample tree (layers Sombra, Tronco, Copa, Pasto) and loose sticks | `art/arbol.py` + `art/arbol_aseprite.lua` | Layers with `python3 art/arbol.py client/public/sprites <layers_dir>`, then `Aseprite -b --script-param dir=<layers_dir> --script-param out=<arbol_muestra.aseprite> --script-param sticks=<palitos.png> --script arbol_aseprite.lua`. After retouching: `Aseprite -b arbol_muestra.aseprite --save-as client/public/sprites/arbol.png` |
 | Big tree from line art (layers Sombra, Tronco, Copa, Hojas; tags `idle`, `chop`) | `Arboles/Arbol1.aseprite` + `art/pintar_arbol.py` + `art/animar_arbol.py` + `art/arbol_animado_aseprite.lua` | Export the line art to PNG, `python3 art/animar_arbol.py <line_art.png> <dir>`, then `Aseprite -b --script-param dir=<dir> --script-param out=<Arbol1_pintado.aseprite> --script arbol_animado_aseprite.lua`; sheets with `bash client/scripts/export-sprites.sh` |
