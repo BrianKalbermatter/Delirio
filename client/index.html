@@ -47,6 +47,8 @@
         cursor: pointer;
       }
       .pause-resume:hover { background: #fff; }
+      .pause-new { display: block; margin: 12px auto 0; padding: 6px 16px; font: inherit; font-size: 13px; color: var(--muted); background: none; border: 1px solid var(--line); border-radius: 4px; cursor: pointer; }
+      .pause-new:hover { color: var(--text); border-color: var(--muted); }
       .pause-help, .pause-options { margin: 16px 0 0; color: var(--muted); }
       .pause-error { min-height: 1.4em; margin: 12px 0 0; color: #d95763; }
       #game canvas { display: block; image-rendering: pixelated; }
@@ -119,7 +121,8 @@
       }
       .slot:hover, .slot.is-hover { border-color: var(--muted); }
       .slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
-      .slot canvas { width: 64%; image-rendering: pixelated; }
+      .slot canvas { width: 88%; image-rendering: pixelated; }
+      .slot.is-dragging canvas { opacity: 0.3; }
       .slot .count { position: absolute; right: 4px; bottom: 2px; font-size: 11px; color: var(--text); }
       /* Equipment: the player on a lit backdrop, a square on each body part */
       .doll {
@@ -153,7 +156,7 @@
         position: fixed;
         left: 0;
         top: 0;
-        width: 32px;
+        width: 64px;
         z-index: 999;
         pointer-events: none;
         image-rendering: pixelated;
@@ -163,13 +166,27 @@
       .log { margin: 0; padding-left: 18px; color: var(--muted); }
       .log li:first-child { color: var(--text); }
       .hint { margin-top: 24px; color: var(--muted); font-size: 11px; }
-      .abilities { margin: 0; padding: 0; list-style: none; display: grid; gap: 4px; }
-      .abilities li { display: grid; grid-template-columns: 56px 1fr auto; align-items: center; gap: 8px; color: var(--text); }
-      .abilities kbd { padding: 1px 6px; font: inherit; font-size: 11px; text-align: center; color: var(--muted); border: 1px solid var(--line); border-radius: 3px; }
-      .abilities .status { color: var(--muted); font-size: 12px; }
-      .abilities li.is-active .status { color: var(--accent); }
-      .abilities li.is-active kbd { color: var(--accent); border-color: var(--accent); }
-      .abilities li.is-cooling { color: var(--muted); }
+      .craft { display: flex; align-items: center; gap: 14px; }
+      .craft-grid { display: grid; grid-template-columns: repeat(3, 52px); gap: 5px; }
+      .craft-arrow { font-size: 20px; color: var(--muted); }
+      .craft-result { width: 64px; }
+      .craft-result.is-ready { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+      .craft-result.is-crafting { border-color: var(--accent); }
+      .craft-cell.is-locked { opacity: 0.6; cursor: default; }
+      .craft-bar { position: relative; height: 18px; margin-top: 10px; background: #0f0d14; border: 1px solid var(--line); border-radius: 4px; overflow: hidden; }
+      .craft-fill { height: 100%; width: 0; background: linear-gradient(#f7d47c, #d99a2e); }
+      .craft-label { position: absolute; inset: 0; display: grid; place-items: center; font-size: 12px; color: var(--text); text-shadow: 0 1px 2px #000; }
+      .points { margin: 0 0 10px; font-size: 14px; color: var(--muted); }
+      .points.has-points { color: var(--accent); }
+      .upgrades { margin: 0 0 12px; padding: 0; list-style: none; display: grid; gap: 10px; }
+      .upgrades li { display: grid; grid-template-columns: 1fr auto 40px; align-items: center; gap: 10px; color: var(--text); }
+      .upgrades .name { display: block; font-size: 15px; font-weight: bold; }
+      .upgrades .effect { display: block; margin-top: 2px; font-size: 13px; line-height: 1.35; color: var(--muted); }
+      .upgrades .level { font-size: 14px; color: var(--muted); }
+      .upgrades li.is-maxed .level { color: var(--accent); }
+      .plus { width: 40px; height: 40px; padding: 0; font: inherit; font-size: 24px; line-height: 1; font-weight: bold; color: var(--accent); background: #0f0d14; border: 1px solid var(--accent); border-radius: 4px; cursor: pointer; }
+      .plus:hover, .plus.is-hover { background: var(--accent); color: #0f0d14; }
+      .plus:disabled { color: var(--muted); border-color: var(--line); background: none; cursor: default; }
       .core { margin: 0; padding: 8px; background: #0f0d14; border: 1px solid var(--line); border-radius: 4px; color: var(--accent); white-space: pre; overflow-x: auto; }
     </style>
   </head>

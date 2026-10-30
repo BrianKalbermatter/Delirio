@@ -6,6 +6,7 @@ export interface ItemKind {
   sprite: string; // asset name in public/assets
   frame: number; // frame of the sprite lying on the floor (and the icon, unless `icon`)
   icon?: number; // frame shown in the inventory, when it is not `frame`
+  iconSprite?: string; // sheet `icon` is in, when not `sprite` (art/iconos.py)
   // Picked up only with the E key while standing on it, instead of by just
   // walking over it.
   pickupWithKey?: boolean;
@@ -98,7 +99,9 @@ export const ITEMS: Record<string, ItemKind> = {
     name: "Spear",
     sprite: "lanza",
     frame: 0,
-    icon: WEAPON_ICON_FRAME,
+    // Its own sprite is a thin diagonal that does not read at slot size.
+    iconSprite: "iconos",
+    icon: 0,
     pickupWithKey: true,
     weapon: { grip: { x: 14, y: 39 } },
   },

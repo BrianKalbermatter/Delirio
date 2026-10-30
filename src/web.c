@@ -42,6 +42,21 @@ EMSCRIPTEN_KEEPALIVE int web_jugador_muertes(void) { return juego_jugador_comple
 EMSCRIPTEN_KEEPALIVE int web_jugador_delirio(void) { return juego_jugador_completo()->delirio; }
 EMSCRIPTEN_KEEPALIVE int web_jugador_vida(void) { return juego_jugador()->vida; }
 EMSCRIPTEN_KEEPALIVE int web_jugador_vida_max(void) { return juego_jugador()->vidaMAX; }
+// Las mejoras en el orden de MejoraId (mecanicas/jugador.h)
+EMSCRIPTEN_KEEPALIVE void web_cargar_progreso(int nivel, int experiencia, int vida, int movilidad, int salto_doble) {
+  int mejoras[MEJORA_CANTIDAD] = {[MEJORA_VIDA] = vida, [MEJORA_MOVILIDAD] = movilidad, [MEJORA_SALTO_DOBLE] = salto_doble};
+  juego_cargar_progreso(nivel, experiencia, mejoras);
+}
+EMSCRIPTEN_KEEPALIVE int web_mejorar(int m) { return juego_mejorar(m); }
+EMSCRIPTEN_KEEPALIVE int web_mejora(int m) { return juego_jugador_completo()->mejoras[m]; }
+EMSCRIPTEN_KEEPALIVE int web_mejora_tope(int m) { return MEJORA_TOPE[m]; }
+EMSCRIPTEN_KEEPALIVE int web_jugador_puntos(void) { return jugador_puntos(juego_jugador_completo()); }
+EMSCRIPTEN_KEEPALIVE int web_jugador_saltos(void) { return juego_jugador_completo()->saltos; }
+EMSCRIPTEN_KEEPALIVE int web_jugador_nivel(void) { return juego_jugador_completo()->nivel; }
+EMSCRIPTEN_KEEPALIVE int web_jugador_experiencia(void) { return juego_jugador_completo()->experiencia; }
+EMSCRIPTEN_KEEPALIVE int web_jugador_experiencia_nivel(void) {
+  return jugador_experiencia_nivel(juego_jugador_completo()->nivel);
+}
 EMSCRIPTEN_KEEPALIVE void web_curar(int vida) { juego_curar(vida); }
 
 // Enemigos: el navegador recorre los ENEMIGOS_MAX huecos y dibuja los activos
@@ -108,6 +123,8 @@ EMSCRIPTEN_KEEPALIVE float web_lab_hoja(int i, int hoja, int dato) {
 }
 
 // Reloj
+EMSCRIPTEN_KEEPALIVE float web_reloj_ms_total(void) { return juego_reloj()->ms_total; }
+EMSCRIPTEN_KEEPALIVE void web_cargar_partida(float reloj_ms, float x, float y) { juego_cargar_partida(reloj_ms, x, y); }
 EMSCRIPTEN_KEEPALIVE int web_reloj_dia(void) { return juego_reloj()->dia; }
 EMSCRIPTEN_KEEPALIVE int web_reloj_fase(void) { return juego_reloj()->fase; }
 EMSCRIPTEN_KEEPALIVE float web_reloj_restante_ms(void) { return reloj_restante_fase(juego_reloj()); }
@@ -117,7 +134,7 @@ EMSCRIPTEN_KEEPALIVE float web_reloj_luz(void) { return reloj_luz(juego_reloj())
 EMSCRIPTEN_KEEPALIVE float web_reloj_sol(void) { return reloj_sol(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE void web_velocidad_tiempo(float factor) { juego_velocidad_tiempo(factor); }
 EMSCRIPTEN_KEEPALIVE void web_prueba_puertas(void) { juego_prueba_puertas(); }
-EMSCRIPTEN_KEEPALIVE int web_lanzar(float dx, float dy, int probar) { return juego_lanzar(dx, dy, probar); }
+EMSCRIPTEN_KEEPALIVE int web_lanzar(float dx, float dy, float fuerza, int probar) { return juego_lanzar(dx, dy, fuerza, probar); }
 EMSCRIPTEN_KEEPALIVE float web_lanza_impacto_x(void) { return juego_lanza_impacto().x; }
 EMSCRIPTEN_KEEPALIVE float web_lanza_impacto_y(void) { return juego_lanza_impacto().y; }
 EMSCRIPTEN_KEEPALIVE float web_lanza_cae_x(void) { return juego_lanza_cae().x; }

@@ -53,6 +53,7 @@ static int auto_ataques;          // cuantas veces pego solo (el navegador lo mi
 static int lanzando;              // tirando la lanza: nada lo interrumpe
 static int auto_objetivo = -1;    // el enemigo al que le pega solo (-1: ninguno)
 static float auto_espera_ms;      // hasta que puede pegar solo de nuevo
+static int muertos_cobrados;      // enemigos muertos ya pasados a experiencia
 
 // ########################################################
 // Llamadas a las mecanicas
@@ -67,6 +68,7 @@ void juego_iniciar(unsigned int semilla){
   jugador_iniciar(&jugador, "Personaje_2", HABILIDADES_BASE, base);
   medusa = (Entity){.vidaMAX = 40, .vida = 40, .danio = 8};
   enemigos_iniciar(&enemigos, &laberinto, base.posicion, semilla);
+  muertos_cobrados = 0;
   reloj_iniciar(&reloj);
 }
 
@@ -173,6 +175,12 @@ void juego_actualizar(float dt_ms){
     printf("Te mataron los enemigos\n");
     jugador_morir(&jugador, laberinto_aparicion(&laberinto));
   }
+
+  // 5. Experiencia: por cada enemigo que mato desde el paso anterior (a
+  //    golpes, con la lanza o con el golpe al suelo)
+  int nuevos = enemigos.muertos - muertos_cobrados;
+  muertos_cobrados = enemigos.muertos;
+  if (nuevos > 0) jugador_ganar_experiencia(&jugador, nuevos * EXPERIENCIA_ENEMIGO);
 }
 
 const Entity *juego_jugador(void){ return &jugador.entidad; }
@@ -200,13 +208,16 @@ void juego_prueba_puertas(void){
   printf("Prueba: las puertas se empiezan a cerrar en %.0f s\n", antes / 1000.0f);
 }
 
-#define ALCANCE_LANZA 320.0f
+#define ALCANCE_LANZA 320.0f     // con la barra llena
+#define LANZA_FUERZA_MIN 0.15f   // soltada enseguida, llega a esta parte del alcance
 static Direccion lanza_impacto, lanza_cae;
 
-int juego_lanzar(float dx, float dy, int probar){
+int juego_lanzar(float dx, float dy, float fuerza, int probar){
   lanza_impacto = lanza_cae = jugador.entidad.posicion;
   if (jugador_muerto(&jugador)) return -1;
-  return enemigos_lanza(&enemigos, &laberinto, jugador.entidad.posicion, (Direccion){dx, dy}, ALCANCE_LANZA,
+  if (fuerza < LANZA_FUERZA_MIN) fuerza = LANZA_FUERZA_MIN;
+  if (fuerza > 1.0f) fuerza = 1.0f;
+  return enemigos_lanza(&enemigos, &laberinto, jugador.entidad.posicion, (Direccion){dx, dy}, ALCANCE_LANZA * fuerza,
                         probar, &lanza_impacto, &lanza_cae);
 }
 
@@ -222,6 +233,25 @@ void juego_desclavar(int i){
 const Entity *juego_medusa(void){ return &medusa; }
 const Enemigos *juego_enemigos(void){ return &enemigos; }
 int juego_auto_ataques(void){ return auto_ataques; }
+
+void juego_cargar_progreso(int nivel, int experiencia, const int mejoras[MEJORA_CANTIDAD]){
+  jugador_cargar(&jugador, nivel, experiencia, mejoras);
+}
+
+void juego_cargar_partida(float reloj_ms, float x, float y){
+  reloj_iniciar(&reloj);
+  float falta = reloj_ms;
+  while (falta > 0){ // de a un segundo: cada expansion en su momento
+    float paso = falta < SEGUNDO_MS ? falta : SEGUNDO_MS;
+    if (reloj_avanzar(&reloj, paso) & EVENTO_EXPANSION) laberinto_expandir(&laberinto);
+    falta -= paso;
+  }
+  laberinto_apertura(&laberinto, reloj_apertura_puertas(&reloj));
+  jugador.entidad.posicion = (Direccion){x, y};
+  jugador.hay_destino = 0;
+}
+
+int juego_mejorar(int mejora){ return jugador_mejorar(&jugador, mejora); }
 
 void juego_curar(int vida){
   if (jugador_muerto(&jugador)) return;

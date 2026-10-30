@@ -42,6 +42,23 @@ export class Inventory {
     return slot.item;
   }
 
+  // Moves what is in slot `from` to slot `to`: onto the same item it stacks,
+  // onto another one they swap places. The selection goes with it.
+  move(from: number, to: number): void {
+    const moving = this.slots[from];
+    if (!moving || from === to || to < 0 || to >= this.slots.length) return;
+    const there = this.slots[to];
+    if (there && there.item.id === moving.item.id) {
+      there.count += moving.count;
+      this.slots[from] = null;
+    } else {
+      this.slots[to] = moving;
+      this.slots[from] = there;
+    }
+    this.selected = to;
+    this.version++;
+  }
+
   select(index: number): void {
     if (index < 0 || index >= this.slots.length || index === this.selected) return;
     this.selected = index;

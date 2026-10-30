@@ -18,17 +18,6 @@ export const HELD_KEYS: Record<string, number> = {
   ShiftRight: ABILITY.CORRER,
 };
 
-// Label shown in the panel for each ability (block is on the right button).
-export const ABILITY_KEY_LABEL: Record<number, string> = {
-  [ABILITY.ATAQUE_LIGERO]: "auto",
-  [ABILITY.APOYO]: "C",
-  [ABILITY.PARRY]: "V",
-  [ABILITY.ULTI]: "R",
-  [ABILITY.BLOQUEAR]: "R-click",
-  [ABILITY.SALTAR]: "Space",
-  [ABILITY.CORRER]: "Shift",
-};
-
 export class AbilityKeys {
   constructor(
     target: Window,

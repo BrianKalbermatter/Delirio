@@ -1,4 +1,4 @@
-"""Procedural tileset for the maze: dirt floor, stone paving, mossy wall tops
+"""Procedural tileset for the maze: sand floor with pebbles, stone paving, mossy wall tops
 and tall wall faces. Saturated mid-value palette (warm earth, blue-violet
 stone, living greens) so the black, pink and cyan player always stands out.
 
@@ -19,9 +19,12 @@ WALL_H = 288  # wall face height: towering, about six times the player's height
 # Palette: Endesga-32-style ramps. Warm earth, blue-violet stone and living
 # greens, saturated but kept in the mid values, so the black, pink and cyan
 # player still owns the brightest and most saturated pixels on screen.
-DIRT = [(104, 66, 50), (132, 86, 60), (156, 104, 70), (180, 124, 82)]
-DIRT_SPECK = (78, 48, 40)
-PEBBLE = [(90, 105, 136), (192, 203, 220)]
+# The maze floor: pale yellowish sand, fine grains, and small pebbles.
+SAND = [(184, 150, 96), (204, 172, 112), (218, 188, 126), (230, 204, 146)]
+SAND_GRAIN_DARK = (166, 132, 84)
+SAND_GRAIN_LIGHT = (240, 220, 168)
+# Pebbles: outline, body, lit top.
+PEBBLE = [(104, 86, 70), (150, 134, 116), (196, 184, 164)]
 GRASS = [(38, 92, 66), (62, 137, 72), (99, 199, 77)]
 
 SLAB = [(38, 43, 68), (58, 68, 102), (78, 92, 128), (104, 122, 158)]
@@ -59,22 +62,20 @@ def get(img, x, y):
 
 
 def floor_dirt(rng, grass):
+    """Sand: soft 2x2 tone patches, loose 1 px grains and a few pebbles."""
     img = Image.new("RGBA", (T, T))
-    # Base in 2x2 clusters, so the noise reads as pixel art and not as static.
     for cy in range(0, T, 2):
         for cx in range(0, T, 2):
-            tone = DIRT[min(3, max(0, int(rng.gauss(1.5, 0.8))))]
+            tone = SAND[min(3, max(0, int(rng.gauss(1.6, 0.6))))]
             for dy in range(2):
                 for dx in range(2):
                     put(img, cx + dx, cy + dy, tone)
+    for _ in range(26):
+        put(img, rng.randrange(T), rng.randrange(T), SAND_GRAIN_DARK)
     for _ in range(14):
-        put(img, rng.randrange(T), rng.randrange(T), DIRT_SPECK)
-    for _ in range(rng.randint(1, 3)):
-        x, y = rng.randrange(T), rng.randrange(T)
-        put(img, x, y, PEBBLE[1])
-        put(img, x + 1, y, PEBBLE[1])
-        put(img, x, y + 1, PEBBLE[0])
-        put(img, x + 1, y + 1, PEBBLE[0])
+        put(img, rng.randrange(T), rng.randrange(T), SAND_GRAIN_LIGHT)
+    for _ in range(rng.randint(2, 5)):
+        pebble(img, rng.randrange(T), rng.randrange(T), rng.choice((1, 1, 2, 2, 3)))
     if grass:
         x, y = rng.randrange(4, T - 4), rng.randrange(6, T - 2)
         for i, dx in enumerate((-2, -1, 0, 1, 2)):
@@ -221,6 +222,23 @@ def forest_floor(rng):
         put(img, x, y, FOREST_FLOOR[3])
         put(img, x, y - 1, (62, 137, 72))
     return img
+
+
+def pebble(img, x, y, size):
+    """A small stone sitting in the sand: outlined, lit from the top left,
+    with a speck of shadow under it."""
+    if size == 1:
+        put(img, x, y, PEBBLE[1])
+        put(img, x, y + 1, SAND_GRAIN_DARK)
+        return
+    w, h = size + 1, size
+    for dy in range(h):
+        for dx in range(w):
+            edge = dy == h - 1 or dx == w - 1
+            put(img, x + dx, y + dy, PEBBLE[0] if edge else PEBBLE[1])
+    put(img, x, y, PEBBLE[2])  # the light on top
+    for dx in range(1, w + 1):
+        put(img, x + dx, y + h, SAND_GRAIN_DARK)  # shadow on the sand
 
 
 def paving(rng):

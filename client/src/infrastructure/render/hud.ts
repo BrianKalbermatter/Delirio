@@ -1,4 +1,4 @@
-// What the game shows over the world, in screen pixels: the medusa's life,
+// What the game shows over the world, in screen pixels: the hurt flash,
 // the clock and gates at the top center, the banners (the maze grows, you
 // died) and the key prompt above the player. Text is rasterized at the game's
 // own resolution, so it is upscaled with the pixel art.
@@ -15,7 +15,6 @@ import { solidRect } from "./textures";
 
 const CLOCK_FONT: TextStyleOptions = { fontFamily: "monospace", fontSize: 12, fontWeight: "bold" };
 const SMALL_FONT: TextStyleOptions = { fontFamily: "monospace", fontSize: 11 };
-const MEDUSA_FONT: TextStyleOptions = { fontFamily: "monospace", fontSize: 10, fill: "#5fcde4" };
 const RED = "#d95763";
 const HURT_FLASH_MS = 300;
 const HURT_FLASH_ALPHA = 0.3;
@@ -80,16 +79,6 @@ export function createKeyPrompt(): Graphics {
 export class Hud {
   // Screen space, over everything else. The owner adds it to the stage.
   readonly view = new Container();
-  // Top left: the medusa's life.
-  private readonly medusaLabel = pixelText(MEDUSA_FONT);
-  // A 1 px line on whole pixel edges, as the canvas drew it: half over each
-  // of the two pixels it straddles.
-  private readonly medusaFrame = new Graphics().rect(12, 24, 120, 8).stroke({ width: 2, color: "#3a3445", alpha: 0.5 });
-  private readonly medusaBar = solidRect(0x6a8a4a);
-  // Under it: the player's own life.
-  private readonly lifeLabel = pixelText(MEDUSA_FONT);
-  private readonly lifeFrame = new Graphics().rect(12, 46, 120, 8).stroke({ width: 2, color: "#3a3445", alpha: 0.5 });
-  private readonly lifeBar = solidRect(0xd95763);
   // A red flash over the screen when an enemy hits the player.
   private readonly hurtFlash = solidRect(0xb01a28);
   private hurtAt = -Infinity;
@@ -105,17 +94,9 @@ export class Hud {
   private readonly deathBanner = pixelText({ ...CLOCK_FONT, fontSize: 18, fill: RED }, "YOU DIED");
 
   constructor() {
-    this.medusaBar.position.set(13, 25);
-    this.lifeBar.position.set(13, 47);
     this.hurtFlash.alpha = 0;
     this.view.addChild(
       this.hurtFlash,
-      this.medusaLabel,
-      this.medusaFrame,
-      this.medusaBar,
-      this.lifeLabel,
-      this.lifeFrame,
-      this.lifeBar,
       this.clockBox,
       this.clockLine,
       this.growthLine,
@@ -126,20 +107,8 @@ export class Hud {
     );
   }
 
-  showMedusa(life: number, max: number): void {
-    const ratio = life / max;
-    this.medusaLabel.text = `MEDUSA ${life} / ${max}${life === 0 ? "  DEAD - T reset" : ""}`;
-    placeText(this.medusaLabel, 12, 18);
-    this.medusaBar.tint = ratio > 0.3 ? 0x6a8a4a : 0xd95763;
-    this.medusaBar.setSize(118 * ratio, 6);
-  }
-
-  showLife(life: number, max: number): void {
-    const ratio = Math.max(0, life) / max;
-    this.lifeLabel.text = `LIFE ${Math.max(0, life)} / ${max}`;
-    placeText(this.lifeLabel, 12, 40);
-    this.lifeBar.setSize(118 * ratio, 6);
-    // The hurt flash fades out over HURT_FLASH_MS.
+  // The hurt flash fades out over HURT_FLASH_MS.
+  showHurtFlash(): void {
     const t = (performance.now() - this.hurtAt) / HURT_FLASH_MS;
     this.hurtFlash.alpha = t < 1 ? HURT_FLASH_ALPHA * (1 - t) : 0;
   }

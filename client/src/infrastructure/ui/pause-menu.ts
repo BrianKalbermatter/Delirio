@@ -9,13 +9,19 @@ export class PauseMenu {
   private readonly resume: HTMLButtonElement;
 
   // onResume gets the click position, where the virtual cursor starts.
-  constructor(root: HTMLElement, onResume: (x: number, y: number) => Promise<void>) {
+  // onNewGame leaves this game for a new maze from the base.
+  constructor(
+    root: HTMLElement,
+    onResume: (x: number, y: number) => Promise<void>,
+    onNewGame: () => void,
+  ) {
     this.el = document.createElement("div");
     this.el.className = "pause";
     this.el.innerHTML = `
       <div class="pause-box">
         <h1 class="pause-title"></h1>
         <button class="pause-resume" type="button">Play</button>
+        <button class="pause-new" type="button">New game</button>
         <p class="pause-help">Left click: move · Esc: this menu</p>
         <p class="pause-options">Options: coming soon</p>
         <p class="pause-error" role="alert"></p>
@@ -35,6 +41,10 @@ export class PauseMenu {
         // Chrome refuses to re-lock for about a second after Esc.
         this.error.textContent = "The browser needs a second after Esc. Click again.";
       }
+    });
+    this.el.querySelector<HTMLButtonElement>(".pause-new")!.addEventListener("click", (e) => {
+      if (e.detail === 0) return; // only real clicks, like Resume
+      if (confirm("Start a new maze from the base? Level and skills are kept; what you carry is lost.")) onNewGame();
     });
     root.appendChild(this.el);
     this.show(true);

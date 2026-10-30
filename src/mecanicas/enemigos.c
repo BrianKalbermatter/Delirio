@@ -398,6 +398,7 @@ static int herir(Enemigos *e, Enemigo *en, int danio){
     en->entidad.vida = 0;
     en->entidad.estados = MUERTO;
     en->muerto_ms = MUERTE_MS;
+    e->muertos++;
   } else {
     cambiar_animo(en, ANIMO_HUYE);
   }

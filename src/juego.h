@@ -44,11 +44,12 @@ void juego_velocidad_tiempo(float factor);
 // puerta de arriba.
 void juego_prueba_puertas(void);
 
-// El jugador tira la lanza hacia (dx, dy) (ver enemigos_lanza; con `probar`
-// solo dice que pasaria). Devuelve el hueco del enemigo que mato (-1:
+// El jugador tira la lanza hacia (dx, dy) con `fuerza` (0..1, lo que cargo
+// la barra): llega mas lejos cuanto mas la cargo (ver enemigos_lanza; con
+// `probar` solo dice que pasaria). Devuelve el hueco del enemigo que mato (-1:
 // ninguno); juego_lanza_impacto() dice donde le dio y juego_lanza_cae()
 // donde quedo la lanza.
-int juego_lanzar(float dx, float dy, int probar);
+int juego_lanzar(float dx, float dy, float fuerza, int probar);
 Direccion juego_lanza_impacto(void);
 
 // Mientras el jugador tira la lanza (de apuntar a terminar el tiro) no usa
@@ -71,6 +72,18 @@ int juego_auto_ataques(void);
 
 // El enemigo al que el jugador le pega solo ahora (-1: ninguno).
 int juego_auto_objetivo(void);
+
+// Carga un progreso guardado: nivel, experiencia y mejoras (jugador_cargar).
+void juego_cargar_progreso(int nivel, int experiencia, const int mejoras[MEJORA_CANTIDAD]);
+
+// Retoma una partida guardada (llamar justo despues de juego_iniciar con la
+// misma semilla): adelanta el reloj hasta `reloj_ms` de juego, haciendo crecer
+// el laberinto en cada expansion como si se hubiera jugado (mismo laberinto),
+// y pone al jugador en (x, y).
+void juego_cargar_partida(float reloj_ms, float x, float y);
+
+// Gasta un punto de nivel en una mejora (MejoraId). Devuelve 1 si la compro.
+int juego_mejorar(int mejora);
 
 // Le devuelve vida al jugador (una pocion), sin pasarse del maximo.
 void juego_curar(int vida);

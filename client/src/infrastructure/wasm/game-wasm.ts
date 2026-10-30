@@ -51,6 +51,12 @@ export interface PlayerStats {
   delirium: number; // +1 per death
   life: number;
   lifeMax: number;
+  level: number; // from 1
+  xp: number; // gathered in this level
+  xpNext: number; // what this level needs to go up
+  points: number; // level points not spent yet
+  upgrades: number[]; // times each UPGRADE was bought
+  upgradeMax: number[]; // how many times each can be
 }
 
 // Same order as `enum animo` in src/mecanicas/enemigos.h.
@@ -98,7 +104,13 @@ export interface PlayerState {
   dirX: number;
   dirY: number;
   state: number; // index into STATE
+  jumps: number; // +1 per jump, the one in the air too
 }
+
+// The upgrades bought with level points, same order as `enum mejora_id` in
+// src/mecanicas/jugador.h.
+export const UPGRADE = { LIFE: 0, MOBILITY: 1, DOUBLE_JUMP: 2 } as const;
+export const UPGRADE_COUNT = 3;
 
 // The maze generated in C (src/mecanicas/laberinto.c).
 export interface MazeInfo {
@@ -133,7 +145,8 @@ export interface GameWasm {
   // Testing aid: clock 15 s before the gates start closing (normal speed),
   // player in front of the top gate.
   testGates(): void;
-  // The player throws the spear towards (dirX, dirY): it kills the first enemy
+  // The player throws the spear towards (dirX, dirY) with `force` (0..1, how
+  // much the bar charged: the further it flies): it kills the first enemy
   // in its way and carries it to where the flight ends, pinned there when it
   // is a wall face that shows. Says which enemy it killed (its slot, -1 if
   // none), where it hit it (or where the flight ended) and where the spear
@@ -141,6 +154,7 @@ export interface GameWasm {
   throwSpear(
     dirX: number,
     dirY: number,
+    force: number,
     dryRun?: boolean,
   ): { enemy: number; hitX: number; hitY: number; x: number; y: number };
   // Pulls the spear out of the pinned enemy in `slot`: it drops dead.
@@ -153,6 +167,15 @@ export interface GameWasm {
   abilities(): AbilityState[];
   player(): PlayerState;
   playerStats(): PlayerStats;
+  // A saved progress: level, experience and upgrades (by UPGRADE), healed.
+  loadProgress(level: number, xp: number, upgrades: number[]): void;
+  // A saved game, right after start() with its seed: the clock moved on to
+  // `clockMs` (the maze growing as it did) and the player at (x, y).
+  loadGame(clockMs: number, x: number, y: number): void;
+  // Game time since the start (the clock's total), to save it.
+  clockMs(): number;
+  // Spends a level point on an UPGRADE. False if none left or it is maxed.
+  upgrade(id: number): boolean;
   // The target as C stored it (null if none yet), to check it arrived.
   targetInC(): { x: number; y: number } | null;
   clock(): ClockState;
@@ -218,7 +241,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const medusaLife = num("web_medusa_vida", 0);
   const medusaLifeMax = num("web_medusa_vida_max", 0);
   const reset = call("web_reset", 0);
-  const spear = num("web_lanzar", 3);
+  const spear = num("web_lanzar", 4);
   const setThrowing = call("web_lanzando", 1);
   const spearHitX = num("web_lanza_impacto_x", 0);
   const spearHitY = num("web_lanza_impacto_y", 0);
@@ -226,6 +249,15 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const spearY = num("web_lanza_cae_y", 0);
   const life = num("web_jugador_vida", 0);
   const lifeMax = num("web_jugador_vida_max", 0);
+  const level = num("web_jugador_nivel", 0);
+  const xp = num("web_jugador_experiencia", 0);
+  const xpNext = num("web_jugador_experiencia_nivel", 0);
+  const points = num("web_jugador_puntos", 0);
+  const upgradeLevel = num("web_mejora", 1);
+  const upgradeTop = num("web_mejora_tope", 1);
+  const upgrade = num("web_mejorar", 1);
+  const loadProgress = call("web_cargar_progreso", 2 + UPGRADE_COUNT);
+  const jumps = num("web_jugador_saltos", 0);
   const enemyMax = num("web_enemigos_max", 0)();
   const enemy = Object.fromEntries(
     [
@@ -281,14 +313,21 @@ export async function loadGameWasm(): Promise<GameWasm> {
     update,
     setTimeSpeed: call("web_velocidad_tiempo", 1),
     testGates: call("web_prueba_puertas", 0),
-    throwSpear: (dirX, dirY, dryRun = false) => {
-      const enemy = spear(dirX, dirY, dryRun ? 1 : 0);
+    throwSpear: (dirX, dirY, force, dryRun = false) => {
+      const enemy = spear(dirX, dirY, force, dryRun ? 1 : 0);
       return { enemy, hitX: spearHitX(), hitY: spearHitY(), x: spearX(), y: spearY() };
     },
     unpin: call("web_desclavar", 1),
     setThrowing: (throwing) => setThrowing(throwing ? 1 : 0),
-    player: () => ({ x: x(), y: y(), dirX: dirX(), dirY: dirY(), state: state() }),
-    playerStats: () => ({ deaths: deaths(), delirium: delirium(), life: life(), lifeMax: lifeMax() }),
+    player: () => ({ x: x(), y: y(), dirX: dirX(), dirY: dirY(), state: state(), jumps: jumps() }),
+    playerStats: () => ({ deaths: deaths(), delirium: delirium(), life: life(), lifeMax: lifeMax(),
+      level: level(),
+      xp: xp(),
+      xpNext: xpNext(),
+      points: points(),
+      upgrades: Array.from({ length: UPGRADE_COUNT }, (_, m) => upgradeLevel(m)),
+      upgradeMax: Array.from({ length: UPGRADE_COUNT }, (_, m) => upgradeTop(m)),
+    }),
     enemies: () => {
       const list: EnemyState[] = [];
       for (let i = 0; i < enemyMax; i++) {
@@ -345,5 +384,10 @@ export async function loadGameWasm(): Promise<GameWasm> {
     medusaLife,
     medusaLifeMax,
     reset,
+    loadProgress: (level, xpSaved, upgrades) =>
+      loadProgress(level, xpSaved, ...Array.from({ length: UPGRADE_COUNT }, (_, m) => upgrades[m] ?? 0)),
+    upgrade: (id) => upgrade(id) === 1,
+    loadGame: call("web_cargar_partida", 3),
+    clockMs: num("web_reloj_ms_total", 0),
   };
 }

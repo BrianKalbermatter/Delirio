@@ -102,6 +102,7 @@ typedef struct enemigos {
   Arbustos arbustos;
   int arbusto_jugador; // en que arbusto esta el jugador (-1: en ninguno)
   float delatado_ms;   // > 0: pego desde un arbusto y se lo ve igual
+  int muertos;         // cuantos mato el jugador en total (para su experiencia)
 } Enemigos;
 
 // Pone las rondas y los arbustos, y reparte a los sueltos alrededor de

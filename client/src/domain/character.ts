@@ -59,6 +59,7 @@ export interface CoreState {
   dirY: number;
   state: string; // name of the C state, e.g. "CAMINANDO"
   jumping: boolean; // HAB_SALTAR active
+  jumps: number; // +1 per jump C starts, the double jump in the air too
 }
 
 export class Character {
@@ -71,6 +72,10 @@ export class Character {
   private pivoting = false;
   // Jump in progress: time since it started.
   private jumpMs: number | null = null;
+  private jumps = 0; // the last CoreState.jumps seen
+  // A double jump starts this high (where the first one was) and the arc
+  // goes on top, coming down to the floor by the end.
+  private jumpBaseLift = 0;
   private action: ActionState | null = null;
   // Direction the C core is moving along this frame (unit-ish, 0 when still).
   private moveX = 0;
@@ -110,8 +115,14 @@ export class Character {
     const art = this.jumpArtMs;
     if (art === null) return 0;
     const [up, down] = JUMP_AIR_ART_MS;
-    if (art <= up || art >= down) return 0;
-    return Math.round(JUMP_HEIGHT * Math.sin((Math.PI * (art - up)) / (down - up)));
+    const base = this.jumpBaseLift * Math.max(0, 1 - art / down);
+    if (art <= up || art >= down) return Math.round(base);
+    return Math.round(base + JUMP_HEIGHT * Math.sin((Math.PI * (art - up)) / (down - up)));
+  }
+
+  // True on the frame a double jump started (from the air).
+  get justDoubleJumped(): boolean {
+    return this.jumpMs === 0 && this.jumpBaseLift > 0;
   }
 
   // Playback rate for the animator: an action is squeezed into its time.
@@ -197,11 +208,21 @@ export class Character {
 
   // Returns true while jumping: the jump keeps the direction it took off in.
   private syncJump(core: CoreState, dtMs: number): boolean {
+    const newJump = core.jumps !== this.jumps;
+    this.jumps = core.jumps;
     if (!core.jumping) {
       this.jumpMs = null;
+      this.jumpBaseLift = 0;
       return false;
     }
-    if (this.jumpMs === null) {
+    if (this.jumpMs !== null && newJump) {
+      // Jumping again in the air: the jump plays from the start once more,
+      // from the height it was at.
+      this.jumpBaseLift = this.lift;
+      this.jumpMs = 0;
+      if (this.action) this.action = null;
+    } else if (this.jumpMs === null) {
+      this.jumpBaseLift = 0;
       // The C core jumps along its direction: face it at once. Jumping cuts a
       // swing on the ground or a pickup short.
       this.jumpMs = 0;

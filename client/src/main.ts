@@ -12,7 +12,8 @@
 import { Application, Container, Graphics, Matrix, Sprite, Texture, TextureStyle } from "pixi.js";
 import { Character } from "./domain/character";
 import { directionFromVector, vectorOf } from "./domain/facing";
-import { Equipment, type EquipSlot } from "./domain/equipment";
+import { EQUIP_SLOTS, Equipment, type EquipSlot } from "./domain/equipment";
+import { CraftingGrid } from "./domain/crafting";
 import { Inventory } from "./domain/inventory";
 import {
   flightFrame,
@@ -26,8 +27,8 @@ import { ITEM_SPRITES, placeItems, type Prop, WEAPON_ITEMS } from "./domain/leve
 import { Square } from "./domain/square";
 import { placeSampleTree, sampleTrunkBox } from "./domain/sample-tree";
 import { TileMap } from "./domain/tile-map";
-import { ABILITY_KEY_LABEL, AbilityKeys } from "./infrastructure/input/ability-keys";
-import { LockedMouse } from "./infrastructure/input/locked-mouse";
+import { AbilityKeys } from "./infrastructure/input/ability-keys";
+import { LockedMouse, VIRTUAL_MOUSEUP } from "./infrastructure/input/locked-mouse";
 import { AbilityEffects } from "./infrastructure/render/ability-effects";
 import { Animator } from "./infrastructure/render/animator";
 import { BigTree, type BigTreeArt } from "./infrastructure/render/big-tree";
@@ -40,6 +41,11 @@ import { EnemyViews } from "./infrastructure/render/enemies";
 import { FlameGlow } from "./infrastructure/render/flame-glow";
 import { Glow } from "./infrastructure/render/glow";
 import { createKeyPrompt, formatMs, Hud, KEY_PROMPT_SIZE } from "./infrastructure/render/hud";
+import { PLAYER_BAR_HEIGHT, PlayerBar } from "./infrastructure/render/player-bar";
+import { Blood } from "./infrastructure/render/blood";
+import { Dust } from "./infrastructure/render/dust";
+import { loadProgress, saveProgress } from "./infrastructure/storage/progress-store";
+import { clearWorld, loadWorld, type SavedWorld, saveWorld } from "./infrastructure/storage/world-store";
 import { Lighting } from "./infrastructure/render/lighting";
 import { type Box, loadMazeTiles, MazeRenderer, type View } from "./infrastructure/render/maze-renderer";
 import {
@@ -52,14 +58,21 @@ import {
   placeFrame,
   type SpriteSheet,
 } from "./infrastructure/render/sprite-sheet";
-import { AbilityPanel } from "./infrastructure/ui/ability-panel";
+import { UpgradePanel } from "./infrastructure/ui/upgrade-panel";
 import { CoreDebug } from "./infrastructure/ui/core-debug";
 import { DOLL_HEIGHT, DOLL_SCALE, DOLL_WIDTH, InventoryPanel } from "./infrastructure/ui/inventory-panel";
 import { GameLog } from "./infrastructure/ui/game-log";
 import { SideTabs } from "./infrastructure/ui/side-tabs";
 import { MapBook } from "./infrastructure/ui/map-book";
 import { PauseMenu } from "./infrastructure/ui/pause-menu";
-import { ABILITY, type EnemyState, loadGameWasm, type PlayerCover, STATE } from "./infrastructure/wasm/game-wasm";
+import {
+  ABILITY,
+  type EnemyState,
+  loadGameWasm,
+  type PlayerCover,
+  STATE,
+  UPGRADE,
+} from "./infrastructure/wasm/game-wasm";
 
 // The canvas fills the whole game area. Its internal resolution adapts to the
 // area so that it is always shown at an integer scale: every pixel the same
@@ -80,6 +93,7 @@ const PROMPT_ABOVE_HEAD = 6;
 // A dropped item lands this far ahead of the feet (past PICKUP_RADIUS), after
 // a short hop out of the hand.
 const DROP_AHEAD = 32;
+const DROP_REACH = 96; // an item dragged onto the map lands at most this far
 const DROP_FALL_MS = 280;
 const DROP_HOP = 16; // px of the hop's peak
 const TARGET_REACHED = 4; // px: the floor marker hides when the player gets this close
@@ -114,8 +128,9 @@ const SLAM_SHAKE_PX = 3;
 // Throwing the spear (with it in the right hand): the right button held aims
 // it, the body wound up (throw_* of art/personaje_3_build.py held at
 // THROW_HOLD_MS) and turned to the cursor while a bar under the feet charges
-// for SPEAR_CHARGE_MS. Released once charged it throws (the rest of the
-// animation, letting go at THROW_RELEASE_MS); released before, it cancels.
+// for SPEAR_CHARGE_MS. Released it throws (the rest of the animation, letting
+// go at THROW_RELEASE_MS), as far as the bar charged: a full bar reaches C's
+// whole range, a little charge throws it short.
 // The spear sticks in the ground where it ends up and has to be picked up.
 const THROW_HOLD_MS = 260;
 const THROW_RELEASE_MS = 440;
@@ -257,17 +272,36 @@ const weaponFx = new Map(
 );
 const sheets = new Map<string, SpriteSheet>(assetNames.map((name, i) => [name, assetSheets[i]]));
 
-// The maze comes from C: a random seed each game (shown in the panel, so a
-// maze worth repeating can be reproduced).
-const seed = Math.floor(Math.random() * 2 ** 31);
+// The character being played (only one for now): its level and experience
+// come back from this browser and are saved there as they change.
+const CHARACTER_ID = "personaje_3";
+// Where it was left (a reload picks the game up there), or null: a new game.
+const savedWorld = loadWorld(CHARACTER_ID);
+// The maze comes from C: a random seed each new game (shown in the panel, so
+// a maze worth repeating can be reproduced), the saved one when going on.
+const seed = savedWorld?.seed ?? Math.floor(Math.random() * 2 ** 31);
 game.start(seed);
+// The base, where the start items, the square and the tree go (also when
+// going on: the player is elsewhere then).
+const baseSpawn = game.player();
+if (savedWorld) game.loadGame(savedWorld.clockMs, savedWorld.x, savedWorld.y);
+const savedProgress = loadProgress(CHARACTER_ID);
+if (savedProgress) game.loadProgress(savedProgress.level, savedProgress.xp, savedProgress.upgrades);
 const map = new TileMap(game.maze.size, game.maze.size, game.maze.tileSize);
 let mazeVersion = -1;
 let growthBannerMs = 0;
 let gateOpening = 1;
-let seenExpansions = 0;
+let seenExpansions = game.clock().expansions; // a loaded game does not announce old growths
 let seenDeaths = 0;
 let lastLife = -1;
+let seenLevel = game.playerStats().level;
+let savedXp = game.playerStats().xp;
+
+function saveCurrentProgress(): void {
+  const { level, xp, upgrades } = game.playerStats();
+  saveProgress(CHARACTER_ID, { level, xp, upgrades });
+  savedXp = xp;
+}
 let enemyAnimMs = 0; // game time the enemies' animations have to catch up on
 let seenAutoAttacks = 0; // swings C made on its own (an enemy got too close)
 let deathBannerMs = 0;
@@ -297,9 +331,17 @@ interface PropView {
   // while the body shows it, and pulling it out drops the body.
   pinnedEnemy?: number;
 }
-const spawn = game.player();
-const items = placeItems(map, spawn);
+const spawn = baseSpawn;
+// Going on, the items lying around are the saved ones (the rest of the props
+// are placed as always).
+const items = placeItems(map, spawn).filter((prop) => !savedWorld || !prop.pickup);
 let propViews: PropView[] = items.map((prop) => addProp(prop, prop.frame === undefined));
+for (const saved of savedWorld?.floor ?? []) {
+  const item = ITEMS[saved.id];
+  if (!item) continue;
+  const prop: Prop = { sprite: item.sprite, frame: saved.frame, x: saved.x, y: saved.y, pickup: item };
+  propViews.push(addProp(prop, saved.frame === undefined));
+}
 const square = new Square(map, spawn);
 // The big tree: its trunk is solid, C keeps it with the walls.
 const tree = placeSampleTree(spawn);
@@ -308,8 +350,9 @@ const bigTree = new BigTree(tree, treeArt);
 standing.addChild(bigTree.view);
 const plazaDeco = new PlazaDeco(tree.flowers, [flowerSheet, tallFlowerSheet], standing);
 const bushViews = new BushViews(game.bushes(), bushSheet, standing);
-// Fallen branches lie around the tree, each drawn with its own variant.
-propViews.push(
+// Fallen branches lie around the tree, each drawn with its own variant (in a
+// saved game they are among the saved floor items).
+if (!savedWorld) propViews.push(
   ...tree.branches.map((b) =>
     addProp(
       {
@@ -355,6 +398,10 @@ standing.addChild(
 );
 // The shadow left on the floor while the player is in the air.
 const jumpShadow = new Graphics().ellipse(0, 0, 9, 3).fill({ color: 0x000000, alpha: 0.35 });
+// The puff of air under the feet when jumping again in the air.
+const airPuff = new Graphics();
+let airPuffAt: { x: number; y: number; ms: number } | null = null;
+const AIR_PUFF_MS = 260;
 let slamImpactMs: number | null = null; // time left until the fists hit the floor
 const playerGlow = new Glow(playerSheet, PLAYER_EYES, PLAYER_GLOW);
 const torchFx = weaponFx.get(ITEMS.torch.id)!;
@@ -369,10 +416,16 @@ const targetMarker = new TargetMarker();
 const sunShadow = new Sprite({ tint: 0x000000 });
 // The white ring under the enemy the player swings at on its own.
 const focusRing = new Graphics();
-ground.addChild(maze.floor, bigTree.ground, targetMarker.view, focusRing, sunShadow, jumpShadow);
+// The blood the player loses when hit: stains on the floor, drops in the air.
+const blood = new Blood();
+// The dust kicked up walking, the player's and the enemies'.
+const dust = new Dust();
+ground.addChild(maze.floor, bigTree.ground, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
+standing.addChild(blood.air, airPuff);
 const lighting = new Lighting(canvas.width, canvas.height);
 const keyPrompt = createKeyPrompt();
 const spearBar = new Graphics();
+const playerBar = new PlayerBar();
 const spearSprite = new Sprite();
 standing.addChild(spearSprite);
 const abilityEffects = new AbilityEffects();
@@ -382,6 +435,7 @@ app.stage.addChild(
   torchGlows.rightHand.view,
   torchGlows.leftHand.view,
   playerGlow.view,
+  playerBar.view,
   keyPrompt,
   spearBar,
   abilityEffects.view,
@@ -422,6 +476,7 @@ const tabs = new SideTabs(
 );
 const coreDebug = new CoreDebug(tabs.page("technical"));
 const gameLog = new GameLog(tabs.page("technical"));
+if (savedProgress) gameLog.log(`Progress loaded from this browser: level ${savedProgress.level}.`);
 showControlsHint(tabs.page("technical"));
 // The cursor is read lazily: the mouse is set up further down.
 const panelCursor = {
@@ -432,19 +487,79 @@ const panelCursor = {
     return mouse.y;
   },
 };
-const panel = new InventoryPanel(tabs.page("inventory"), inventory, equipment, sheets, panelCursor, {
+// An inventory item dragged out of the panel and let go on the map: it is
+// dropped where the cursor is (within reach).
+canvas.addEventListener(VIRTUAL_MOUSEUP, () => {
+  const index = panel.draggedIndex;
+  if (index !== null) dropItem(index, cursorInWorld());
+});
+const crafting = new CraftingGrid();
+const panel = new InventoryPanel(tabs.page("inventory"), inventory, equipment, crafting, sheets, panelCursor, {
   drop: dropItem,
   use: useItem,
+  move: (from, to) => inventory.move(from, to),
   equip: equipFrom,
   clickEquip: (slot) => equipFrom(slot, inventory.selected),
   takeOff,
+  putInCraft: (cell, index) => {
+    const item = inventory.slots[index]?.item;
+    if (!item || crafting.isCrafting || crafting.cells[cell]) return;
+    crafting.put(cell, item);
+    inventory.removeOne(index);
+  },
+  takeFromCraft: (cell) => {
+    const item = crafting.cells[cell];
+    if (!item || crafting.isCrafting) return;
+    if (!inventory.add(item)) {
+      gameLog.log("The inventory is full.");
+      return;
+    }
+    crafting.take(cell);
+  },
+  craft: () => {
+    if (crafting.isCrafting) return;
+    const recipe = crafting.start();
+    if (!recipe) gameLog.log("Those items do not make anything.");
+    else gameLog.log(`Making: ${ITEMS[recipe.result].name}...`);
+  },
+  cancelCraft: () => {
+    if (!crafting.isCrafting) return;
+    crafting.cancel();
+    gameLog.log("Stopped crafting.");
+  },
 });
-const abilityPanel = new AbilityPanel(tabs.page("skills"), ABILITY_KEY_LABEL);
-gameLog.log("You wake up at the base.");
+const upgradePanel = new UpgradePanel(tabs.page("skills"), (id) => {
+  if (!game.upgrade(id)) return;
+  saveCurrentProgress();
+  upgradePanel.show(game.playerStats()); // also while paused, when update() does not run
+  if (id === UPGRADE.DOUBLE_JUMP) gameLog.log("Double jump learned: press Space again in the air.");
+});
+if (savedWorld) {
+  restoreBelongings(savedWorld);
+  gameLog.log("You go on where you left off.");
+} else {
+  gameLog.log("You wake up at the base.");
+}
+// Saved every few seconds of play and when the page goes away (a reload).
+const WORLD_SAVE_MS = 2000;
+let worldSaveMs = 0;
+window.addEventListener("pagehide", () => {
+  if (!startingOver) saveWorld(CHARACTER_ID, snapshotWorld());
+});
 
 // Mouse locked in the game; whenever it is released (Esc), the game pauses
 // and the menu shows.
-const pauseMenu = new PauseMenu(gameEl, (x, y) => mouse.lock(x, y));
+const pauseMenu = new PauseMenu(
+  gameEl,
+  (x, y) => mouse.lock(x, y),
+  () => {
+    // A new maze from the base; level and skills stay (progress-store).
+    clearWorld(CHARACTER_ID);
+    startingOver = true; // or pagehide would save this game again
+    location.reload();
+  },
+);
+let startingOver = false;
 const mouse = new LockedMouse(canvas, (locked) => {
   if (locked) pauseMenu.hide();
   else pauseMenu.show();
@@ -491,6 +606,7 @@ let spearThrow: {
   ms: number;
   dirX: number; // where it is thrown (unit), fixed on release
   dirY: number;
+  force?: number; // 0..1, the charge it was released with
   released?: boolean;
 } | null = null;
 // The spear in the air: from where the hand let it go to where it hits (an
@@ -503,6 +619,7 @@ let flyingSpear: {
   totalMs: number;
   dirX: number;
   dirY: number;
+  force: number;
   thrown?: { enemy: number; x: number; y: number };
 } | null = null;
 
@@ -528,6 +645,22 @@ function update(dtMs: number): void {
   game.update(dtMs); // the C core moves the game one step
   if (syncMaze()) maze.invalidate();
   enemyAnimMs += dtMs; // drawn in draw(), also while paused
+  blood.update(dtMs);
+  kickUpDust(dtMs);
+  worldSaveMs += dtMs;
+  if (worldSaveMs >= WORLD_SAVE_MS) {
+    worldSaveMs = 0;
+    saveWorld(CHARACTER_ID, snapshotWorld());
+  }
+  // Crafting goes on with the game clock (it stops while paused).
+  const crafted = crafting.update(dtMs);
+  if (crafted) {
+    if (inventory.add(crafted)) gameLog.log(`Crafted: ${crafted.name}.`);
+    else {
+      dropAtFeet(crafted);
+      gameLog.log(`Crafted: ${crafted.name}. The inventory is full: it is at your feet.`);
+    }
+  }
 
   // Gates: they close little by little at the end of the afternoon.
   const opening = game.maze.gateOpening();
@@ -546,13 +679,19 @@ function update(dtMs: number): void {
     gameLog.log(`You died. Delirium ${stats.delirium}.`);
   }
   deathBannerMs = Math.max(0, deathBannerMs - dtMs);
-  // Hit by an enemy: a red flash and a jolt.
+  // Hit by an enemy: a red flash, a jolt and blood on the floor.
   if (lastLife >= 0 && stats.life < lastLife && !player.isDead) {
     hud.hurt();
+    blood.spill(player.x, player.y, PLAYER_BODY_HEIGHT, lastLife - stats.life);
     camera.shake(HURT_SHAKE_MS, HURT_SHAKE_PX);
     gameLog.log(`An enemy hits you: -${lastLife - stats.life} life.`);
   }
   lastLife = stats.life;
+  if (stats.level > seenLevel) {
+    gameLog.log(`Level up! You are level ${stats.level}, fully healed: a point to spend in Skills (+).`);
+  }
+  if (stats.level !== seenLevel || stats.xp !== savedXp) saveCurrentProgress();
+  seenLevel = stats.level;
 
   const expansions = game.clock().expansions;
   if (expansions > seenExpansions) {
@@ -572,6 +711,8 @@ function update(dtMs: number): void {
   const lookAt = mouse.overGame() && !book.isOpen ? cursorInWorld() : undefined;
   const wasDead = player.isDead;
   player.sync(core, dtMs, lookAt, core.y - PLAYER_BODY_HEIGHT / 2);
+  if (player.justDoubleJumped) airPuffAt = { x: player.x, y: player.y - player.lift, ms: 0 };
+  if (airPuffAt && (airPuffAt.ms += dtMs) >= AIR_PUFF_MS) airPuffAt = null;
   if (wasDead && !player.isDead) {
     camera.x = player.x; // respawned at the base: jump there instead of sliding
     camera.y = playerCenterY();
@@ -582,7 +723,7 @@ function update(dtMs: number): void {
   book.update(mouse);
   showCoreDebug(core);
   const abilities = game.abilities();
-  abilityPanel.show(abilities);
+  upgradePanel.show(stats);
   abilityEffects.showAttacks = !equippedWeapon();
   for (const started of abilityEffects.update(abilities, dtMs)) {
     gameLog.log(started.name);
@@ -762,25 +903,27 @@ function updateSpearThrow(dtMs: number): void {
     const aim = aimFromBody();
     if (aim) player.turnAction(directionFromVector(aim.x, aim.y));
     if (mouse.rightHeld) return;
-    if (spearThrow.ms < SPEAR_CHARGE_MS || !aim) {
-      player.endAction(); // let go before it charged: no throw
+    if (!aim) {
+      player.endAction(); // the cursor on the body: nowhere to throw it
       endThrow();
       return;
     }
-    spearThrow = { phase: "throw", ms: THROW_HOLD_MS, dirX: aim.x, dirY: aim.y };
+    const force = spearCharge(spearThrow.ms);
+    spearThrow = { phase: "throw", ms: THROW_HOLD_MS, dirX: aim.x, dirY: aim.y, force };
     return;
   }
   if (!spearThrow.released && spearThrow.ms >= THROW_RELEASE_MS) {
     spearThrow.released = true;
     equipment.take("rightHand"); // it is in the air now, not in the hand
-    const { dirX, dirY } = spearThrow;
-    const aim = game.throwSpear(dirX, dirY, true); // where it is going to hit
+    const { dirX, dirY, force = 1 } = spearThrow;
+    const aim = game.throwSpear(dirX, dirY, force, true); // where it is going to hit
     const hit = aim.enemy >= 0;
     launchSpear(
       { x: player.x + dirX * SPEAR_HAND_AHEAD, y: player.y + dirY * SPEAR_HAND_AHEAD, z: SPEAR_HAND_HEIGHT },
       { x: aim.hitX, y: aim.hitY, z: hit ? SPEAR_HIT_HEIGHT : 0 },
       dirX,
       dirY,
+      force,
     );
   }
   if (spearThrow.ms < animationDurationMs(playerSheet, "throw_right")) return;
@@ -803,9 +946,15 @@ function launchSpear(
   to: { x: number; y: number; z: number },
   dirX: number,
   dirY: number,
+  force: number,
 ): void {
   const far = Math.hypot(to.x - from.x, to.y - from.y);
-  flyingSpear = { from, to, ms: 0, totalMs: (far / SPEAR_FLIGHT_SPEED) * 1000, dirX, dirY };
+  flyingSpear = { from, to, ms: 0, totalMs: (far / SPEAR_FLIGHT_SPEED) * 1000, dirX, dirY, force };
+}
+
+// How much the bar charged after `ms` aiming (0..1).
+function spearCharge(ms: number): number {
+  return Math.min(1, ms / SPEAR_CHARGE_MS);
 }
 
 // Moves the spear in the air. On arrival C does the throw: an enemy still in
@@ -815,12 +964,12 @@ function updateFlyingSpear(dtMs: number): void {
   if (!flyingSpear) return;
   flyingSpear.ms += dtMs;
   if (flyingSpear.ms < flyingSpear.totalMs) return;
-  const { to, dirX, dirY } = flyingSpear;
+  const { to, dirX, dirY, force } = flyingSpear;
   if (!flyingSpear.thrown) {
-    const thrown = game.throwSpear(dirX, dirY);
+    const thrown = game.throwSpear(dirX, dirY, force);
     gameLog.log(thrown.enemy >= 0 ? "The spear hits!" : "The spear misses.");
     if (thrown.enemy < 0 && Math.hypot(thrown.x - to.x, thrown.y - to.y) > 2) {
-      launchSpear(to, { x: thrown.x, y: thrown.y, z: 0 }, dirX, dirY);
+      launchSpear(to, { x: thrown.x, y: thrown.y, z: 0 }, dirX, dirY, force);
       flyingSpear.thrown = thrown;
       return;
     }
@@ -871,14 +1020,14 @@ function showFlyingSpear(): void {
 }
 
 // While aiming the spear, its charge under the feet: filling, then gold once
-// it can be thrown. Screen space, like the key prompt.
+// full (the furthest throw). Screen space, like the key prompt.
 function showSpearBar(): void {
   spearBar.visible = spearThrow?.phase === "aim";
   if (!spearThrow || !spearBar.visible) return;
   const [sx, sy] = worldToScreen(player.x, player.y + SPEAR_BAR_BELOW_FEET);
   const x = Math.round(sx - SPEAR_BAR_WIDTH / 2);
   const y = Math.round(sy);
-  const charge = Math.min(1, spearThrow.ms / SPEAR_CHARGE_MS);
+  const charge = spearCharge(spearThrow.ms);
   const ready = charge === 1;
   spearBar
     .clear()
@@ -1003,12 +1152,21 @@ function bodySheet(right: boolean, left: boolean): SpriteSheet {
   return playerSheet;
 }
 
-// A key cap with an "E" above the player's head while an item to pick up
+// Life, level and experience above the player's head, following it.
+function showPlayerBar(): void {
+  const [sx, sy] = worldToScreen(player.x, player.y - PLAYER_BODY_HEIGHT - PROMPT_ABOVE_HEAD);
+  playerBar.show(game.playerStats(), sx, sy);
+}
+
+// A key cap with an "E" above the player's bar while an item to pick up
 // with E is in reach. Screen space, after the darkness, so it shows at night.
 function showKeyPrompt(): void {
   keyPrompt.visible = keyPickupInReach() !== undefined;
   if (!keyPrompt.visible) return;
-  const [sx, sy] = worldToScreen(player.x, player.y - PLAYER_BODY_HEIGHT - PROMPT_ABOVE_HEAD);
+  const [sx, sy] = worldToScreen(
+    player.x,
+    player.y - PLAYER_BODY_HEIGHT - PROMPT_ABOVE_HEAD - PLAYER_BAR_HEIGHT - PROMPT_ABOVE_HEAD,
+  );
   const bob = Math.round(Math.sin(performance.now() / 250)); // 1 px up and down
   keyPrompt.position.set(Math.round(sx - KEY_PROMPT_SIZE / 2), Math.round(sy - KEY_PROMPT_SIZE) + bob);
 }
@@ -1028,7 +1186,9 @@ function dropAtFeet(item: ItemKind): void {
 
 // Takes one item out of an inventory slot and throws it on the floor ahead of
 // the player. Where that is a wall or the tree's trunk, it falls at the feet.
-function dropItem(index: number): void {
+// With `at` (an item dragged onto the map) it lands there, or as far that
+// way as DROP_REACH; without it, just ahead of the player.
+function dropItem(index: number, at?: { x: number; y: number }): void {
   const item = inventory.removeOne(index);
   if (!item) {
     gameLog.log("Nothing to drop in that slot.");
@@ -1037,6 +1197,12 @@ function dropItem(index: number): void {
   const [dirX, dirY] = vectorOf(player.facing);
   let x = Math.round(player.x + dirX * DROP_AHEAD);
   let y = Math.round(player.y + dirY * DROP_AHEAD);
+  if (at) {
+    const far = Math.hypot(at.x - player.x, at.y - player.y);
+    const k = far > DROP_REACH ? DROP_REACH / far : 1;
+    x = Math.round(player.x + (at.x - player.x) * k);
+    y = Math.round(player.y + (at.y - player.y) * k);
+  }
   const t = map.tileSize;
   const trunk = sampleTrunkBox(tree);
   const inTrunk = x >= trunk.x && x <= trunk.x + trunk.w && y >= trunk.y && y <= trunk.y + trunk.h;
@@ -1059,6 +1225,63 @@ function dropItem(index: number): void {
   );
   gameLog.log(`Dropped: ${item.name}`);
   if (item.id === "map_book" && book.isOpen && !inventory.has("map_book")) book.toggle();
+}
+
+// What a reload needs to go on from here (world-store.ts).
+function snapshotWorld(): SavedWorld {
+  const floor = propViews
+    .filter((view) => view.prop.pickup)
+    .map((view) => ({ id: view.prop.pickup!.id, frame: view.prop.frame, x: view.prop.x, y: view.prop.y }));
+  // A spear in the air is saved stuck where it was going.
+  if (flyingSpear) {
+    const at = flyingSpear.thrown ?? flyingSpear.to;
+    const frame = stuckFrame(throwDirIndex(flyingSpear.dirX, flyingSpear.dirY));
+    floor.push({ id: "spear", frame, x: Math.round(at.x), y: Math.round(at.y) });
+  }
+  const p = game.player();
+  return {
+    seed,
+    clockMs: game.clockMs(),
+    x: p.x,
+    y: p.y,
+    inventory: inventory.slots.map((slot) => (slot ? { id: slot.item.id, count: slot.count } : null)),
+    selected: inventory.selected,
+    equipment: Object.fromEntries(EQUIP_SLOTS.map((slot) => [slot, equipment.slots[slot]?.id ?? null])),
+    crafting: crafting.cells.map((item) => item?.id ?? null),
+    floor,
+  };
+}
+
+// Puts back what the player carried, wore and had in the crafting grid.
+function restoreBelongings(world: SavedWorld): void {
+  world.inventory.forEach((saved, i) => {
+    const item = saved && ITEMS[saved.id];
+    if (item && i < inventory.slots.length && saved.count > 0) inventory.slots[i] = { item, count: saved.count };
+  });
+  inventory.version++;
+  inventory.select(world.selected);
+  for (const slot of EQUIP_SLOTS) {
+    const item = ITEMS[world.equipment[slot] ?? ""];
+    if (item && Equipment.fits(item, slot)) equipment.put(slot, item);
+  }
+  world.crafting.forEach((id, cell) => {
+    const item = id ? ITEMS[id] : undefined;
+    if (item) crafting.put(cell, item);
+  });
+}
+
+// Dust behind the feet of whoever walks on the floor: the player (not in the
+// air) and the enemies alive and out of the bushes.
+function kickUpDust(dtMs: number): void {
+  dust.track("player", player.x, player.y, !player.isDead && player.lift === 0, dtMs);
+  const seen = new Set(["player"]);
+  for (const e of game.enemies()) {
+    const key = `enemy${e.slot}`;
+    seen.add(key);
+    dust.track(key, e.x, e.y, STATE[e.state] !== "MUERTO" && e.pinned === null && e.bush < 0, dtMs);
+  }
+  dust.keep(seen);
+  dust.update(dtMs);
 }
 
 // Updates what the stage shows from the game state, then renders it.
@@ -1104,12 +1327,13 @@ function draw(): void {
   lighting.update(lightX, lightY, dirX, dirY);
   showTorchGlow(flicker);
   showPlayerGlow(); // over the darkness: it is the player's own light
+  blood.draw();
+  dust.draw();
+  showPlayerBar();
   showKeyPrompt();
   showSpearBar();
   showAbilityEffects();
-  hud.showMedusa(game.medusaLife(), game.medusaLifeMax());
-  const { life, lifeMax } = game.playerStats();
-  hud.showLife(life, lifeMax);
+  hud.showHurtFlash();
   hud.showClock(game.clock(), gateOpening, timeSpeed, canvas.width, performance.now());
   hud.showBanners(growthBannerMs, deathBannerMs, DEATH_BANNER_MS, canvas.width, canvas.height);
   cursor.setShape(book.isOpen && mouse.isOver(book.element) ? (mouse.rightHeld ? "eraser" : "pencil") : "arrow");
@@ -1121,7 +1345,7 @@ function showControlsHint(root: HTMLElement): void {
   const hint = document.createElement("p");
   hint.className = "hint";
   hint.textContent =
-    "W A S D: move · Spear in the right hand: hold the right button to aim (the bar under the feet charges), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Next to an enemy: swings at it on its own, one at a time (white ring) · C: support · V: parry · Space: jump · R: punch the ground · F: clock speed · G: test gates · Esc: menu";
+    "W A S D: move · Spear in the right hand: hold the right button to aim (the bar under the feet charges: the fuller, the further), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Next to an enemy: swings at it on its own, one at a time (white ring) · C: support · V: parry · Space: jump (twice in the air with the double jump, Skills tab) · R: punch the ground · F: clock speed · G: test gates · Esc: menu";
   root.appendChild(hint);
 }
 
@@ -1205,6 +1429,14 @@ function showPlayer(alpha: number): void {
   jumpShadow.visible = player.lift > 0;
   jumpShadow.position.set(Math.round(player.x), Math.round(player.y));
   jumpShadow.scale.set(1 - player.lift / 80);
+  airPuff.clear();
+  if (airPuffAt) {
+    const p = airPuffAt.ms / AIR_PUFF_MS;
+    airPuff
+      .ellipse(Math.round(airPuffAt.x), Math.round(airPuffAt.y), Math.round(6 + 10 * p), Math.round(2 + 3 * p))
+      .stroke({ color: 0xffffff, width: 1, alpha: 0.8 * (1 - p) });
+    airPuff.zIndex = depthOf(airPuffAt.y, DEPTH.player) - 1e-3; // behind the body
+  }
   if (!frame) return;
   // Hands holding something. Bending down to pick something up, the right
   // hand reaches for the floor: what it holds is hidden until it is back.
@@ -1379,6 +1611,7 @@ function coreState() {
     ...p,
     state: STATE[p.state] ?? `unknown (${p.state})`,
     jumping: game.abilities()[ABILITY.SALTAR]?.active ?? false,
+    jumps: p.jumps,
   };
 }
 

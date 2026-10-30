@@ -39,6 +39,19 @@ typedef enum tipo_habilidad {
   HAB_MANTENIDA    // activa mientras se mantiene apretada (correr, bloquear)
 } TipoHabilidad;
 
+// Mejoras que se compran con los puntos de nivel (uno por nivel), en la
+// pestania Skills. Cada una se puede subir hasta su tope (MEJORA_TOPE).
+typedef enum mejora_id {
+  MEJORA_VIDA,        // +VIDA_POR_MEJORA de vida maxima
+  MEJORA_MOVILIDAD,   // +MOVILIDAD_POR_MEJORA de velocidad, caminando y saltando
+  MEJORA_SALTO_DOBLE, // en el aire, Espacio otra vez salta de nuevo
+  MEJORA_CANTIDAD
+} MejoraId;
+
+#define VIDA_POR_MEJORA 15
+#define MOVILIDAD_POR_MEJORA 0.08f
+extern const int MEJORA_TOPE[MEJORA_CANTIDAD];
+
 // Como es una habilidad para un personaje (sus numeros).
 typedef struct habilidad_def {
   const char *nombre;
@@ -63,6 +76,12 @@ typedef struct jugador {
   int hay_destino;
   int muertes;
   int delirio;       // sube +1 con cada muerte (concept/Mecanicas.md)
+  int nivel;         // empieza en 1
+  int experiencia;   // la juntada en este nivel (ver jugador_experiencia_nivel)
+  int mejoras[MEJORA_CANTIDAD]; // cuantas veces compro cada una
+  int vida_base;     // la vida maxima sin mejoras
+  int saltos;        // sube con cada salto, tambien el del aire (para animarlo)
+  int salto_aire;    // 1 si ya uso el salto doble en este salto
   float muerto_ms;   // > 0 mientras esta muerto: cuenta hasta reaparecer
   Direccion reaparicion; // donde reaparece al terminar de morir
 } Jugador;
@@ -76,7 +95,29 @@ extern const HabilidadDef HABILIDADES_BASE[HAB_CANTIDAD];
 // tanto el jugador queda MUERTO en el lugar; despues reaparece en la base.
 #define DURACION_MUERTE_MS 2640.0f
 
+// Experiencia: cada enemigo muerto da EXPERIENCIA_ENEMIGO. Al juntar la del
+// nivel sube uno, se cura del todo y gana un punto para una mejora.
+#define EXPERIENCIA_ENEMIGO 25
+
 void jugador_iniciar(Jugador *j, const char *nombre, const HabilidadDef *habilidades, Entity base);
+
+// La experiencia que hace falta para pasar del nivel `nivel` al siguiente.
+int jugador_experiencia_nivel(int nivel);
+
+// Le suma `puntos` de experiencia. Devuelve cuantos niveles subio.
+int jugador_ganar_experiencia(Jugador *j, int puntos);
+
+// Lo pone en `nivel` con `experiencia` juntada y esas `mejoras` compradas
+// (un progreso guardado), curado del todo. Las mejoras que no entran en los
+// puntos del nivel o pasan su tope se descartan.
+void jugador_cargar(Jugador *j, int nivel, int experiencia, const int mejoras[MEJORA_CANTIDAD]);
+
+// Puntos sin gastar: uno por nivel despues del 1, menos las mejoras compradas.
+int jugador_puntos(const Jugador *j);
+
+// Gasta un punto en la mejora `m`. Devuelve 1 si la compro, 0 si no hay
+// puntos o ya esta en su tope.
+int jugador_mejorar(Jugador *j, MejoraId m);
 
 void jugador_ir_a(Jugador *j, Direccion destino);
 
