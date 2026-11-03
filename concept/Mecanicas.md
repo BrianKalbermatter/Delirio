@@ -60,6 +60,7 @@ Con el tiempo, todo se deteriora: la comida, el agua, la casa y el equipamiento.
   - El delirio sube **+1**.
 - Con delirio alto (entre 6 y 7), el personaje **alucina de noche**: se mueve más lento o tiene más sueño.
 - El delirio **baja durmiendo 2 noches**. El costo: se pierde tiempo, y mientras se duerme se gastan el agua y la comida.
+- Disparadores, niveles y catálogo de alucinaciones: ver [Delirio.md](Delirio.md).
 
 ## El laberinto
 

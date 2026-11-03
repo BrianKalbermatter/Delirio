@@ -3,10 +3,12 @@
 // each body part. Items are put on by dragging them onto a square, by
 // selecting them and clicking the square, or with a double click (use it).
 // Under the player, the crafting grid: items go in the same way, and a click
-// on the result starts making it while a bar fills up.
+// on the result starts making it while a bar fills up. Beside it, the recipe
+// book: everything the build level allows, with its shape, and what the next
+// build level unlocks (greyed).
 // Plain DOM next to the game canvas.
 import { EQUIP_SLOT_NAMES, EQUIP_SLOTS, type EquipSlot, type Equipment } from "../../domain/equipment";
-import { CRAFT_SIZE, type CraftingGrid } from "../../domain/crafting";
+import { CRAFT_SIZE, type CraftingGrid, MAX_BUILD_LEVEL, type Recipe, RECIPES } from "../../domain/crafting";
 import type { Inventory } from "../../domain/inventory";
 import { ITEMS } from "../../domain/items";
 import type { ItemKind } from "../../domain/items";
@@ -54,6 +56,8 @@ export class InventoryPanel {
   private readonly craftResult: HTMLButtonElement;
   private readonly craftFill: HTMLElement;
   private readonly craftLabel: HTMLElement;
+  private readonly recipesEl: HTMLElement;
+  private shownBuildLevel = 0;
   private readonly ghost = document.createElement("canvas");
   readonly doll: HTMLCanvasElement;
   private renderedVersion = "";
@@ -78,13 +82,19 @@ export class InventoryPanel {
       <h2>Equipment</h2>
       <div class="doll"><canvas width="${DOLL_WIDTH}" height="${DOLL_HEIGHT}"></canvas></div>
       <h2>Crafting</h2>
-      <div class="craft">
-        <div class="craft-grid"></div>
-        <span class="craft-arrow">&#9654;</span>
-        <button class="slot craft-result"></button>
+      <div class="craft-area">
+        <div class="craft-bench">
+          <div class="craft">
+            <div class="craft-grid"></div>
+            <span class="craft-arrow">&#9654;</span>
+            <button class="slot craft-result"></button>
+          </div>
+          <div class="craft-bar"><div class="craft-fill"></div><span class="craft-label"></span></div>
+        </div>
+        <div class="recipes"></div>
       </div>
-      <div class="craft-bar"><div class="craft-fill"></div><span class="craft-label"></span></div>
     `;
+    this.recipesEl = root.querySelector<HTMLElement>(".recipes")!;
     const slotsEl = root.querySelector<HTMLElement>(".slots")!;
     this.selectedEl = root.querySelector<HTMLElement>(".selected")!;
     const dollEl = root.querySelector<HTMLElement>(".doll")!;
@@ -221,7 +231,67 @@ export class InventoryPanel {
       : "Empty slot";
   }
 
+  // The recipe book: the build level on top, what it allows (with the shape
+  // to lay in the grid) and, greyed, what the next level unlocks.
+  private showRecipes(): void {
+    const level = this.crafting.buildLevel;
+    if (level === this.shownBuildLevel) return;
+    this.shownBuildLevel = level;
+    const section = (title: string, recipes: Recipe[], locked: boolean) => {
+      const h = document.createElement("h3");
+      h.className = `build-level${locked ? " is-locked" : ""}`;
+      h.textContent = title;
+      const list = document.createElement("ul");
+      list.className = "recipe-list";
+      for (const recipe of recipes) list.appendChild(this.recipeRow(recipe, locked));
+      this.recipesEl.append(h, list);
+    };
+    this.recipesEl.replaceChildren();
+    section(`Build level ${level}`, RECIPES.filter((r) => r.level <= level), false);
+    const next = RECIPES.filter((r) => r.level === level + 1);
+    if (level < MAX_BUILD_LEVEL && next.length > 0) {
+      section(`Build level ${level + 1} · raise Build in Skills`, next, true);
+    }
+  }
+
+  private recipeRow(recipe: Recipe, locked: boolean): HTMLElement {
+    const li = document.createElement("li");
+    li.classList.toggle("is-locked", locked);
+    const item = ITEMS[recipe.result];
+    const result = document.createElement("span");
+    result.className = "recipe-result";
+    result.appendChild(this.icon(item));
+    const name = document.createElement("span");
+    name.className = "recipe-name";
+    const ingredients = new Map<string, number>();
+    for (const row of recipe.pattern) {
+      for (const ch of row) if (ch !== ".") ingredients.set(recipe.key[ch], (ingredients.get(recipe.key[ch]) ?? 0) + 1);
+    }
+    name.textContent = item.name;
+    const needs = document.createElement("span");
+    needs.className = "recipe-needs";
+    needs.textContent = [...ingredients].map(([id, n]) => `${n} ${ITEMS[id].name.toLowerCase()}`).join(" · ");
+    name.appendChild(needs);
+    // The shape, in a little 3x3 grid
+    const shape = document.createElement("span");
+    shape.className = "recipe-shape";
+    for (let r = 0; r < CRAFT_SIZE; r++) {
+      for (let c = 0; c < CRAFT_SIZE; c++) {
+        const cell = document.createElement("span");
+        const ch = recipe.pattern[r]?.[c];
+        if (ch && ch !== ".") cell.appendChild(this.icon(ITEMS[recipe.key[ch]]));
+        shape.appendChild(cell);
+      }
+    }
+    li.title = locked
+      ? `${item.name}: unlocked at build level ${recipe.level}`
+      : `${item.name}: lay it out like this in the crafting grid (mirrored also works)`;
+    li.append(result, name, shape);
+    return li;
+  }
+
   private showCrafting(): void {
+    this.showRecipes();
     this.crafting.cells.forEach((item, cell) => {
       const el = this.craftEls[cell];
       el.replaceChildren();
@@ -231,12 +301,17 @@ export class InventoryPanel {
     });
     const recipe = this.crafting.match();
     const result = recipe ? ITEMS[recipe.result] : null;
+    const locked = this.crafting.lockedMatch();
     this.craftResult.replaceChildren();
     if (result) this.craftResult.appendChild(this.icon(result));
+    else if (locked) this.craftResult.appendChild(this.icon(ITEMS[locked.result]));
+    this.craftResult.classList.toggle("is-locked", !result && locked !== null);
     this.craftResult.classList.toggle("is-ready", result !== null && !this.crafting.isCrafting);
     this.craftResult.classList.toggle("is-crafting", this.crafting.isCrafting);
     this.craftResult.title = !result
-      ? "Nothing to make with this"
+      ? locked
+        ? `${ITEMS[locked.result].name}: needs build level ${locked.level} (raise Build in Skills)`
+        : "Nothing to make with this"
       : this.crafting.isCrafting
         ? `Making: ${result.name} (right click: stop)`
         : `Click to make: ${result.name}`;

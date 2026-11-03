@@ -21,6 +21,13 @@ export interface FloorItem {
 export interface SavedWorld {
   seed: number;
   clockMs: number;
+  bossesDefeated: number; // bits 1 << zone (ZONE in game-wasm.ts): they stay dead
+  // The big rocks broken (ids from domain/rocks.ts). Missing in a save from
+  // before the rocks: then the pebbles are placed on load.
+  // `loose`: the version of the loose pebbles and branches already placed.
+  rocks?: { broken: number[]; loose?: number };
+  // What the player set up (a workbench): item id and foot position.
+  structures?: { id: string; x: number; y: number }[];
   x: number;
   y: number;
   inventory: (SavedItem | null)[];
@@ -45,6 +52,13 @@ export function loadWorld(characterId: string): SavedWorld | null {
     return {
       seed: saved.seed!,
       clockMs: saved.clockMs!,
+      bossesDefeated: Number.isInteger(saved.bossesDefeated) ? saved.bossesDefeated! : 0,
+      rocks: Array.isArray(saved.rocks?.broken)
+        ? { broken: saved.rocks.broken.filter(Number.isInteger), loose: Number(saved.rocks.loose) || 1 }
+        : undefined,
+      structures: Array.isArray(saved.structures)
+        ? saved.structures.filter((s) => typeof s?.id === "string" && Number.isFinite(s.x) && Number.isFinite(s.y))
+        : [],
       x: saved.x!,
       y: saved.y!,
       inventory: Array.isArray(saved.inventory) ? saved.inventory : [],

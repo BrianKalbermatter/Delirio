@@ -19,6 +19,7 @@ export interface Prop {
 // Every sprite the items can use, so they can be loaded up front.
 export const ITEM_SPRITES = [
   "Cofre_comun",
+  "rocas", // the big rocks (not items: they are broken, see domain/rocks.ts)
   ...new Set(Object.values(ITEMS).flatMap((i) => (i.iconSprite ? [i.sprite, i.iconSprite] : [i.sprite]))),
 ];
 // The items that are weapons (their overlay sheets are loaded up front too).

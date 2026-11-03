@@ -31,9 +31,10 @@ Direccion juego_destino(void);
 const Reloj *juego_reloj(void);
 const Laberinto *juego_laberinto(void);
 
-// Una caja solida sobre el piso (un tronco), en pixeles del mundo.
-// Devuelve 0 si ya no entran mas.
+// Una caja solida sobre el piso (una roca grande), en pixeles del mundo.
+// Devuelve su numero (-1 si ya no entran mas); juego_quitar_obstaculo la saca.
 int juego_agregar_obstaculo(float x, float y, float ancho, float alto);
+void juego_quitar_obstaculo(int i);
 
 // Para probar: multiplica la velocidad del reloj (1 = normal). No acelera el
 // movimiento, solo el paso de los dias.
@@ -82,11 +83,27 @@ void juego_cargar_progreso(int nivel, int experiencia, const int mejoras[MEJORA_
 // y pone al jugador en (x, y).
 void juego_cargar_partida(float reloj_ms, float x, float y);
 
+// Si el jugador tiene un escudo en la mano (lo dice el navegador, que lleva
+// el equipo): cubierto puede caminar despacio.
+void juego_escudo(int si);
+
 // Gasta un punto de nivel en una mejora (MejoraId). Devuelve 1 si la compro.
 int juego_mejorar(int mejora);
 
 // Le devuelve vida al jugador (una pocion), sin pasarse del maximo.
 void juego_curar(int vida);
 void juego_reiniciar(void);
+
+// 1 durante la tregua (el dia pleno del primer dia): los enemigos no entran
+// a la plaza, el jugador junta recursos y se prepara.
+int juego_tregua(void);
+
+// Cuantas veces lo quemo la lava (sube en uno con cada quemadura).
+int juego_quemaduras(void);
+
+// Jefes ya vencidos (bits 1 << Zona): para guardar la partida y cargarla
+// (despues de juego_iniciar).
+int juego_jefes_vencidos(void);
+void juego_cargar_jefes_vencidos(int vencidos);
 
 #endif

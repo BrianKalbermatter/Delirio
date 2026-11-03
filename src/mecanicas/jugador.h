@@ -46,10 +46,12 @@ typedef enum mejora_id {
   MEJORA_MOVILIDAD,   // +MOVILIDAD_POR_MEJORA de velocidad, caminando y saltando
   MEJORA_SALTO_DOBLE, // en el aire, Espacio otra vez salta de nuevo
   MEJORA_RECOLECCION, // las cosas del piso vienen solas desde mas lejos (lo dibuja el navegador)
+  MEJORA_CONSTRUCCION, // sube el nivel de construccion: desbloquea mas cosas para fabricar
   MEJORA_CANTIDAD
 } MejoraId;
 
 #define VIDA_POR_MEJORA 15
+
 #define MOVILIDAD_POR_MEJORA 0.08f
 extern const int MEJORA_TOPE[MEJORA_CANTIDAD];
 
@@ -83,6 +85,7 @@ typedef struct jugador {
   int vida_base;     // la vida maxima sin mejoras
   int saltos;        // sube con cada salto, tambien el del aire (para animarlo)
   int salto_aire;    // 1 si ya uso el salto doble en este salto
+  int escudo;        // 1 con un escudo en la mano: cubierto puede caminar (despacio)
   float muerto_ms;   // > 0 mientras esta muerto: cuenta hasta reaparecer
   Direccion reaparicion; // donde reaparece al terminar de morir
 } Jugador;
@@ -91,6 +94,7 @@ typedef struct jugador {
 extern const HabilidadDef HABILIDADES_BASE[HAB_CANTIDAD];
 
 #define MULTIPLICADOR_CORRER 1.6f
+#define MULTIPLICADOR_CUBIERTO 0.45f // caminando cubierto con el escudo
 #define VELOCIDAD_SALTO 170.0f // pixeles por segundo, hacia adelante en el aire
 // Lo que dura la animacion de morir (death: 33 frames de 80 ms). Mientras
 // tanto el jugador queda MUERTO en el lugar; despues reaparece en la base.
@@ -112,6 +116,11 @@ int jugador_ganar_experiencia(Jugador *j, int puntos);
 // (un progreso guardado), curado del todo. Las mejoras que no entran en los
 // puntos del nivel o pasan su tope se descartan.
 void jugador_cargar(Jugador *j, int nivel, int experiencia, const int mejoras[MEJORA_CANTIDAD]);
+
+// El nivel de construccion empieza en 1 y sube con MEJORA_CONSTRUCCION. Para
+// subirlo el jugador tiene que estar por encima: pasar a construccion 2 pide
+// nivel 2, a construccion 3 nivel 3...
+int jugador_nivel_construccion(const Jugador *j);
 
 // Puntos sin gastar: uno por nivel despues del 1, menos las mejoras compradas.
 int jugador_puntos(const Jugador *j);

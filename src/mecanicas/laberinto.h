@@ -21,6 +21,21 @@
 // anillo alrededor de la plaza y cada expansion talla otro anillo por afuera.
 //
 // La semilla permite repetir el mismo laberinto para pruebas.
+//
+// ZONAS DE LOS JEFES: la semilla elige donde va cada una, pero siempre siguen
+// el mismo orden de dificultad, de la plaza hacia afuera:
+//   - MEDUSAS (templo de Zeus): en una esquina del laberinto inicial, cerca de
+//     la plaza: es la primera y la mas facil de encontrar.
+//   - POSEIDON (Aquiles, el centauro): en la esquina opuesta, a media
+//     distancia (aparece con las primeras expansiones).
+//   - MINOTAURO (Hades): una GUARIDA abierta en el borde exterior del mundo,
+//     en uno de los lados que no tocan la esquina de Poseidon. Es la SALIDA:
+//     tiene una sola puerta, hacia el laberinto, y se talla recien cuando el
+//     laberinto crecio hasta cubrirla (las ultimas expansiones). Se genere
+//     como se genere el resto, el final siempre es la puerta del Minotauro.
+// Por ahora las zonas solo cambian el suelo (laberinto_influencia): cuanto
+// mas cerca del jefe, mas se nota. Los muros, las estructuras y los jefes
+// vienen despues.
 #ifndef LABERINTO_H
 #define LABERINTO_H
 
@@ -38,7 +53,24 @@
 #define LAB_INICIAL (LAB_PLAZA + 2 * LAB_ANILLO_INICIAL) // celdas por lado al empezar
 #define LAB_MAX_CELDAS (LAB_INICIAL + 2 * LAB_ANILLO * LAB_EXPANSIONES) // tamanio final
 #define LAB_TILES (LAB_MAX_CELDAS * LAB_CELDA + LAB_MURO) // tiles por lado del mundo
-#define LAB_MAX_OBSTACULOS 512 // cajas solidas sobre el piso (troncos de arboles)
+#define LAB_MAX_OBSTACULOS 2048 // cajas solidas sobre el piso (rocas grandes)
+// Guarida del Minotauro: un salon abierto de celdas, pegado al borde del mundo.
+#define LAB_GUARIDA_ANCHO 6  // celdas a lo largo del borde
+#define LAB_GUARIDA_FONDO 4  // celdas hacia adentro (las 2 ultimas expansiones)
+#define LAB_HADES_ALCANCE 9.0f // celdas desde la guarida en que el suelo ya se oscurece
+#define LAB_ARENA 4          // celdas por lado de las arenas (Medusas, Poseidon): menos que la plaza
+#define LAB_LAVA_HUECO 2     // tiles de lava entre piedra y piedra en la guarida (un salto)
+#define LAB_MAX_PIEDRAS 12   // plataformas de la guarida (entrada, piedras e isla)
+#define LAB_MAX_CHARCOS 160  // charcos de lava en los pasillos cerca de la guarida
+
+// Zonas del suelo (el orden de la dificultad).
+typedef enum zona {
+  ZONA_LABERINTO = 0, // arena comun
+  ZONA_MEDUSAS,       // templo de Zeus
+  ZONA_POSEIDON,      // Aquiles, el centauro de Poseidon
+  ZONA_MINOTAURO,     // Hades
+  ZONA_CANTIDAD
+} Zona; // cajas solidas sobre el piso (troncos de arboles)
 
 // Rectangulo de tiles (el hueco de una puerta).
 typedef struct rect_tiles {
@@ -50,6 +82,24 @@ typedef struct rect_px {
   float x, y, ancho, alto;
 } RectPx;
 
+// Una sala de jefe (arena o guarida), en celdas.
+typedef struct sala {
+  int c, f, ancho, alto;
+  int tallada; // 1 cuando el laberinto ya la cubre y se puede entrar
+} Sala;
+
+// Un rectangulo de la guarida medido desde su puerta, en tiles: u a lo
+// largo del borde del mundo, v hacia el fondo (0 = junto a la puerta).
+typedef struct rect_local {
+  int u, v, ancho, fondo;
+} RectLocal;
+
+// Un charco de lava: centro en tiles y radio (el borde es irregular).
+typedef struct charco {
+  int col, fila;
+  float radio;
+} Charco;
+
 typedef struct laberinto {
   unsigned char muro[LAB_TILES][LAB_TILES];                  // [fila][col] 1 = muro, 0 = piso
   unsigned char abierta[LAB_MAX_CELDAS][LAB_MAX_CELDAS];     // [fila][col] celda ya tallada
@@ -58,7 +108,20 @@ typedef struct laberinto {
   RectTiles puertas[4];                                      // arriba, abajo, izquierda, derecha
   RectPx obstaculos[LAB_MAX_OBSTACULOS];                     // chocan como muros
   int cant_obstaculos;
+  int obs_primero[LAB_MAX_CELDAS][LAB_MAX_CELDAS];           // por celda: primer obstaculo (-1: ninguno)
+  int obs_siguiente[LAB_MAX_OBSTACULOS];                     // el siguiente de la misma celda
   float apertura;                                            // 1 = abiertas, 0 = cerradas
+  // Zonas de los jefes (ver arriba)
+  Sala salas[ZONA_CANTIDAD];                                 // por Zona (la de ZONA_LABERINTO no se usa)
+  RectTiles entradas[ZONA_CANTIDAD][2];                      // los dos huecos de cada arena
+  RectTiles puerta_minotauro;                                // la salida: hueco hacia la guarida
+  RectTiles guarida_tiles;                                   // el piso de la guarida
+  int guarida_lado;                                          // 0 arriba, 1 abajo, 2 izquierda, 3 derecha
+  RectLocal piedras[LAB_MAX_PIEDRAS];                        // donde no hay lava en la guarida
+  int cant_piedras;
+  RectTiles isla;                                            // la ultima piedra: donde pelea el Minotauro
+  Charco charcos[LAB_MAX_CHARCOS];
+  int cant_charcos;
   int version;                                               // sube en cada cambio
 } Laberinto;
 
@@ -73,12 +136,22 @@ int laberinto_es_muro(const Laberinto *lab, int col, int fila);
 // Cuanto estan abiertas las 4 puertas: 1 = del todo, 0 = cerradas.
 void laberinto_apertura(Laberinto *lab, float apertura);
 
-// Agrega una caja solida en pixeles (un tronco): los pies chocan con ella
-// como con un muro. Devuelve 0 si ya no hay lugar para otra.
+// Agrega una caja solida en pixeles (una roca grande): los pies chocan con
+// ella como con un muro. Devuelve su numero, o -1 si ya no hay lugar.
 int laberinto_agregar_obstaculo(Laberinto *lab, RectPx caja);
+
+// Quita el obstaculo `i` (el numero que devolvio laberinto_agregar_obstaculo):
+// una roca rota ya no choca. Su lugar queda para otro.
+void laberinto_quitar_obstaculo(Laberinto *lab, int i);
+
+// 1 si la caja (en pixeles) se superpone con algun obstaculo.
+int laberinto_toca_obstaculo(const Laberinto *lab, RectPx caja);
 
 // 1 si el tile es parte del hueco de una puerta.
 int laberinto_es_puerta(const Laberinto *lab, int col, int fila);
+
+// 1 si el tile es parte del hueco de la puerta del Minotauro (ya tallada).
+int laberinto_es_puerta_minotauro(const Laberinto *lab, int col, int fila);
 
 // Las 2 hojas de la puerta `i` (0..3), en pixeles, con la apertura actual.
 // Cada hoja sale de un costado del hueco; abierta del todo miden 0.
@@ -90,6 +163,34 @@ Direccion laberinto_frente_a_puerta(const Laberinto *lab, int i, float distancia
 
 // 1 si alguna hoja de puerta esta encima de los pies en `pos` (aplastado).
 int laberinto_aplasta(const Laberinto *lab, Direccion pos);
+
+// Cuanto pesa la zona `zona` en el suelo del tile (col, fila): 1 = de lleno,
+// 0 = nada. Va bajando de a poco al alejarse, para que el suelo avise si el
+// jefe esta cerca.
+float laberinto_influencia(const Laberinto *lab, Zona zona, int col, int fila);
+
+// La zona que mas pesa en el tile (ZONA_LABERINTO si ninguna).
+Zona laberinto_zona(const Laberinto *lab, int col, int fila, float *influencia);
+
+// Centro de la guarida del Minotauro, en pixeles.
+Direccion laberinto_guarida(const Laberinto *lab);
+
+// El piso de la sala del jefe de `zona`, en pixeles.
+RectPx laberinto_sala_px(const Laberinto *lab, Zona zona);
+
+// La isla del fondo de la guarida (donde pelea el Minotauro), en pixeles.
+RectPx laberinto_isla_px(const Laberinto *lab);
+
+// La sala de jefe ya tallada en la que cae el tile (ZONA_LABERINTO si ninguna).
+Zona laberinto_sala(const Laberinto *lab, int col, int fila);
+
+// LAVA: la guarida del Minotauro entera (salvo las piedras del parkour) y
+// charcos en los pasillos cerca. No frena: quema al que la pisa sin saltar.
+int laberinto_es_lava(const Laberinto *lab, int col, int fila);
+int laberinto_pisa_lava(const Laberinto *lab, Direccion pies);
+
+// 1 si los pies en `pies` no chocan con nada (muro, puerta, obstaculo).
+int laberinto_libre(const Laberinto *lab, Direccion pies);
 
 // Centro de la plaza: donde aparece el jugador.
 Direccion laberinto_aparicion(const Laberinto *lab);

@@ -18,6 +18,19 @@
 //     ronda entera. Cuando se calman vuelven a su lugar a seguir charlando.
 //
 // Y arbustos (arbustos.h): el jugador escondido en uno no se ve.
+//
+// LA PLAZA: ningun enemigo nace ni reaparece adentro. Al principio (la
+// tregua, ver enemigos_plaza_permitida) tampoco entran: se frenan en las
+// puertas, asi el jugador junta recursos y se prepara tranquilo. Despues,
+// mientras las puertas estan abiertas, los que deambulan van entrando.
+//
+// JEFES: uno por sala de jefe (laberinto.h), en los ultimos huecos de la
+// lista. Por ahora son espartanos mas grandes (hasta que lleguen sus
+// sprites). Aparecen cuando su sala se talla y esperan quietos; al entrar el
+// jugador a la sala empieza el combate: lo persiguen sin salir de la sala
+// (el Minotauro, sin salir de su isla), cargan el golpe un momento (se ve) y
+// pegan fuerte. No se asustan ni escapan. Si el jugador se va de la sala un
+// rato, vuelven a su lugar y se curan. Muertos no vuelven.
 #ifndef ENEMIGOS_H
 #define ENEMIGOS_H
 
@@ -31,6 +44,8 @@
 #define RONDA_MAX 6    // enemigos por ronda, como mucho
 #define MANADAS_MAX 6
 #define MANADA_MAX 4   // enemigos por manada, como mucho
+#define JEFES (ZONA_CANTIDAD - 1) // uno por sala (Medusas, Poseidon, Minotauro)
+#define EXPERIENCIA_JEFE 250
 
 // Contra que cara de un muro lo clavo una lanza (solo las que el juego
 // muestra: la de adelante y los costados). El enemigo mira hacia el tiro.
@@ -89,6 +104,12 @@ typedef struct enemigo {
   int monedas;         // 1 a 3
   ArmaEnemigo arma;
   int suelta_arma;     // 1: al morir deja el arma en el piso
+  // Jefes (los demas tienen jefe = ZONA_LABERINTO)
+  Zona jefe;           // de que sala es jefe
+  int despierto;       // 1 peleando con el jugador
+  float carga_ms;      // > 0 mientras carga el golpe (al llegar a 0, pega)
+  float espera_ms;     // hasta que puede cargar otro golpe
+  float afuera_ms;     // cuanto hace que el jugador salio de su sala
 } Enemigo;
 
 // Un grupo charlando en circulo alrededor de `centro`.
@@ -120,6 +141,10 @@ typedef struct enemigos {
   int arbusto_jugador; // en que arbusto esta el jugador (-1: en ninguno)
   float delatado_ms;   // > 0: pego desde un arbusto y se lo ve igual
   int muertos;         // cuantos mato el jugador en total (para su experiencia)
+  int jefes_muertos;   // cuantos jefes mato (dan EXPERIENCIA_JEFE cada uno)
+  int vencidos;        // bit (1 << zona) por cada jefe ya vencido: no vuelve
+  int combate;         // hueco del jefe peleando con el jugador (-1: ninguno)
+  int plaza_permitida; // 0 durante la tregua: no entran a la plaza
 } Enemigos;
 
 // Pone las rondas y los arbustos, y reparte a los sueltos alrededor de
@@ -177,5 +202,20 @@ int enemigos_grupo(const Enemigos *e, int i);
 
 // 1 si el enemigo `i` esta hablando en su ronda.
 int enemigos_habla(const Enemigos *e, int i);
+
+// De `pies` al borde del cuerpo del enemigo `i` (un jefe es grande).
+float enemigos_distancia(const Enemigos *e, int i, Direccion pies);
+
+// Cuanto mas grande que un espartano se dibuja el enemigo `i` (1 = normal).
+float enemigos_escala(const Enemigos *e, int i);
+
+// Que parte del golpe cargo el jefe `i` (0..1; 0 si no esta cargando).
+float enemigos_carga(const Enemigos *e, int i);
+
+// Si los enemigos pueden entrar a la plaza (0: tregua, se frenan en las puertas).
+void enemigos_plaza_permitida(Enemigos *e, int si);
+
+// Jefes ya vencidos (bits 1 << Zona), para guardar la partida y cargarla.
+void enemigos_cargar_vencidos(Enemigos *e, int vencidos);
 
 #endif

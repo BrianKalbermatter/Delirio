@@ -1,0 +1,81 @@
+{
+ "frames": [
+  {
+   "filename": "pico 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 31
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 31
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 31
+   },
+   "duration": 100
+  },
+  {
+   "filename": "pico 1",
+   "frame": {
+    "x": 26,
+    "y": 0,
+    "w": 26,
+    "h": 31
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 31
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 31
+   },
+   "duration": 100
+  },
+  {
+   "filename": "pico 2",
+   "frame": {
+    "x": 52,
+    "y": 0,
+    "w": 26,
+    "h": 31
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 26,
+    "h": 31
+   },
+   "sourceSize": {
+    "w": 26,
+    "h": 31
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "app": "art/armas.py",
+  "image": "pico.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 78,
+   "h": 31
+  },
+  "scale": "1",
+  "frameTags": []
+ }
+}

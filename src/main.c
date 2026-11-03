@@ -54,6 +54,11 @@ static int lanzando;              // tirando la lanza: nada lo interrumpe
 static int auto_objetivo = -1;    // el enemigo al que le pega solo (-1: ninguno)
 static float auto_espera_ms;      // hasta que puede pegar solo de nuevo
 static int muertos_cobrados;      // enemigos muertos ya pasados a experiencia
+static int jefes_cobrados;        // jefes muertos ya pasados a experiencia
+static Direccion pie_seguro;      // donde piso por ultima vez sin lava (vuelve ahi si se quema)
+static int quemaduras;            // sube cada vez que la lava lo quema (el navegador lo mira)
+
+#define DANIO_LAVA 20
 
 // ########################################################
 // Llamadas a las mecanicas
@@ -69,6 +74,8 @@ void juego_iniciar(unsigned int semilla){
   medusa = (Entity){.vidaMAX = 40, .vida = 40, .danio = 8};
   enemigos_iniciar(&enemigos, &laberinto, base.posicion, semilla);
   muertos_cobrados = 0;
+  jefes_cobrados = 0;
+  pie_seguro = base.posicion;
   reloj_iniciar(&reloj);
 }
 
@@ -91,7 +98,8 @@ static void usar_habilidad(int habilidad, float alcance){
 }
 
 void juego_usar_habilidad(int habilidad){
-  if (lanzando) return;
+  // Una cosa a la vez: tirando la lanza o cubriendose no usa otra habilidad
+  if (lanzando || jugador_activa(&jugador, HAB_BLOQUEAR)) return;
   usar_habilidad(habilidad, ALCANCE_GOLPE);
 }
 
@@ -110,16 +118,14 @@ static void auto_atacar(float dt_ms){
   Direccion pies = jugador.entidad.posicion;
   float d = 0;
   if (auto_objetivo >= 0){
-    Direccion p = enemigos.lista[auto_objetivo].entidad.posicion;
-    d = sqrtf((p.x - pies.x) * (p.x - pies.x) + (p.y - pies.y) * (p.y - pies.y));
+    d = enemigos_distancia(&enemigos, auto_objetivo, pies); // hasta el borde del cuerpo (un jefe es grande)
     if (!enemigos_vivo(&enemigos, auto_objetivo) || d > AUTO_SUELTA) auto_objetivo = -1;
   }
   if (auto_objetivo < 0){
     Direccion hacia;
     auto_objetivo = enemigos_mas_cercano(&enemigos, pies, RADIO_AUTO_ATAQUE, &hacia);
     if (auto_objetivo < 0) return;
-    Direccion p = enemigos.lista[auto_objetivo].entidad.posicion;
-    d = sqrtf((p.x - pies.x) * (p.x - pies.x) + (p.y - pies.y) * (p.y - pies.y));
+    d = enemigos_distancia(&enemigos, auto_objetivo, pies);
   }
   if (auto_espera_ms > 0 || d > RADIO_AUTO_ATAQUE) return;
   for (int h = HAB_ATAQUE_LIGERO; h <= HAB_ATAQUE_CRITICO; h++){
@@ -139,6 +145,7 @@ static void auto_atacar(float dt_ms){
 int juego_auto_objetivo(void){ return auto_objetivo; }
 
 void juego_mantener_habilidad(int habilidad, int apretada){
+  if (apretada && habilidad == HAB_BLOQUEAR && lanzando) return; // o se cubre o tira la lanza
   jugador_mantener(&jugador, habilidad, apretada);
 }
 
@@ -170,7 +177,26 @@ void juego_actualizar(float dt_ms){
   jugador_actualizar(&jugador, &laberinto, dt_ms);
   auto_atacar(dt_ms);
 
-  // 4. Los enemigos: rodean al jugador y, cuando se animan, le pegan
+  // 3b. Lava: saltando se pasa por encima; el que la pisa se quema y vuelve
+  //     al ultimo lugar seguro (el parkour se reintenta sin volver a la base)
+  if (!jugador_muerto(&jugador) && !jugador_activa(&jugador, HAB_SALTAR)){
+    if (laberinto_pisa_lava(&laberinto, jugador.entidad.posicion)){
+      quemaduras++;
+      jugador.entidad.vida -= DANIO_LAVA;
+      jugador.entidad.posicion = pie_seguro;
+      jugador.hay_destino = 0;
+      printf("La lava te quema\n");
+      if (jugador.entidad.vida <= 0){
+        printf("Te consumio la lava\n");
+        jugador_morir(&jugador, laberinto_aparicion(&laberinto));
+      }
+    } else pie_seguro = jugador.entidad.posicion;
+  }
+
+  // 4. Los enemigos: rodean al jugador y, cuando se animan, le pegan. El
+  //    primer dia (la tregua) no entran a la plaza; despues entran mientras
+  //    las puertas estan abiertas.
+  enemigos_plaza_permitida(&enemigos, !juego_tregua());
   if (enemigos_actualizar(&enemigos, &laberinto, &jugador, dt_ms) > 0 && jugador.entidad.vida <= 0){
     printf("Te mataron los enemigos\n");
     jugador_morir(&jugador, laberinto_aparicion(&laberinto));
@@ -181,7 +207,17 @@ void juego_actualizar(float dt_ms){
   int nuevos = enemigos.muertos - muertos_cobrados;
   muertos_cobrados = enemigos.muertos;
   if (nuevos > 0) jugador_ganar_experiencia(&jugador, nuevos * EXPERIENCIA_ENEMIGO);
+  int jefes = enemigos.jefes_muertos - jefes_cobrados;
+  jefes_cobrados = enemigos.jefes_muertos;
+  if (jefes > 0) jugador_ganar_experiencia(&jugador, jefes * EXPERIENCIA_JEFE);
 }
+
+int juego_quemaduras(void){ return quemaduras; }
+
+int juego_tregua(void){ return reloj.dia == 1 && reloj.fase == FASE_DIA; }
+
+int juego_jefes_vencidos(void){ return enemigos.vencidos; }
+void juego_cargar_jefes_vencidos(int vencidos){ enemigos_cargar_vencidos(&enemigos, vencidos); }
 
 const Entity *juego_jugador(void){ return &jugador.entidad; }
 const Jugador *juego_jugador_completo(void){ return &jugador; }
@@ -192,6 +228,10 @@ const Laberinto *juego_laberinto(void){ return &laberinto; }
 
 int juego_agregar_obstaculo(float x, float y, float ancho, float alto){
   return laberinto_agregar_obstaculo(&laberinto, (RectPx){x, y, ancho, alto});
+}
+
+void juego_quitar_obstaculo(int i){
+  laberinto_quitar_obstaculo(&laberinto, i);
 }
 
 void juego_velocidad_tiempo(float factor){ velocidad_tiempo = factor; }
@@ -247,9 +287,16 @@ void juego_cargar_partida(float reloj_ms, float x, float y){
     falta -= paso;
   }
   laberinto_apertura(&laberinto, reloj_apertura_puertas(&reloj));
-  jugador.entidad.posicion = (Direccion){x, y};
+  // Si el laberinto cambio desde que se guardo (otra version del juego) y
+  // quedo adentro de un muro o sobre lava, vuelve a la base
+  Direccion donde = {x, y};
+  int lava = laberinto_pisa_lava(&laberinto, donde);
+  if (!laberinto_libre(&laberinto, donde) || lava) donde = laberinto_aparicion(&laberinto);
+  jugador.entidad.posicion = pie_seguro = donde;
   jugador.hay_destino = 0;
 }
+
+void juego_escudo(int si){ jugador.escudo = si; }
 
 int juego_mejorar(int mejora){ return jugador_mejorar(&jugador, mejora); }
 

@@ -192,9 +192,12 @@ export function drawFrame(ctx: CanvasRenderingContext2D, sheet: SpriteSheet, f: 
 }
 
 // Shows one frame on `sprite` with its feet (bottom center) at (x, y).
-export function placeFrame(sprite: Sprite, frame: Frame, x: number, y: number): void {
+// `scale` grows the frame around its anchor (the feet), for a boss drawn
+// bigger than the others.
+export function placeFrame(sprite: Sprite, frame: Frame, x: number, y: number, scale = 1): void {
   sprite.texture = frame.texture;
-  sprite.position.set(Math.round(x - frame.anchorX), Math.round(y - frame.h));
+  sprite.scale.set(scale);
+  sprite.position.set(Math.round(x - frame.anchorX * scale), Math.round(y - frame.h * scale));
 }
 
 // Sets each animation's pivot to the average horizontal center of mass of its

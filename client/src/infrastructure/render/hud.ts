@@ -92,6 +92,11 @@ export class Hud {
   // Death: red flash fading out, and the message.
   private readonly deathFlash = solidRect(0x7a0f18);
   private readonly deathBanner = pixelText({ ...CLOCK_FONT, fontSize: 18, fill: RED }, "YOU DIED");
+  // Bottom center during a boss fight: its name and life.
+  private readonly bossBox = solidRect(0x090710, 0.72);
+  private readonly bossBack = solidRect(0x3a1820);
+  private readonly bossLife = solidRect(0xd95763);
+  private readonly bossName = pixelText({ ...CLOCK_FONT, fill: "#f0e6d0" });
 
   constructor() {
     this.hurtFlash.alpha = 0;
@@ -102,6 +107,10 @@ export class Hud {
       this.growthLine,
       this.gatesLine,
       this.growthBanner,
+      this.bossBox,
+      this.bossBack,
+      this.bossLife,
+      this.bossName,
       this.deathFlash,
       this.deathBanner,
     );
@@ -152,6 +161,24 @@ export class Hud {
     this.gatesLine.text = gates;
     this.gatesLine.style.fill = closing && blink ? RED : clock.gatesOpen ? "#7ccf7a" : "#8f86c9";
     placeText(this.gatesLine, cx, 49, "center");
+  }
+
+  // The boss the player is fighting (null: none), at the bottom of the screen.
+  showBoss(boss: { name: string; life: number; lifeMax: number } | null, width: number, height: number): void {
+    const shown = boss !== null;
+    this.bossBox.visible = this.bossBack.visible = this.bossLife.visible = this.bossName.visible = shown;
+    if (!boss) return;
+    const barWidth = Math.min(320, width - 40);
+    const left = Math.round(width / 2 - barWidth / 2);
+    const top = height - 46;
+    this.bossBox.position.set(left - 8, top - 18);
+    this.bossBox.setSize(barWidth + 16, 34);
+    this.bossName.text = boss.name.toUpperCase();
+    placeText(this.bossName, Math.round(width / 2), top - 4, "center");
+    this.bossBack.position.set(left, top + 2);
+    this.bossBack.setSize(barWidth, 6);
+    this.bossLife.position.set(left, top + 2);
+    this.bossLife.setSize(Math.max(0, Math.round((barWidth * boss.life) / boss.lifeMax)), 6);
   }
 
   // Time left of each banner; deathTotalMs is how long the death one lasts.

@@ -24,6 +24,11 @@ const FEET_PADDING = 13; // like the player: the bottom row of the floor line
 const BAR_WIDTH = 20;
 const BAR_ABOVE_FEET = 56; // px from the feet to the life bar, over the crest
 const HIT_TINT = 0xff7070;
+// Bosses are bigger spartans for now, each in its own colour, until their
+// sprites come (ZONE in game-wasm.ts). Winding up a blow they flash.
+const BOSS_TINT: Record<number, number> = { 1: 0xa8e6a0, 2: 0x8fc4ff, 3: 0xff8a6a };
+const CHARGE_TINT = 0xfff0a0;
+const CHARGE_FLASHES = 6; // flashes over the whole wind-up, faster towards the blow
 // Speech bubble: a small white box with three dots that light up in turn.
 const BUBBLE_ABOVE_FEET = 60; // px from the feet to the bubble's bottom
 const BUBBLE_W = 15;
@@ -167,8 +172,8 @@ export class EnemyViews {
     view.y = y;
     const frame = view.animator.currentFrame();
     if (!frame) return;
-    placeFrame(view.sprite, frame, x, y + FEET_PADDING);
-    view.sprite.tint = enemy.hitMs > 0 ? HIT_TINT : 0xffffff;
+    placeFrame(view.sprite, frame, x, y + FEET_PADDING * enemy.scale, enemy.scale);
+    view.sprite.tint = this.tintOf(enemy);
     this.placeWeapon(view, enemy, `${motion}_${facing}`, x, y, dead || enemy.pinned !== null);
     // Pinned to a side face it stands in the wall's own row: drawn after the
     // wall, so the cracks and the spearhead show on it.
@@ -176,7 +181,8 @@ export class EnemyViews {
     const depthY = side ? (Math.floor(y / TILE) + 1) * TILE : y;
     view.root.zIndex = depthOf(depthY, DEPTH.prop);
 
-    const hurt = !dead && enemy.life < enemy.lifeMax;
+    // A boss shows its life in the HUD, not over its head
+    const hurt = !dead && enemy.life < enemy.lifeMax && !enemy.boss;
     view.bar.visible = hurt;
     if (hurt) {
       const x = Math.round(enemy.x - BAR_WIDTH / 2);
@@ -205,9 +211,16 @@ export class EnemyViews {
       const frame = sheet ? view.animator.frameAtShareIn(sheet, tag) : null;
       sprite.visible = frame !== null;
       if (!frame) continue;
-      placeFrame(sprite, frame, x, y + FEET_PADDING);
+      placeFrame(sprite, frame, x, y + FEET_PADDING * enemy.scale, enemy.scale);
       sprite.tint = view.sprite.tint;
     }
+  }
+
+  private tintOf(enemy: EnemyState): number {
+    if (enemy.hitMs > 0) return HIT_TINT;
+    // Winding up: flashes that speed up as the blow comes (the cue to dodge)
+    if (enemy.charge > 0 && Math.floor(enemy.charge * enemy.charge * CHARGE_FLASHES * 2) % 2 === 0) return CHARGE_TINT;
+    return BOSS_TINT[enemy.boss] ?? 0xffffff;
   }
 
   // The bubble with its tail at (x, y), its dots lit in turn.

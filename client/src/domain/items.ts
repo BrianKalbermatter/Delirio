@@ -18,6 +18,8 @@ export interface ItemKind {
   wear?: "head" | "body" | "legs";
   // Lying on the floor it loops this animation of its sprite (a spinning coin).
   floorAnimation?: string;
+  // Set up in the world when used (a workbench): its solid base, px.
+  structure?: { width: number; depth: number };
   // Gives light while held: the radii (px) of the lit area at night.
   light?: { inner: number; outer: number };
 }
@@ -73,6 +75,39 @@ export const ITEMS: Record<string, ItemKind> = {
     sprite: "ramas",
     frame: 0,
     pickupWithKey: true,
+  },
+  // Pebbles (art/rocas.py, in the colours of Brian's Roca1): lying around the
+  // big rocks and left by breaking one. Picked up with E; several shapes
+  // (frames), all the same item.
+  pebble: {
+    id: "pebble",
+    name: "Pebble",
+    sprite: "piedritas",
+    frame: 0,
+    pickupWithKey: true,
+  },
+  // Brian's stone pickaxe (sprites/Armas/PicoPiedra.aseprite, overlays by
+  // art/armas.py). Crafted from 3 pebbles and 2 branches; held in the right
+  // hand it breaks the big rocks.
+  pickaxe: {
+    id: "pickaxe",
+    name: "Stone pickaxe",
+    sprite: "pico",
+    frame: 0,
+    icon: WEAPON_ICON_FRAME,
+    pickupWithKey: true,
+    weapon: { grip: { x: 12, y: 41 } },
+  },
+  // Brian's workbench (sprites/Objetos/MesaDeTrabajo.aseprite). Unlocked at
+  // build level 2; once made, used from the inventory it is set up in front of
+  // the player and stays there (a solid structure), and E next to it opens
+  // the crafting grid.
+  workbench: {
+    id: "workbench",
+    name: "Workbench",
+    sprite: "mesa_trabajo",
+    frame: 0,
+    structure: { width: 52, depth: 12 },
   },
   // Brian's axe (sprites/PersonajePrincipales/Hacha.aseprite).
   axe: {

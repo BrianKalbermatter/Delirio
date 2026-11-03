@@ -2,6 +2,9 @@
 // it (one per square) that make a recipe's shape, anywhere in the grid and
 // also mirrored, can be crafted: it takes the recipe's time, a bar fills up,
 // and then the items are used up and the result comes out.
+//
+// Every recipe has a BUILD LEVEL: only those up to the player's build level
+// can be made (it goes up in the Skills tab, see UPGRADE.BUILD).
 import { ITEMS, type ItemKind } from "./items";
 
 export const CRAFT_SIZE = 3;
@@ -13,7 +16,10 @@ export interface Recipe {
   pattern: string[];
   key: Record<string, string>;
   ms: number; // how long it takes to make
+  level: number; // the build level it needs
 }
+
+export const MAX_BUILD_LEVEL = 5;
 
 export const RECIPES: Recipe[] = [
   {
@@ -21,6 +27,7 @@ export const RECIPES: Recipe[] = [
     pattern: ["B", "B"],
     key: { B: "branch" },
     ms: 3000,
+    level: 1,
   },
   {
     // Three branches on a diagonal (either one: the shape also counts mirrored).
@@ -28,12 +35,30 @@ export const RECIPES: Recipe[] = [
     pattern: ["B..", ".B.", "..B"],
     key: { B: "branch" },
     ms: 4000,
+    level: 1,
+  },
+  {
+    // Like Minecraft's: three pebbles across the top, two branches down the middle.
+    result: "pickaxe",
+    pattern: ["PPP", ".B.", ".B."],
+    key: { P: "pebble", B: "branch" },
+    ms: 4000,
+    level: 1,
+  },
+  {
+    // A square of four branches, like Minecraft's crafting table.
+    result: "workbench",
+    pattern: ["BB", "BB"],
+    key: { B: "branch" },
+    ms: 6000,
+    level: 2,
   },
   {
     result: "axe",
     pattern: ["SS", ".B", ".B"],
     key: { S: "enemy_sword", B: "branch" },
     ms: 5000,
+    level: 2,
   },
 ];
 
@@ -41,6 +66,18 @@ export class CraftingGrid {
   readonly cells: (ItemKind | null)[] = Array.from({ length: CRAFT_SIZE * CRAFT_SIZE }, () => null);
   // Bumped on every change, so views can redraw only when needed.
   version = 0;
+  // The player's build level: recipes above it cannot be made.
+  private level = 1;
+
+  get buildLevel(): number {
+    return this.level;
+  }
+
+  set buildLevel(level: number) {
+    if (level === this.level) return;
+    this.level = level;
+    this.version++;
+  }
   // What is being made and for how long already.
   private job: { recipe: Recipe; ms: number } | null = null;
 
@@ -70,8 +107,19 @@ export class CraftingGrid {
     return item;
   }
 
-  // The recipe the grid makes now, if any.
+  // The recipe the grid makes now, if any (within the build level).
   match(): Recipe | null {
+    const recipe = this.shapeMatch();
+    return recipe && recipe.level <= this.level ? recipe : null;
+  }
+
+  // A recipe the grid makes but the build level does not allow yet.
+  lockedMatch(): Recipe | null {
+    const recipe = this.shapeMatch();
+    return recipe && recipe.level > this.level ? recipe : null;
+  }
+
+  private shapeMatch(): Recipe | null {
     const shape = trim(this.cells.map((item) => item?.id ?? null));
     if (!shape) return null;
     return RECIPES.find((r) => sameShape(shape, r) || sameShape(shape.map((row) => [...row].reverse()), r)) ?? null;

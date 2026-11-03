@@ -60,6 +60,7 @@ export interface CoreState {
   state: string; // name of the C state, e.g. "CAMINANDO"
   jumping: boolean; // HAB_SALTAR active
   jumps: number; // +1 per jump C starts, the double jump in the air too
+  blocking: boolean; // HAB_BLOQUEAR held: covering (block_*, block_walk_* moving)
 }
 
 export class Character {
@@ -68,6 +69,7 @@ export class Character {
   motion: Motion = "idle";
   facing: Direction = "front";
   private targetFacing: Direction = "front";
+  private blocking = false;
   private turnClockMs = 0;
   private pivoting = false;
   // Jump in progress: time since it started.
@@ -92,6 +94,7 @@ export class Character {
     if (this.action) return `${this.action.name}_${this.action.view}`;
     if (this.jumpMs !== null) return `jump_${this.facing}`;
     const motion = this.pivoting ? "idle" : this.motion;
+    if (this.blocking) return `${motion === "idle" ? "block" : "block_walk"}_${this.facing}`;
     return `${motion}_${this.facing}`;
   }
 
@@ -172,6 +175,7 @@ export class Character {
     this.x = core.x;
     this.y = core.y;
     this.motion = MOTION_BY_STATE[core.state] ?? "idle";
+    this.blocking = core.blocking;
     this.moveX = core.dirX;
     this.moveY = core.dirY;
     if (this.isDead) {

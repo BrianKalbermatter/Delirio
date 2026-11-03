@@ -44,7 +44,7 @@ export class PauseMenu {
     });
     this.el.querySelector<HTMLButtonElement>(".pause-new")!.addEventListener("click", (e) => {
       if (e.detail === 0) return; // only real clicks, like Resume
-      if (confirm("Start a new maze from the base? Level and skills are kept; what you carry is lost.")) onNewGame();
+      if (confirm("Start a new game from zero? Level, skills, what you carry and the maze are all lost.")) onNewGame();
     });
     root.appendChild(this.el);
     this.show(true);

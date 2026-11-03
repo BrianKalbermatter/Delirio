@@ -25,6 +25,11 @@ declare -A ARGS=(
 # Items (pickups) load from public/assets, like the potions and the chest.
 declare -A ASSET_SPRITES=(
   [ramas]="Plaza/Ramas.aseprite"
+  [mesa_trabajo]="Objetos/MesaDeTrabajo.aseprite"
+)
+# Extra Aseprite arguments per asset: the workbench is drawn on a 200x200 canvas.
+declare -A ASSET_ARGS=(
+  [mesa_trabajo]="--trim-sprite"
 )
 
 # Aseprite cannot write into WSL (\\wsl.localhost paths), so sheets go to a
@@ -71,6 +76,8 @@ done
 
 OUT_LABEL="assets"
 for name in "${!ASSET_SPRITES[@]}"; do
-  export_sheet "$name" "${ASSET_SPRITES[$name]}"
+  # shellcheck disable=SC2206 # ASSET_ARGS values are meant to split into words
+  args=(${ASSET_ARGS[$name]:-})
+  export_sheet "$name" "${ASSET_SPRITES[$name]}" "${args[@]}"
 done
 rm -rf "$TMP"

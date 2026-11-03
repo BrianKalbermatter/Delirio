@@ -1,6 +1,7 @@
 #include "enemigos.h"
 
 #include <math.h>
+#include <stdio.h>
 
 // Sueltos a la vez: los que deambulan (y cazan en manada) alrededor del
 // jugador. Los de las rondas van aparte.
@@ -46,8 +47,8 @@
 #define CAZA 50                 // ...en este % de sus rumbos
 
 // Rondas: cuantas en la plaza y en el laberinto, y como son.
-#define RONDAS_PLAZA 3
-#define RONDAS_LABERINTO 4
+#define RONDAS_PLAZA 0      // en la plaza no hay: es la base del jugador
+#define RONDAS_LABERINTO 6
 #define RONDA_RADIO 46.0f       // radio del circulo en el que se paran
 #define VISION_CHARLA 140.0f    // charlando ven poco: se los puede sorprender
 #define CALMA_MS 6000.0f        // deambulando sin verlo este tiempo, vuelven a la ronda
@@ -55,6 +56,9 @@
 #define REAPARECE_RONDA_MS 45000.0f // un muerto de la ronda vuelve tanto despues
 
 // Arbustos
+// Sin arbustos por ahora: vuelven con sus sprites nuevos (poner HAY_ARBUSTOS
+// en 1). Sin ninguno, nadie se esconde y la mecanica queda quieta.
+#define HAY_ARBUSTOS 0
 #define ARBUSTO_RADIO 76.0f
 #define ARBUSTOS_POR_RONDA 2
 #define ARBUSTOS_PLAZA 6
@@ -118,6 +122,8 @@ static int zona_libre(const Laberinto *lab, int col, int fila, int radio){
   for (int f = fila - radio; f <= fila + radio; f++){
     for (int c = col - radio; c <= col + radio; c++){
       if (laberinto_es_muro(lab, c, f) || laberinto_es_puerta(lab, c, f)) return 0;
+      if (laberinto_sala(lab, c, f) != ZONA_LABERINTO || laberinto_es_lava(lab, c, f)) return 0;
+      if (laberinto_toca_obstaculo(lab, (RectPx){c * (float)LAB_TILE, f * (float)LAB_TILE, LAB_TILE, LAB_TILE})) return 0;
     }
   }
   return 1;
@@ -135,6 +141,10 @@ static int plaza_hasta_tile(void){ return plaza_desde_tile() + LAB_PLAZA * LAB_C
 static int en_plaza(int col, int fila){
   int desde = plaza_desde_tile(), hasta = plaza_hasta_tile();
   return col >= desde && col <= hasta && fila >= desde && fila <= hasta;
+}
+
+static int en_plaza_px(Direccion p){
+  return en_plaza((int)floorf(p.x / LAB_TILE), (int)floorf(p.y / LAB_TILE));
 }
 
 static Direccion centro_de_tile(int col, int fila){
@@ -171,7 +181,7 @@ static int buscar_lugar(Enemigos *e, const Laberinto *lab, Direccion jugador, Di
     if (p.x < 0 || p.y < 0) continue;
     int col = (int)(p.x / LAB_TILE);
     int fila = (int)(p.y / LAB_TILE);
-    if (!lugar_libre(lab, col, fila)) continue;
+    if (en_plaza(col, fila) || !lugar_libre(lab, col, fila)) continue; // en la plaza nunca nace nadie
     *lugar = centro_de_tile(col, fila);
     return 1;
   }
@@ -242,6 +252,153 @@ static ArmaEnemigo elegir_arma(Enemigos *e){
   return ARMA_NINGUNA;
 }
 
+// ---------------------------------------------------------------- jefes
+
+typedef struct jefe_def {
+  int vida, danio;
+  float velocidad;  // pixeles por segundo, persiguiendo
+  float escala;     // tamanio del dibujo y del cuerpo, contra un espartano
+  float carga_ms;   // lo que tarda en cargar el golpe (el aviso para esquivarlo)
+  float espera_ms;  // entre golpe y golpe
+} JefeDef;
+
+static const JefeDef JEFE[ZONA_CANTIDAD] = {
+  [ZONA_MEDUSAS]   = {350,  12, 85.0f,  2.0f, 650.0f, 1100.0f},
+  [ZONA_POSEIDON]  = {600,  16, 115.0f, 2.4f, 550.0f, 950.0f},
+  [ZONA_MINOTAURO] = {1000, 24, 100.0f, 2.8f, 600.0f, 1000.0f},
+};
+#define JEFE_RADIO 9.0f          // radio del cuerpo de un espartano: se multiplica por la escala
+#define JEFE_VUELVE_MS 4000.0f   // el jugador fuera de la sala este tiempo: se calma y se cura
+#define LANZA_DANIO_JEFE 60      // una lanza no lo mata de un tiro: le saca esto
+
+static int hueco_jefe(Zona z){ return ENEMIGOS_MAX - JEFES + (z - 1); }
+
+// Lo que ocupa su cuerpo mas alla de los pies (para que el jugador y la
+// lanza lo alcancen aunque sea grande). 0 en los comunes.
+static float cuerpo(const Enemigo *en){
+  return en->jefe ? JEFE_RADIO * JEFE[en->jefe].escala : 0.0f;
+}
+
+// Donde se mueve el jefe: su sala (el Minotauro, su isla), con un margen
+// para que el cuerpo no se meta en los muros.
+static RectPx terreno_jefe(const Laberinto *lab, Zona z){
+  RectPx r = z == ZONA_MINOTAURO ? laberinto_isla_px(lab) : laberinto_sala_px(lab, z);
+  float m = 16.0f;
+  return (RectPx){r.x + m, r.y + m, r.ancho - 2 * m, r.alto - 2 * m};
+}
+
+static Direccion centro_rect(RectPx r){ return (Direccion){r.x + r.ancho / 2, r.y + r.alto / 2}; }
+
+static int dentro_rect(RectPx r, Direccion p){
+  return p.x >= r.x && p.x <= r.x + r.ancho && p.y >= r.y && p.y <= r.y + r.alto;
+}
+
+static void nacer(Enemigos *e, Enemigo *en, Direccion lugar, Animo animo);
+
+// El jefe de la sala `z`, quieto en el medio de su terreno, esperando.
+static void nacer_jefe(Enemigos *e, const Laberinto *lab, Zona z){
+  Enemigo *en = &e->lista[hueco_jefe(z)];
+  en->ronda = en->manada = -1;
+  nacer(e, en, centro_rect(terreno_jefe(lab, z)), ANIMO_DEAMBULA);
+  en->jefe = z;
+  en->entidad.vidaMAX = en->entidad.vida = JEFE[z].vida;
+  en->entidad.danio = JEFE[z].danio;
+  en->arma = z == ZONA_POSEIDON ? ARMA_LANZA : z == ZONA_MINOTAURO ? ARMA_HACHA : ARMA_NINGUNA;
+  en->suelta_arma = 0;
+  en->botin = BOTIN_POCION;
+  en->monedas = 10 * z;
+}
+
+// Un paso del jefe. Devuelve el danio que le hizo al jugador.
+static int paso_jefe(Enemigos *e, Enemigo *en, int yo, const Laberinto *lab, Jugador *j, float dt_ms){
+  Zona z = en->jefe;
+  const JefeDef *def = &JEFE[z];
+  RectPx terreno = terreno_jefe(lab, z);
+  Direccion pies = en->entidad.posicion;
+  Direccion jugador = j->entidad.posicion;
+  int adentro = !jugador_muerto(j) && dentro_rect(laberinto_sala_px(lab, z), jugador);
+  Direccion al_jugador = {jugador.x - pies.x, jugador.y - pies.y};
+  float dist = largo(al_jugador);
+  Direccion hacia = unitario(al_jugador);
+  if (en->espera_ms > 0) en->espera_ms -= dt_ms;
+
+  // Entro a la sala: empieza el combate
+  if (!en->despierto){
+    en->entidad.estados = QUIETO;
+    if (adentro){
+      en->despierto = 1;
+      en->afuera_ms = 0;
+      en->espera_ms = 800.0f; // un respiro antes del primer golpe
+      printf("Empieza el combate con el jefe %d\n", z);
+    } else return 0;
+  }
+  e->combate = yo;
+
+  // Se fue: un rato despues el jefe se calma, vuelve a su lugar y se cura
+  if (!adentro){
+    en->afuera_ms += dt_ms;
+    if (en->afuera_ms > JEFE_VUELVE_MS){
+      en->despierto = 0;
+      en->carga_ms = 0;
+      en->entidad.vida = en->entidad.vidaMAX;
+      en->entidad.posicion = centro_rect(terreno);
+      e->combate = -1;
+      return 0;
+    }
+  } else en->afuera_ms = 0;
+
+  float alcance = ALCANCE + cuerpo(en);
+  int danio = 0;
+  Direccion dir = {0, 0};
+  float velocidad = 0;
+  if (en->carga_ms > 0){
+    // Cargando el golpe: quieto, mirandolo. Al terminar pega donde este
+    en->mira = hacia;
+    en->carga_ms -= dt_ms;
+    en->entidad.estados = ATACANDO;
+    if (en->carga_ms <= 0){
+      en->carga_ms = 0;
+      en->espera_ms = def->espera_ms;
+      int a_salvo = jugador_activa(j, HAB_BLOQUEAR) || jugador_activa(j, HAB_SALTAR);
+      if (dist <= alcance * 1.15f && !a_salvo && !jugador_muerto(j)){
+        j->entidad.vida -= def->danio;
+        danio = def->danio;
+      }
+    }
+    return danio;
+  }
+  if (adentro && dist <= alcance && en->espera_ms <= 0){
+    en->carga_ms = def->carga_ms;
+    en->mira = hacia;
+    en->entidad.estados = ATACANDO;
+    return 0;
+  }
+  if (adentro && dist > alcance * 0.7f){
+    dir = hacia;
+    velocidad = def->velocidad;
+  } else if (!adentro){
+    Direccion casa = centro_rect(terreno);
+    if (distancia(casa, pies) > 8.0f){
+      dir = unitario((Direccion){casa.x - pies.x, casa.y - pies.y});
+      velocidad = def->velocidad * 0.6f;
+    }
+  }
+  float paso = velocidad * dt_ms / 1000.0f;
+  float movido = laberinto_mover(lab, &en->entidad.posicion, dir.x * paso, dir.y * paso);
+  // Sin salir de su terreno
+  Direccion *p = &en->entidad.posicion;
+  if (p->x < terreno.x) p->x = terreno.x;
+  if (p->x > terreno.x + terreno.ancho) p->x = terreno.x + terreno.ancho;
+  if (p->y < terreno.y) p->y = terreno.y;
+  if (p->y > terreno.y + terreno.alto) p->y = terreno.y + terreno.alto;
+  if (largo(dir) > 0){
+    en->entidad.dir = dir;
+    en->mira = adentro ? hacia : dir;
+  }
+  en->entidad.estados = movido < 0.01f ? QUIETO : CORRIENDO;
+  return 0;
+}
+
 static void nacer(Enemigos *e, Enemigo *en, Direccion lugar, Animo animo){
   int ronda = en->ronda, sitio = en->asiento, manada = en->manada;
   *en = (Enemigo){0};
@@ -287,7 +444,13 @@ static void aparecer(Enemigos *e, Enemigo *en, const Laberinto *lab, Direccion j
     }
   }
   Direccion lugar;
-  if (!buscar_lugar(e, lab, jugador, &lugar)){
+  int hallado = buscar_lugar(e, lab, jugador, &lugar);
+  // El jugador en la plaza: el anillo alrededor cae casi todo adentro. Nace
+  // en cualquier lugar del laberinto, fuera de su vista.
+  for (int intento = 0; !hallado && intento < 60; intento++){
+    hallado = lugar_al_azar(e, lab, 0, 1, &lugar) && distancia(lugar, jugador) > APARECE_DESDE;
+  }
+  if (!hallado){
     en->reaparece_ms = 2000.0f; // probar de nuevo en un rato
     return;
   }
@@ -417,9 +580,10 @@ void enemigos_iniciar(Enemigos *e, const Laberinto *lab, Direccion jugador, unsi
     e->lista[i].ronda = -1;
     e->lista[i].manada = -1;
   }
+  e->combate = -1;
   int hueco = 0;
   poner_rondas(e, lab, jugador, &hueco);
-  poner_arbustos(e, lab, jugador);
+  if (HAY_ARBUSTOS) poner_arbustos(e, lab, jugador);
   poner_errantes(e, lab, jugador, hueco);
 }
 
@@ -434,7 +598,14 @@ static int herir(Enemigos *e, Enemigo *en, int danio){
     en->entidad.vida = 0;
     en->entidad.estados = MUERTO;
     en->muerto_ms = MUERTE_MS;
-    e->muertos++;
+    if (en->jefe){
+      e->jefes_muertos++;
+      e->vencidos |= 1 << en->jefe;
+      e->combate = -1;
+      printf("Venciste al jefe %d\n", en->jefe);
+    } else e->muertos++;
+  } else if (en->jefe){
+    en->despierto = 1; // un jefe no escapa: pelea
   } else {
     cambiar_animo(en, ANIMO_HUYE);
   }
@@ -450,10 +621,10 @@ int enemigos_golpe_jugador(Enemigos *e, const Jugador *j, float alcance, int dan
     Enemigo *en = &e->lista[i];
     Direccion hacia = {en->entidad.posicion.x - pies.x, en->entidad.posicion.y - pies.y};
     float d = largo(hacia);
-    if (d > alcance) continue;
+    if (d > alcance + cuerpo(en)) continue;
     // Del lado al que mira (o encima suyo)
     Direccion u = unitario(hacia);
-    if (d > 12.0f && u.x * mira.x + u.y * mira.y < 0.2f) continue;
+    if (d > 12.0f + cuerpo(en) && u.x * mira.x + u.y * mira.y < 0.2f) continue;
     golpes += herir(e, en, danio);
   }
   return golpes;
@@ -489,7 +660,7 @@ int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion
     Direccion rel = {en->entidad.posicion.x - desde.x, en->entidad.posicion.y - desde.y};
     float adelante = rel.x * tiro.x + rel.y * tiro.y;
     float costado = fabsf(rel.x * tiro.y - rel.y * tiro.x);
-    if (adelante > 0 && adelante <= mejor_d && costado <= LANZA_ANCHO){
+    if (adelante > 0 && adelante <= mejor_d && costado <= LANZA_ANCHO + cuerpo(en)){
       mejor = i;
       mejor_d = adelante;
     }
@@ -497,7 +668,12 @@ int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion
   if (mejor < 0) return -1;
   Enemigo *en = &e->lista[mejor];
   *impacto = *cae = en->entidad.posicion;
-  if (probar) return mejor;
+  if (probar) return en->jefe ? -1 : mejor;
+  // A un jefe la lanza le pega y cae a sus pies: no lo mata ni lo clava
+  if (en->jefe){
+    herir(e, en, LANZA_DANIO_JEFE);
+    return -1;
+  }
   herir(e, en, en->entidad.vida);
 
   // Se lo lleva ensartado hasta donde termina el vuelo. Clavado solo contra
@@ -544,9 +720,9 @@ int enemigos_golpe_suelo(Enemigos *e, Direccion centro, float radio, int danio){
   for (int i = 0; i < ENEMIGOS_MAX; i++){
     Enemigo *en = &e->lista[i];
     if (!vivo(en)) continue;
-    float d = distancia(en->entidad.posicion, centro);
+    float d = distancia(en->entidad.posicion, centro) - cuerpo(en);
     if (d <= radio) golpes += herir(e, en, danio);
-    else if (d <= radio * 3){ // el temblor los asusta
+    else if (d <= radio * 3 && !en->jefe){ // el temblor los asusta
       cambiar_animo(en, ANIMO_HUYE);
       alertar_grupo(e, en);
     }
@@ -560,7 +736,7 @@ int enemigos_mas_cercano(const Enemigos *e, Direccion pies, float radio, Direcci
   for (int i = 0; i < ENEMIGOS_MAX; i++){
     const Enemigo *en = &e->lista[i];
     if (!vivo(en)) continue;
-    float d = distancia(en->entidad.posicion, pies);
+    float d = distancia(en->entidad.posicion, pies) - cuerpo(en);
     if (d <= mejor_d){
       mejor = i;
       mejor_d = d;
@@ -586,6 +762,31 @@ int enemigos_grupo(const Enemigos *e, int i){
   if (en->ronda >= 0) return en->ronda;
   if (en->manada >= 0) return RONDAS_MAX + en->manada;
   return -1;
+}
+
+void enemigos_plaza_permitida(Enemigos *e, int si){ e->plaza_permitida = si; }
+
+float enemigos_distancia(const Enemigos *e, int i, Direccion pies){
+  const Enemigo *en = &e->lista[i];
+  return distancia(en->entidad.posicion, pies) - cuerpo(en);
+}
+
+float enemigos_escala(const Enemigos *e, int i){
+  const Enemigo *en = &e->lista[i];
+  return en->jefe ? JEFE[en->jefe].escala : 1.0f;
+}
+
+float enemigos_carga(const Enemigos *e, int i){
+  const Enemigo *en = &e->lista[i];
+  if (!en->jefe || en->carga_ms <= 0) return 0.0f;
+  return 1.0f - en->carga_ms / JEFE[en->jefe].carga_ms;
+}
+
+void enemigos_cargar_vencidos(Enemigos *e, int vencidos){
+  e->vencidos = vencidos;
+  for (int z = ZONA_LABERINTO + 1; z < ZONA_CANTIDAD; z++){
+    if (vencidos & (1 << z)) e->lista[hueco_jefe(z)].activo = 0;
+  }
 }
 
 int enemigos_habla(const Enemigos *e, int i){
@@ -743,7 +944,7 @@ static float deambular(Enemigos *e, Enemigo *en, const Jugador *j, float dt_ms, 
     Direccion al_jugador = {j->entidad.posicion.x - pies.x, j->entidad.posicion.y - pies.y};
     if (en->manada >= 0 && largo(al_jugador) < RASTREO && (int)(siguiente(e) % 100) < CAZA){
       en->entidad.dir = girar(unitario(al_jugador), entre(e, -35.0f, 35.0f));
-    } else if (afuera && (int)(siguiente(e) % 100) < TIRA_A_LA_PLAZA){
+    } else if (afuera && e->plaza_permitida && (int)(siguiente(e) % 100) < TIRA_A_LA_PLAZA){
       Direccion a_plaza = unitario((Direccion){e->plaza.x - pies.x, e->plaza.y - pies.y});
       en->entidad.dir = girar(a_plaza, entre(e, -70.0f, 70.0f));
     } else {
@@ -905,6 +1106,11 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
     if (vivo(en) && en->animo == ANIMO_ATACA) e->atacando++;
   }
   actualizar_rondas(e, dt_ms);
+  // Los jefes aparecen cuando su sala ya esta tallada (y no los vencio)
+  for (int z = ZONA_LABERINTO + 1; z < ZONA_CANTIDAD; z++){
+    if (!e->lista[hueco_jefe(z)].activo && !(e->vencidos & (1 << z)) && lab->salas[z].tallada) nacer_jefe(e, lab, (Zona)z);
+  }
+  e->combate = -1;
   for (int i = 0; i < ENEMIGOS_MAX; i++){
     Enemigo *en = &e->lista[i];
     if (!en->activo){
@@ -923,8 +1129,13 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
       en->muerto_ms -= dt_ms;
       if (en->muerto_ms <= 0){
         en->activo = 0;
-        en->reaparece_ms = en->ronda >= 0 ? REAPARECE_RONDA_MS : REAPARECE_MS;
+        en->reaparece_ms = en->jefe ? 0 : en->ronda >= 0 ? REAPARECE_RONDA_MS : REAPARECE_MS;
       }
+      continue;
+    }
+
+    if (en->jefe){
+      danio_total += paso_jefe(e, en, i, lab, j, dt_ms);
       continue;
     }
 
@@ -933,7 +1144,14 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
     Direccion dir;
     float velocidad = decidir(e, en, i, lab, j, dt_ms, &dir);
     float paso = velocidad * dt_ms / 1000.0f;
+    Direccion antes = en->entidad.posicion;
     float movido = laberinto_mover(lab, &en->entidad.posicion, dir.x * paso, dir.y * paso);
+    // Tregua: no cruzan las puertas (se quedan del lado de afuera)
+    if (!e->plaza_permitida && en_plaza_px(en->entidad.posicion) && !en_plaza_px(antes)){
+      en->entidad.posicion = antes;
+      movido = 0;
+      if (en->animo == ANIMO_DEAMBULA) en->rumbo_ms = 0; // otro rumbo
+    }
     if (largo(dir) > 0) en->entidad.dir = dir;
     // Contra un muro al deambular: busca otro rumbo enseguida (o, volviendo
     // a la ronda, uno al azar un rato para rodearlo)

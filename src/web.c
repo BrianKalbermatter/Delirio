@@ -44,12 +44,16 @@ EMSCRIPTEN_KEEPALIVE int web_jugador_vida(void) { return juego_jugador()->vida; 
 EMSCRIPTEN_KEEPALIVE int web_jugador_vida_max(void) { return juego_jugador()->vidaMAX; }
 // Las mejoras en el orden de MejoraId (mecanicas/jugador.h)
 EMSCRIPTEN_KEEPALIVE void web_cargar_progreso(int nivel, int experiencia, int vida, int movilidad, int salto_doble,
-                                               int recoleccion) {
+                                               int recoleccion, int construccion) {
   int mejoras[MEJORA_CANTIDAD] = {[MEJORA_VIDA] = vida, [MEJORA_MOVILIDAD] = movilidad,
-                                  [MEJORA_SALTO_DOBLE] = salto_doble, [MEJORA_RECOLECCION] = recoleccion};
+                                  [MEJORA_SALTO_DOBLE] = salto_doble, [MEJORA_RECOLECCION] = recoleccion,
+                                  [MEJORA_CONSTRUCCION] = construccion};
   juego_cargar_progreso(nivel, experiencia, mejoras);
 }
 EMSCRIPTEN_KEEPALIVE int web_mejorar(int m) { return juego_mejorar(m); }
+// Nivel de construccion (1..5): que se puede fabricar
+EMSCRIPTEN_KEEPALIVE int web_jugador_construccion(void) { return jugador_nivel_construccion(juego_jugador_completo()); }
+EMSCRIPTEN_KEEPALIVE void web_escudo(int si) { juego_escudo(si); }
 EMSCRIPTEN_KEEPALIVE int web_mejora(int m) { return juego_jugador_completo()->mejoras[m]; }
 EMSCRIPTEN_KEEPALIVE int web_mejora_tope(int m) { return MEJORA_TOPE[m]; }
 EMSCRIPTEN_KEEPALIVE int web_jugador_puntos(void) { return jugador_puntos(juego_jugador_completo()); }
@@ -87,6 +91,18 @@ EMSCRIPTEN_KEEPALIVE float web_enemigo_golpeado(int i) { return enemigo(i)->golp
 EMSCRIPTEN_KEEPALIVE int web_enemigo_grupo(int i) { return enemigos_grupo(juego_enemigos(), i); }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_habla(int i) { return enemigos_habla(juego_enemigos(), i); }
 // En que arbusto esta (-1: en ninguno)
+// Jefes: cuanto mas grande se dibuja (1 = un espartano comun), de que sala
+// es jefe (Zona; 0 = no es jefe) y cuanto cargo el golpe (0..1)
+EMSCRIPTEN_KEEPALIVE float web_enemigo_escala(int i) { return enemigos_escala(juego_enemigos(), i); }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_jefe(int i) { return enemigo(i)->jefe; }
+EMSCRIPTEN_KEEPALIVE float web_enemigo_carga(int i) { return enemigos_carga(juego_enemigos(), i); }
+// El hueco del jefe que pelea con el jugador (-1: ninguno)
+EMSCRIPTEN_KEEPALIVE int web_jefe_combate(void) { return juego_enemigos()->combate; }
+EMSCRIPTEN_KEEPALIVE int web_jefes_vencidos(void) { return juego_jefes_vencidos(); }
+EMSCRIPTEN_KEEPALIVE void web_cargar_jefes_vencidos(int v) { juego_cargar_jefes_vencidos(v); }
+EMSCRIPTEN_KEEPALIVE int web_jugador_quemaduras(void) { return juego_quemaduras(); }
+// 1 mientras los enemigos todavia no entran a la plaza (el primer dia)
+EMSCRIPTEN_KEEPALIVE int web_tregua(void) { return juego_tregua(); }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_arbusto(int i) {
   return arbustos_en(&juego_enemigos()->arbustos, enemigo(i)->entidad.posicion);
 }
@@ -117,11 +133,28 @@ EMSCRIPTEN_KEEPALIVE int web_lab_tiles(void) { return LAB_TILES; }
 EMSCRIPTEN_KEEPALIVE int web_lab_tile(void) { return LAB_TILE; }
 EMSCRIPTEN_KEEPALIVE int web_lab_muro(int col, int fila) { return laberinto_es_muro(juego_laberinto(), col, fila); }
 EMSCRIPTEN_KEEPALIVE int web_lab_puerta(int col, int fila) { return laberinto_es_puerta(juego_laberinto(), col, fila); }
+// Zonas de los jefes (Zona en mecanicas/laberinto.h): la que mas pesa en el
+// suelo del tile, y cuanto (0..1)
+EMSCRIPTEN_KEEPALIVE int web_lab_zona(int col, int fila) { return laberinto_zona(juego_laberinto(), col, fila, 0); }
+EMSCRIPTEN_KEEPALIVE float web_lab_influencia(int col, int fila) {
+  float peso;
+  laberinto_zona(juego_laberinto(), col, fila, &peso);
+  return peso;
+}
+EMSCRIPTEN_KEEPALIVE int web_lab_lava(int col, int fila) { return laberinto_es_lava(juego_laberinto(), col, fila); }
+EMSCRIPTEN_KEEPALIVE int web_lab_puerta_minotauro(int col, int fila) {
+  return laberinto_es_puerta_minotauro(juego_laberinto(), col, fila);
+}
+EMSCRIPTEN_KEEPALIVE float web_lab_guarida_x(void) { return laberinto_guarida(juego_laberinto()).x; }
+EMSCRIPTEN_KEEPALIVE float web_lab_guarida_y(void) { return laberinto_guarida(juego_laberinto()).y; }
+EMSCRIPTEN_KEEPALIVE int web_lab_guarida_abierta(void) { return juego_laberinto()->salas[ZONA_MINOTAURO].tallada; }
 EMSCRIPTEN_KEEPALIVE float web_lab_apertura(void) { return juego_laberinto()->apertura; }
-// Caja solida (un tronco) en pixeles del mundo; 0 si ya no entran mas
+// Caja solida (una roca grande) en pixeles del mundo: devuelve su numero
+// (-1 si ya no entran mas), para quitarla con web_lab_quitar_obstaculo
 EMSCRIPTEN_KEEPALIVE int web_lab_obstaculo(float x, float y, float ancho, float alto) {
   return juego_agregar_obstaculo(x, y, ancho, alto);
 }
+EMSCRIPTEN_KEEPALIVE void web_lab_quitar_obstaculo(int i) { juego_quitar_obstaculo(i); }
 // Hoja `hoja` (0..1) de la puerta `i` (0..3): dato 0 = x, 1 = y, 2 = ancho, 3 = alto (pixeles)
 EMSCRIPTEN_KEEPALIVE float web_lab_hoja(int i, int hoja, int dato) {
   RectPx hojas[2];

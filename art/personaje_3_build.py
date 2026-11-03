@@ -5,6 +5,9 @@ is always in the RIGHT hand (the black sleeve).
 
 Animations (tag_<direction>, frames x ms):
 - idle 8x~112, walk 10x44, run 10x34
+- block 8x~112, block_walk 10x70: covering, the left forearm raised across
+  the chest (what that hand holds, a shield, ends up in front of the body),
+  standing or edging forward with short, slow steps.
 - jump 10: crouch, take off, tuck, reach down, land. The game lifts the
   sprite: frames 2-7 are in the air (JUMP_AIR in the client).
 - jump_attack 6: a slash in the air, legs tucked; the jump goes on after it.
@@ -103,6 +106,26 @@ def walk(i):
 
 def run(i):
     return gait(i, stride=11.5, lift=6.0, swing=46, bend=60, lean=18, drop=1.8, sway=16)
+
+
+# Covering: the left arm forward and the forearm bent across the chest, the
+# body a little crouched behind it.
+GUARD_ARM = (60.0, 0.0, 115.0)
+
+
+def guard(p):
+    p.arm = {"r": p.arm["r"], "l": GUARD_ARM}
+    return p
+
+
+def block(i, n=8):
+    b = math.sin(2 * math.pi * i / n)
+    return guard(pose(hip_drop=1.6 + 0.3 * b, lean=8, crest_sway=2 * b, head_pitch=-3,
+                      arm={"r": (2 * b, 24.0, 10.0), "l": GUARD_ARM}))
+
+
+def block_walk(i):
+    return guard(gait(i, stride=4.5, lift=1.8, swing=10, bend=14, lean=9, drop=1.6, sway=3))
 
 
 # ---------------------------------------------------------------- jump
@@ -486,24 +509,26 @@ def armed_version(p):
     return a
 
 
-def left_armed(p):
-    """Gripping with the left hand, that arm in the carry pose too."""
+def left_armed(p, keep_arm=False):
+    """Gripping with the left hand, that arm in the carry pose too (or as
+    posed, with keep_arm: covering with a shield)."""
     a = copy.deepcopy(p)
     a.fist = {"r": a.fist["r"], "l": True}
-    swing = a.arm["l"][0]
-    a.arm["l"] = (CARRY_ARM[0] + swing * 0.2, CARRY_ARM[1], CARRY_ARM[2])
+    if not keep_arm:
+        swing = a.arm["l"][0]
+        a.arm["l"] = (CARRY_ARM[0] + swing * 0.2, CARRY_ARM[1], CARRY_ARM[2])
     return a
 
 
-def left_versions(d, bare, armed):
+def left_versions(d, bare, armed, keep_arm=False):
     """Body frames with the left hand gripping (alone and with the right one)
     and the left-armed model."""
-    img_l, model_l = p3.draw(d, left_armed(bare))
-    img_both = p3.draw(d, left_armed(armed))[0]
+    img_l, model_l = p3.draw(d, left_armed(bare, keep_arm))
+    img_both = p3.draw(d, left_armed(armed, keep_arm))[0]
     return img_l, img_both, model_l
 
 
-def loop(sheet, name, poses, ms, carry=True):
+def loop(sheet, name, poses, ms, carry=True, keep_left=False):
     for d in DIRS:
         free, armed, models = [], [], []
         armed_l, armed_both, models_l = [], [], []
@@ -513,7 +538,7 @@ def loop(sheet, name, poses, ms, carry=True):
             armed.append(img)
             models.append(model)
             if carry:
-                img_l, img_both, model_l = left_versions(d, p, armed_version(p))
+                img_l, img_both, model_l = left_versions(d, p, armed_version(p), keep_left)
                 armed_l.append(img_l)
                 armed_both.append(img_both)
                 models_l.append(model_l)
@@ -551,6 +576,8 @@ def main(weapon_dir_path, public, frames_dir):
     loop(sheet, "idle", [idle(i) for i in range(8)], [113, 112] * 4)
     loop(sheet, "walk", [walk(i) for i in range(10)], [44] * 10)
     loop(sheet, "run", [run(i) for i in range(10)], [34] * 10)
+    loop(sheet, "block", [block(i) for i in range(8)], [113, 112] * 4, keep_left=True)
+    loop(sheet, "block_walk", [block_walk(i) for i in range(10)], [70] * 10, keep_left=True)
     loop(sheet, "jump", [jump(i) for i in range(len(JUMP))], JUMP_MS)
     loop(sheet, "slam", [slam(i) for i in range(len(SLAM))], SLAM_MS, carry=False)
     weapon_animation(sheet, "attack", ATTACK, ATTACK_MS, None)

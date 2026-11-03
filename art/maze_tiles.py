@@ -283,6 +283,134 @@ def slab(img, rng, x0, y0, w, h):
         put(img, x0 + w, y, SLAB_GAP)
 
 
+# Boss zones: the floor tells how close a boss is (laberinto.h, zonas).
+# Temple of Zeus (the Medusas): pale marble slabs, grey veins, gold seams.
+MARBLE = [(170, 164, 160), (204, 200, 192), (226, 222, 212), (244, 240, 230)]
+MARBLE_VEIN = (150, 146, 150)
+GOLD = [(140, 96, 40), (200, 148, 52), (240, 200, 92)]
+# Poseidon (Achilles the centaur): a mosaic of small sea-coloured tesserae.
+SEA = [(20, 44, 78), (30, 76, 116), (40, 120, 150), (70, 170, 178)]
+SEA_GROUT = (14, 28, 48)
+FOAM = (196, 236, 230)
+# Hades (the Minotaur): dark basalt blocks, ash, and embers in the cracks.
+BASALT = [(22, 14, 22), (36, 24, 34), (52, 34, 46), (70, 46, 58)]
+ASH = (96, 82, 88)
+EMBER = [(120, 24, 28), (196, 54, 36), (246, 128, 52)]
+
+
+def zeus_floor(rng):
+    """Big square marble slabs (16 px), lit from the top left, with thin grey
+    veins and gold seams between them."""
+    img = Image.new("RGBA", (T, T))
+    s = 16
+    for y0 in range(0, T, s):
+        for x0 in range(0, T, s):
+            base = rng.choice((1, 2, 2, 2))
+            for y in range(y0, y0 + s - 1):
+                for x in range(x0, x0 + s - 1):
+                    tone = base
+                    if y == y0 or x == x0:
+                        tone = base + 1
+                    elif y == y0 + s - 2 or x == x0 + s - 2:
+                        tone = base - 1
+                    put(img, x, y, MARBLE[max(0, min(3, tone))])
+            # A vein wandering across the slab
+            if rng.random() < 0.7:
+                x, y = x0 + rng.randrange(2, s - 3), y0 + 1
+                for _ in range(rng.randint(5, 12)):
+                    put(img, x, y, MARBLE_VEIN)
+                    x += rng.choice((-1, 0, 1, 1))
+                    y += 1
+                    if y >= y0 + s - 2 or not x0 < x < x0 + s - 2:
+                        break
+            # Gold seams: right and bottom of every slab, a brighter fleck now and then
+            for x in range(x0, x0 + s):
+                put(img, x, y0 + s - 1, GOLD[2] if rng.random() < 0.12 else GOLD[1])
+            for y in range(y0, y0 + s):
+                put(img, x0 + s - 1, y, GOLD[2] if rng.random() < 0.12 else GOLD[0])
+    return img
+
+
+def poseidon_floor(rng):
+    """Sea mosaic: 4 px tesserae in deep blues and teals over dark grout,
+    with a few foam-white ones like the crest of a wave."""
+    img = Image.new("RGBA", (T, T), SEA_GROUT + (255,))
+    for y0 in range(0, T, 4):
+        for x0 in range(0, T, 4):
+            tone = SEA[min(3, max(0, int(rng.gauss(1.4, 0.8))))]
+            if rng.random() < 0.04:
+                tone = FOAM
+            for y in range(y0, y0 + 3):
+                for x in range(x0, x0 + 3):
+                    put(img, x, y, tone)
+            if tone != FOAM and rng.random() < 0.3:
+                put(img, x0, y0, SEA[min(3, SEA.index(tone) + 1)])  # a glint on the corner
+    return img
+
+
+def hades_floor(rng):
+    """Dark basalt blocks of uneven sizes, ash dust, and cracks glowing with
+    embers from below."""
+    img = Image.new("RGBA", (T, T), BASALT[0] + (255,))
+    rows = [(0, 10), (11, 10), (22, 9)]
+    for top, h in rows:
+        x = -rng.randrange(0, 8)
+        while x < T:
+            w = rng.choice((8, 10, 12, 14))
+            base = rng.choice((1, 1, 2))
+            for y in range(top, top + h):
+                for xx in range(x, x + w - 1):
+                    tone = base + 1 if y == top else base - 1 if y == top + h - 1 else base
+                    put(img, xx, y, BASALT[max(0, min(3, tone))])
+            x += w
+    for _ in range(rng.randint(10, 18)):
+        put(img, rng.randrange(T), rng.randrange(T), ASH)
+    # Ember cracks: a bright core with a dark red rim
+    for _ in range(rng.randint(1, 3)):
+        x, y = rng.randrange(T), rng.randrange(T)
+        for _ in range(rng.randint(4, 10)):
+            put(img, x, y, EMBER[2] if rng.random() < 0.4 else EMBER[1])
+            put(img, x + 1, y, EMBER[0])
+            x += rng.choice((-1, 0, 1))
+            y += rng.choice((0, 1, 1))
+    return img
+
+
+# Lava (the Minotaur's lair and the pools near it): molten orange with
+# bright yellow currents and floating plates of dark crust.
+LAVA = [(150, 36, 24), (214, 74, 30), (244, 128, 40), (255, 196, 72), (255, 240, 160)]
+CRUST = [(46, 20, 22), (84, 34, 30)]
+
+
+def lava_floor(rng):
+    """Molten rock: soft 2x2 heat patches, a few bright currents, and dark
+    crust plates with a lit rim."""
+    img = Image.new("RGBA", (T, T))
+    for cy in range(0, T, 2):
+        for cx in range(0, T, 2):
+            heat = LAVA[min(3, max(0, int(rng.gauss(1.8, 0.7))))]
+            for dy in range(2):
+                for dx in range(2):
+                    put(img, cx + dx, cy + dy, heat)
+    for _ in range(rng.randint(2, 4)):  # currents
+        x, y = rng.randrange(T), rng.randrange(T)
+        for _ in range(rng.randint(5, 10)):
+            put(img, x, y, LAVA[4] if rng.random() < 0.3 else LAVA[3])
+            x += rng.choice((1, 1, 0))
+            y += rng.choice((-1, 0, 1))
+    for _ in range(rng.randint(1, 3)):  # crust plates
+        x0, y0 = rng.randrange(T), rng.randrange(T)
+        w, h = rng.randint(3, 6), rng.randint(2, 4)
+        for y in range(y0, y0 + h):
+            for x in range(x0, x0 + w):
+                corner = (x in (x0, x0 + w - 1)) and (y in (y0, y0 + h - 1))
+                if not corner:
+                    put(img, x, y, CRUST[1] if y == y0 else CRUST[0])
+        for x in range(x0 + 1, x0 + w - 1):
+            put(img, x, y0 + h, LAVA[0])  # the glow under the plate
+    return img
+
+
 TOP_GRID = 4  # wall tops: one seamless texture of 4x4 tiles
 FACE_GRID = 3  # wall faces: one seamless strip 3 tiles wide
 
@@ -521,6 +649,14 @@ def build(out_dir):
     ground, stroke = GRASS_GROUND, GRASS_STROKE
     for i in range(GRASS_VARIANTS):
         tiles[f"grass_{i}"] = grass(grass_rng, ground, stroke, patterns)
+    # Boss zone floors, each with its own generator so nothing else changes.
+    for name, painter, seed in (("zeus", zeus_floor, 31), ("poseidon", poseidon_floor, 37), ("hades", hades_floor, 41)):
+        zone_rng = random.Random(seed)
+        for i in range(4):
+            tiles[f"{name}_{i}"] = painter(zone_rng)
+    lava_rng = random.Random(43)
+    for i in range(4):
+        tiles[f"lava_{i}"] = lava_floor(lava_rng)
     gate = gate_face()
     for i in range(FACE_GRID):
         tiles[f"gate_face_{i}"] = gate.crop((i * T, 0, (i + 1) * T, WALL_H))

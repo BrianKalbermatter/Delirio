@@ -19,8 +19,9 @@ const COLOR: Record<number, string> = {
   [ABILITY.CORRER]: "#d8cfb8",
 };
 
-// Shown as floating text but with no shape (their effect is the movement).
-const TEXT_ONLY = new Set<number>([ABILITY.SALTAR, ABILITY.CORRER]);
+// Shown as floating text but with no shape (their effect is the movement, or
+// the body's own animation: covering).
+const TEXT_ONLY = new Set<number>([ABILITY.SALTAR, ABILITY.CORRER, ABILITY.BLOQUEAR]);
 const ATTACKS = new Set<number>([
   ABILITY.ATAQUE_LIGERO,
   ABILITY.ATAQUE_RAPIDO,

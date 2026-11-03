@@ -93,6 +93,14 @@ const FOREST_BLEND = 8; // tiles over which the forest floor fades into grass
 // different transition tiles there are per share.
 const BLEND_SHARES = [0.2, 0.4, 0.6, 0.8];
 const BLEND_VARIANTS = 4;
+// Boss zone floors (art/maze_tiles.py), by zone number (ZONE in game-wasm.ts).
+// Near a boss its floor shows through the sand more and more, dithered like
+// the forest edge, so the floor alone tells how close it is.
+const ZONE_FLOORS: Record<number, string> = { 1: "zeus", 2: "poseidon", 3: "hades" };
+const ZONE_VARIANTS = 4;
+const ZONE_RAGGED = 0.25;
+const LAVA_VARIANTS = 4;
+const LAVA_EDGE = 0x2e1416; // crust along the top edge of a lava pool // how much noise moves the edge between floors
 // The floor never changes between maze growths, so it is baked once into
 // chunks of this many tiles a side and reused every frame.
 const FLOOR_CHUNK = 16;
@@ -142,6 +150,7 @@ export class MazeRenderer {
       this.textures.set(name, new Texture({ source, frame: new Rectangle(f.x, f.y, f.w, f.h) }));
     }
     this.buildBlendTiles();
+    this.buildZoneTiles();
     this.shadowTexture = this.buildWallShadow();
   }
 
@@ -294,7 +303,18 @@ export class MazeRenderer {
           );
           continue;
         }
-        tiles.addChild(placed(new Sprite(this.textures.get(this.floorTile(col, row))), x, y));
+        if (this.map.isLava(col, row)) {
+          tiles.addChild(placed(new Sprite(this.textures.get(`lava_${hash(col, row) % LAVA_VARIANTS}`)), x, y));
+          // Its edge against the rock: a dark crust where it meets solid ground
+          if (!this.map.isLava(col, row - 1) && !this.map.isWall(col, row - 1)) {
+            tiles.addChild(placed(new Sprite({ texture: Texture.WHITE, tint: LAVA_EDGE, width: t, height: 2 }), x, y));
+          }
+        } else {
+          const zone = this.zoneTile(col, row);
+          const base = zone?.full ? zone.name : this.floorTile(col, row);
+          tiles.addChild(placed(new Sprite(this.textures.get(base)), x, y));
+          if (zone && !zone.full) tiles.addChild(placed(new Sprite(this.textures.get(zone.name)), x, y));
+        }
         if (this.map.isWall(col, row - 1)) tiles.addChild(placed(new Sprite(this.shadowTexture), x, y));
       }
     }
@@ -532,6 +552,60 @@ export class MazeRenderer {
     const paving = valueNoise(col / 6, row / 6) > 0.62;
     if (paving && hash(col, row) % 100 < 85) return `paving_${hash(col, row) % 4}`;
     return this.pick(this.floorVariants, col, row);
+  }
+
+  // The boss zone floor on the tile, if any: the whole tile where the zone
+  // is at full weight, else a dithered layer over the sand that thickens as
+  // the boss gets closer.
+  private zoneTile(col: number, row: number): { name: string; full: boolean } | null {
+    const floor = ZONE_FLOORS[this.map.zone(col, row)];
+    const weight = this.map.zoneWeight(col, row);
+    if (!floor || weight <= 0) return null;
+    const ragged = (valueNoise(col / 3, row / 3) - 0.5) * ZONE_RAGGED;
+    const share = Math.min(1, Math.max(0, weight + (weight < 1 ? ragged : 0)));
+    const step = Math.round(share * (BLEND_SHARES.length + 1));
+    if (step <= 0) return null;
+    if (step > BLEND_SHARES.length) return { name: `${floor}_${hash(col, row) % ZONE_VARIANTS}`, full: true };
+    return { name: `zone_${floor}_${step - 1}_${hash(col, row) % ZONE_VARIANTS}`, full: false };
+  }
+
+  // Each zone floor at every share of BLEND_SHARES, with the pixels past the
+  // share see-through (same 2x2 noise as the forest edge).
+  private buildZoneTiles(): void {
+    const t = this.map.tileSize;
+    const floors = Object.values(ZONE_FLOORS);
+    const scratch = document.createElement("canvas");
+    scratch.width = scratch.height = t;
+    const layer = scratch.getContext("2d", { willReadFrequently: true })!;
+    const rows = floors.length * BLEND_SHARES.length;
+    const sheet = paintTexture(t * ZONE_VARIANTS, t * rows, (out) => {
+      floors.forEach((floor, z) => {
+        BLEND_SHARES.forEach((share, level) => {
+          for (let i = 0; i < ZONE_VARIANTS; i++) {
+            const f = this.tiles.frames[`${floor}_${i}`];
+            layer.clearRect(0, 0, t, t);
+            layer.drawImage(this.tiles.image, f.x, f.y, t, t, 0, 0, t, t);
+            const pixels = layer.getImageData(0, 0, t, t);
+            for (let y = 0; y < t; y++) {
+              for (let x = 0; x < t; x++) {
+                const noise = (hash((x >> 1) + i * 131, (y >> 1) + level * 71 + z * 53) % 1000) / 1000;
+                if (noise >= share) pixels.data[(y * t + x) * 4 + 3] = 0;
+              }
+            }
+            layer.putImageData(pixels, 0, 0);
+            out.drawImage(scratch, i * t, (z * BLEND_SHARES.length + level) * t);
+          }
+        });
+      });
+    });
+    floors.forEach((floor, z) => {
+      BLEND_SHARES.forEach((_, level) => {
+        for (let i = 0; i < ZONE_VARIANTS; i++) {
+          const tile = new Rectangle(i * t, (z * BLEND_SHARES.length + level) * t, t, t);
+          this.textures.set(`zone_${floor}_${level}_${i}`, new Texture({ source: sheet.source, frame: tile }));
+        }
+      });
+    });
   }
 
   // Grass tiles picked by position, so no repeating pattern shows. The forest

@@ -26,15 +26,17 @@ import {
 } from "./domain/items";
 import { ITEM_SPRITES, placeItems, type Prop, WEAPON_ITEMS } from "./domain/level-items";
 import { Square } from "./domain/square";
-import { placeSampleTree, sampleTrunkBox } from "./domain/sample-tree";
+import { placeSampleTree } from "./domain/sample-tree";
+import { placeMeadow } from "./domain/meadow";
 import { TileMap } from "./domain/tile-map";
 import { AbilityKeys } from "./infrastructure/input/ability-keys";
 import { LockedMouse, VIRTUAL_MOUSEUP } from "./infrastructure/input/locked-mouse";
 import { AbilityEffects } from "./infrastructure/render/ability-effects";
 import { Animator } from "./infrastructure/render/animator";
-import { BigTree, type BigTreeArt } from "./infrastructure/render/big-tree";
 import { PlazaDeco } from "./infrastructure/render/plaza-deco";
 import { BushViews } from "./infrastructure/render/bushes";
+import { RockField } from "./infrastructure/render/rocks";
+import type { BigRock, Pebble } from "./domain/rocks";
 import { Camera } from "./infrastructure/render/camera";
 import { CursorOverlay, TargetMarker } from "./infrastructure/render/cursor";
 import { DEPTH, depthOf } from "./infrastructure/render/depth";
@@ -45,7 +47,7 @@ import { createKeyPrompt, formatMs, Hud, KEY_PROMPT_SIZE } from "./infrastructur
 import { PLAYER_BAR_HEIGHT, PlayerBar } from "./infrastructure/render/player-bar";
 import { Blood } from "./infrastructure/render/blood";
 import { Dust } from "./infrastructure/render/dust";
-import { loadProgress, saveProgress } from "./infrastructure/storage/progress-store";
+import { clearProgress, loadProgress, saveProgress } from "./infrastructure/storage/progress-store";
 import { clearWorld, loadWorld, type SavedWorld, saveWorld } from "./infrastructure/storage/world-store";
 import { Lighting } from "./infrastructure/render/lighting";
 import { type Box, loadMazeTiles, MazeRenderer, type View } from "./infrastructure/render/maze-renderer";
@@ -69,6 +71,7 @@ import { MapBook } from "./infrastructure/ui/map-book";
 import { PauseMenu } from "./infrastructure/ui/pause-menu";
 import {
   ABILITY,
+  BOSS_NAME,
   type EnemyState,
   loadGameWasm,
   type PlayerCover,
@@ -139,7 +142,7 @@ const SLAM_MS = 900;
 const SLAM_IMPACT_MS = 270;
 const SLAM_SHAKE_MS = 350;
 const SLAM_SHAKE_PX = 3;
-// Throwing the spear (with it in the right hand): the right button held aims
+// Throwing the spear (with it in the right hand): the left button held aims
 // it, the body wound up (throw_* of art/personaje_3_build.py held at
 // THROW_HOLD_MS) and turned to the cursor while a bar under the feet charges
 // for SPEAR_CHARGE_MS. Released it throws (the rest of the animation, letting
@@ -231,9 +234,11 @@ const [
   mazeTiles,
   fireSheet,
   enemySheet,
-  treeArt,
   flowerSheet,
   tallFlowerSheet,
+  smallFlowerSheet,
+  grassImage,
+  smallGrassImage,
   bushSheet,
   ...assetSheets
 ] = await Promise.all([
@@ -255,9 +260,13 @@ const [
   // Brian's Espartano1, the level 1 enemy (art/espartano.py,
   // sprites/Enemigos/Espartano1).
   loadSpriteSheet(`${BASE}sprites/espartano_1`),
-  loadBigTreeArt(),
   loadSpriteSheet(`${BASE}sprites/flores`),
   loadSpriteSheet(`${BASE}sprites/flores_2`),
+  // The meadow's small flowers (art/florcitas.py) and Brian's tall grass,
+  // whole and small (art/gramilla.py).
+  loadSpriteSheet(`${BASE}sprites/florcitas`),
+  loadImage(`${BASE}sprites/gramilla.png`),
+  loadImage(`${BASE}sprites/gramilla_chica.png`),
   // Bushes to hide in (art/arbusto.py).
   loadSpriteSheet(`${BASE}sprites/arbusto`),
   ...assetNames.map((name) => loadSpriteSheet(`${BASE}assets/${name}`)),
@@ -298,7 +307,10 @@ game.start(seed);
 // The base, where the start items, the square and the tree go (also when
 // going on: the player is elsewhere then).
 const baseSpawn = game.player();
-if (savedWorld) game.loadGame(savedWorld.clockMs, savedWorld.x, savedWorld.y);
+if (savedWorld) {
+  game.loadGame(savedWorld.clockMs, savedWorld.x, savedWorld.y);
+  game.loadBossesDefeated(savedWorld.bossesDefeated);
+}
 const savedProgress = loadProgress(CHARACTER_ID);
 if (savedProgress) game.loadProgress(savedProgress.level, savedProgress.xp, savedProgress.upgrades);
 const map = new TileMap(game.maze.size, game.maze.size, game.maze.tileSize);
@@ -307,11 +319,24 @@ let growthBannerMs = 0;
 let gateOpening = 1;
 let seenExpansions = game.clock().expansions; // a loaded game does not announce old growths
 let seenDeaths = 0;
+let seenBurns = 0;
+let inTruce = game.truce();
+let bossInFight = -1;
+let seenDefeated = game.bossesDefeated();
 let lastLife = -1;
 let seenLevel = game.playerStats().level;
 let savedXp = game.playerStats().xp;
 
+// Set by New game: from then on nothing is saved (the page reloads clean).
+let startingOver = false;
+
+// Saves where the game is (world-store), unless a new game is starting.
+function saveGame(): void {
+  if (!startingOver) saveWorld(CHARACTER_ID, snapshotWorld());
+}
+
 function saveCurrentProgress(): void {
+  if (startingOver) return; // a new game wiped it: do not write it back
   const { level, xp, upgrades } = game.playerStats();
   saveProgress(CHARACTER_ID, { level, xp, upgrades });
   savedXp = xp;
@@ -367,12 +392,9 @@ for (const saved of savedWorld?.floor ?? []) {
   propViews.push(addProp(prop, saved.frame === undefined));
 }
 const square = new Square(map, spawn);
-// The big tree: its trunk is solid, C keeps it with the walls.
+// Where the big tree stood: for now there is no tree (its new sprites are
+// coming), but its fallen branches stay where they were.
 const tree = placeSampleTree(spawn);
-game.maze.addObstacle(sampleTrunkBox(tree));
-const bigTree = new BigTree(tree, treeArt);
-standing.addChild(bigTree.view);
-const plazaDeco = new PlazaDeco(tree.flowers, [flowerSheet, tallFlowerSheet], standing);
 const bushViews = new BushViews(game.bushes(), bushSheet, standing);
 // Fallen branches lie around the tree, each drawn with its own variant (in a
 // saved game they are among the saved floor items).
@@ -389,6 +411,30 @@ if (!savedWorld) propViews.push(
       false,
     ),
   ),
+);
+// Rocks (domain/rocks.ts): big ones to break with the pickaxe and pebbles to
+// pick up with E, placed cell by cell as the maze is carved. Going on, the
+// pebbles lying around are among the saved floor items, and the broken rocks
+// stay broken (a save from before the rocks gets its pebbles now).
+const rockField = new RockField(seed, standing, sheets.get("rocas")!, map, game.maze, savedWorld?.rocks?.broken ?? []);
+// The loose pebbles and branches changed with LOOSE_VERSION: an older save
+// gets the new layout added on load.
+const LOOSE_VERSION = 2;
+addLoose(rockField.sync((savedWorld?.rocks?.loose ?? 0) < LOOSE_VERSION));
+// The meadow all over the square (domain/meadow.ts): flowers, small flowers
+// and tall grass, off the items and rocks lying there.
+const meadowGround = new Container();
+const plazaDeco = new PlazaDeco(
+  placeMeadow(square, map.tileSize, spawn, [
+    ...propViews.map((v) => ({ x: v.prop.x, y: v.prop.y })),
+    ...tree.branches,
+    ...rockField.positions(),
+  ]),
+  [flowerSheet, tallFlowerSheet],
+  [Texture.from(grassImage), Texture.from(smallGrassImage)],
+  smallFlowerSheet,
+  standing,
+  meadowGround,
 );
 
 const player = new Character();
@@ -460,7 +506,7 @@ const focusRing = new Graphics();
 const blood = new Blood();
 // The dust kicked up walking, the player's and the enemies'.
 const dust = new Dust();
-ground.addChild(maze.floor, bigTree.ground, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
+ground.addChild(maze.floor, meadowGround, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
 standing.addChild(blood.air, airPuff);
 const lighting = new Lighting(canvas.width, canvas.height);
 const keyPrompt = createKeyPrompt();
@@ -517,6 +563,7 @@ const tabs = new SideTabs(
 const coreDebug = new CoreDebug(tabs.page("technical"));
 const gameLog = new GameLog(tabs.page("technical"));
 if (savedProgress) gameLog.log(`Progress loaded from this browser: level ${savedProgress.level}.`);
+if (inTruce) gameLog.log("The square is safe today: no enemy comes in. Gather what you can and get ready.");
 showControlsHint(tabs.page("technical"));
 // The cursor is read lazily: the mouse is set up further down.
 const panelCursor = {
@@ -584,7 +631,7 @@ if (savedWorld) {
 const WORLD_SAVE_MS = 2000;
 let worldSaveMs = 0;
 window.addEventListener("pagehide", () => {
-  if (!startingOver) saveWorld(CHARACTER_ID, snapshotWorld());
+  saveGame();
 });
 
 // Mouse locked in the game; whenever it is released (Esc), the game pauses
@@ -593,13 +640,14 @@ const pauseMenu = new PauseMenu(
   gameEl,
   (x, y) => mouse.lock(x, y),
   () => {
-    // A new maze from the base; level and skills stay (progress-store).
+    // Everything from zero: a new maze from the base, level 1, no skills
+    // (build level 1 too), nothing carried, the bosses back.
     clearWorld(CHARACTER_ID);
-    startingOver = true; // or pagehide would save this game again
+    clearProgress(CHARACTER_ID);
+    startingOver = true; // or pagehide (or a level change) would save this game again
     location.reload();
   },
 );
-let startingOver = false;
 const mouse = new LockedMouse(canvas, (locked) => {
   if (locked) pauseMenu.hide();
   else pauseMenu.show();
@@ -632,6 +680,7 @@ function useAbility(ability: number): void {
   game.useAbility(ability);
 }
 let blocking = false;
+let shieldHeld = false; // last told to C
 let medusaWasAlive = true;
 
 // Last point sent to C, only to draw the marker on the floor.
@@ -669,21 +718,34 @@ function syncMaze(): boolean {
   if (version === mazeVersion) return false;
   mazeVersion = version;
   map.refill(game.maze.isWall, game.maze.isDoor);
+  map.fillZones(game.maze.zone, game.maze.zoneWeight);
+  map.refillLava(game.maze.isLava);
   return true;
 }
 
 function update(dtMs: number): void {
   // The player walks with W A S D only (the mouse aims).
   if (!spearThrow) walkWithKeys();
-  // With the spear in the right hand the right button aims and throws it
-  // instead of blocking.
-  const wantsBlock = mouse.rightHeld && !book.isOpen && !holdsSpear();
+  // The right button covers (with a shield, walking slowly); the left one
+  // throws the spear. One thing at a time: no covering while throwing,
+  // jumping or in the middle of another action (it starts once that ends).
+  const busy = spearThrow !== null || player.isJumping || player.isActing || player.isDead;
+  const wantsBlock = mouse.rightHeld && !book.isOpen && (blocking || !busy) && spearThrow === null;
   if (wantsBlock !== blocking) {
     blocking = wantsBlock;
     game.holdAbility(ABILITY.BLOQUEAR, blocking);
   }
+  const shield = equipment.items.some((item) => item.id === ITEMS.shield.id);
+  if (shield !== shieldHeld) {
+    shieldHeld = shield;
+    game.setShield(shield);
+  }
   game.update(dtMs); // the C core moves the game one step
-  if (syncMaze()) maze.invalidate();
+  if (syncMaze()) {
+    maze.invalidate();
+    addLoose(rockField.sync(true)); // the cells the growth carved get their rocks
+  }
+  updateMining(dtMs);
   enemyAnimMs += dtMs; // drawn in draw(), also while paused
   blood.update(dtMs);
   kickUpDust(dtMs);
@@ -697,12 +759,15 @@ function update(dtMs: number): void {
   worldSaveMs += dtMs;
   if (worldSaveMs >= WORLD_SAVE_MS) {
     worldSaveMs = 0;
-    saveWorld(CHARACTER_ID, snapshotWorld());
+    saveGame();
   }
   // Crafting goes on with the game clock (it stops while paused).
   const crafted = crafting.update(dtMs);
   if (crafted) {
-    if (inventory.add(crafted)) gameLog.log(`Crafted: ${crafted.name}.`);
+    if (inventory.add(crafted)) {
+      gameLog.log(`Crafted: ${crafted.name}.`);
+      if (crafted.structure) gameLog.log(`Double click the ${crafted.name.toLowerCase()} in the inventory to set it up in front of you.`);
+    }
     else {
       dropAtFeet(crafted);
       gameLog.log(`Crafted: ${crafted.name}. The inventory is full: it is at your feet.`);
@@ -727,11 +792,35 @@ function update(dtMs: number): void {
   }
   deathBannerMs = Math.max(0, deathBannerMs - dtMs);
   // Hit by an enemy: a red flash, a jolt and blood on the floor.
+  const burns = game.burns();
   if (lastLife >= 0 && stats.life < lastLife && !player.isDead) {
     hud.hurt();
-    blood.spill(player.x, player.y, PLAYER_BODY_HEIGHT, lastLife - stats.life);
     camera.shake(HURT_SHAKE_MS, HURT_SHAKE_PX);
-    gameLog.log(`An enemy hits you: -${lastLife - stats.life} life.`);
+    if (burns > seenBurns) {
+      gameLog.log(`The lava burns you: -${lastLife - stats.life} life. Jump over it (Space).`);
+    } else {
+      blood.spill(player.x, player.y, PLAYER_BODY_HEIGHT, lastLife - stats.life);
+      gameLog.log(`An enemy hits you: -${lastLife - stats.life} life.`);
+    }
+  }
+  seenBurns = burns;
+  const truce = game.truce();
+  if (inTruce && !truce) gameLog.log("Dusk: from now on the enemies come into the square while the gates are open.");
+  inTruce = truce;
+  // A boss fight starts when the player walks into its room
+  const fighting = game.bossFight();
+  if (fighting >= 0 && bossInFight < 0) {
+    const boss = game.enemies().find((e) => e.slot === fighting);
+    if (boss) gameLog.log(`${BOSS_NAME[boss.boss] ?? "A boss"} wakes up: fight!`);
+  }
+  bossInFight = fighting;
+  const defeated = game.bossesDefeated();
+  if (defeated !== seenDefeated) {
+    for (const [zone, name] of Object.entries(BOSS_NAME)) {
+      if (defeated & ~seenDefeated & (1 << Number(zone))) gameLog.log(`${name} is defeated!`);
+    }
+    seenDefeated = defeated;
+    saveGame();
   }
   lastLife = stats.life;
   if (stats.level > seenLevel) {
@@ -771,12 +860,13 @@ function update(dtMs: number): void {
   showCoreDebug(core);
   const abilities = game.abilities();
   upgradePanel.show(stats);
+  crafting.buildLevel = stats.buildLevel;
   abilityEffects.showAttacks = !equippedWeapon();
   for (const started of abilityEffects.update(abilities, dtMs)) {
     gameLog.log(started.name);
     const id = abilities.indexOf(started);
     if (id <= ABILITY.ATAQUE_CRITICO && !player.isDead) {
-      bigTree.chop(player.x, player.y, vectorOf(player.facing));
+      mineAhead(); // with the pickaxe in hand, a rock in front takes the blow
       // In the air it slashes with the legs tucked; the jump goes on after.
       const name = player.isJumping ? "jump_attack" : "attack";
       const ms = Math.max(MIN_SWING_MS, ATTACK_ACTIVE_MS[id] ?? MIN_SWING_MS);
@@ -815,8 +905,18 @@ function update(dtMs: number): void {
       if (view.fall.ms <= 0) view.fall = undefined;
     }
   }
-  bigTree.update(dtMs);
-  plazaDeco.update(dtMs);
+  plazaDeco.update(dtMs, {
+    left: camera.x - canvas.width / 2,
+    top: camera.y - canvas.height / 2,
+    width: canvas.width,
+    height: canvas.height,
+  });
+  rockField.update(dtMs, {
+    left: camera.x - canvas.width / 2,
+    top: camera.y - canvas.height / 2,
+    width: canvas.width,
+    height: canvas.height + maze.wallHeight,
+  });
   bushViews.update(dtMs, cover.bush);
 
   camera.follow(player.x, playerCenterY(), player.facing, dtMs);
@@ -908,7 +1008,7 @@ function pickUpWithKey(): boolean {
     const towards = directionFromVector(view.prop.x - player.x, view.prop.y - player.y);
     player.startAction("pickup", PICKUP_MS, animationDurationMs(playerSheet, "pickup_right"), towards);
     playerAnimator.restart();
-    gameLog.log("The spear is in your right hand: hold the right button to aim, release to throw.");
+    gameLog.log("The spear is in your right hand: hold the left button to aim, release to throw.");
   } else if (item.weapon) {
     // Turns to it and bends down to take it.
     const towards = directionFromVector(view.prop.x - player.x, view.prop.y - player.y);
@@ -961,8 +1061,8 @@ function updateSpearThrow(dtMs: number): void {
     endThrow();
   }
   if (!spearThrow) {
-    const canAim = holdsSpear() && !player.isDead && !player.isActing && !player.isJumping;
-    if (!(mouse.rightHeld && canAim && mouse.overGame() && !book.isOpen)) return;
+    const canAim = holdsSpear() && !player.isDead && !player.isActing && !player.isJumping && !blocking;
+    if (!(mouse.held && canAim && mouse.overGame() && !book.isOpen)) return;
     const aim = aimFromBody();
     if (!aim) return;
     target = null;
@@ -978,7 +1078,7 @@ function updateSpearThrow(dtMs: number): void {
   if (spearThrow.phase === "aim") {
     const aim = aimFromBody();
     if (aim) player.turnAction(directionFromVector(aim.x, aim.y));
-    if (mouse.rightHeld) return;
+    if (mouse.held) return;
     if (!aim) {
       player.endAction(); // the cursor on the body: nowhere to throw it
       endThrow();
@@ -1134,6 +1234,10 @@ function useItem(index: number): void {
     book.toggle();
     return;
   }
+  if (item.structure) {
+    setUpStructure(index, item);
+    return;
+  }
   const slot = item.weapon ? (equipment.freeSlotFor(item) ?? "rightHand") : item.wear;
   if (!slot) {
     gameLog.log(`The ${item.name.toLowerCase()} cannot be used.`);
@@ -1237,7 +1341,8 @@ function showPlayerBar(): void {
 // A key cap with an "E" above the player's bar while an item to pick up
 // with E is in reach. Screen space, after the darkness, so it shows at night.
 function showKeyPrompt(): void {
-  keyPrompt.visible = keyPickupInReach() !== undefined;
+  keyPrompt.visible =
+    keyPickupInReach() !== undefined || structureInReach() !== undefined || (holdsPickaxe() && rockInReach() !== null);
   if (!keyPrompt.visible) return;
   const [sx, sy] = worldToScreen(
     player.x,
@@ -1254,7 +1359,7 @@ function dropAtFeet(item: ItemKind): void {
 }
 
 // Takes one item out of an inventory slot and throws it on the floor ahead of
-// the player. Where that is a wall or the tree's trunk, it falls at the feet.
+// the player. Where that is a wall, it falls at the feet.
 // With `at` (an item dragged onto the map) it lands there, or as far that
 // way as DROP_REACH; without it, just ahead of the player.
 function dropItem(index: number, at?: { x: number; y: number }): void {
@@ -1273,9 +1378,7 @@ function dropItem(index: number, at?: { x: number; y: number }): void {
     y = Math.round(player.y + (at.y - player.y) * k);
   }
   const t = map.tileSize;
-  const trunk = sampleTrunkBox(tree);
-  const inTrunk = x >= trunk.x && x <= trunk.x + trunk.w && y >= trunk.y && y <= trunk.y + trunk.h;
-  if (map.isWall(Math.floor(x / t), Math.floor(y / t)) || inTrunk) {
+  if (map.isWall(Math.floor(x / t), Math.floor(y / t))) {
     x = Math.round(player.x);
     y = Math.round(player.y);
   }
@@ -1304,6 +1407,9 @@ function snapshotWorld(): SavedWorld {
   return {
     seed,
     clockMs: game.clockMs(),
+    bossesDefeated: game.bossesDefeated(),
+    rocks: { broken: rockField.brokenIds, loose: LOOSE_VERSION },
+    structures: structures.map((s) => ({ id: s.item.id, x: s.x, y: s.y })),
     x: p.x,
     y: p.y,
     inventory: inventory.slots.map((slot) => (slot ? { id: slot.item.id, count: slot.count } : null)),
@@ -1376,10 +1482,16 @@ function draw(): void {
   enemyViews.show(enemies, enemyAnimMs, cover.bush);
   showFocusRing(enemies, cover);
   enemyAnimMs = 0;
-  bigTree.show(playerBody());
   targetMarker.show(target, performance.now());
   const pinned = new Set(enemies.filter((e) => e.pinned).map((e) => e.slot));
+  const viewHalfW = canvas.width / 2 + 96;
+  const viewHalfH = canvas.height / 2 + 96;
   for (const v of propViews) {
+    // Far off screen (hundreds of pebbles lie around the maze): just hidden
+    if (Math.abs(v.prop.x - camera.x) > viewHalfW || Math.abs(v.prop.y - camera.y) > viewHalfH) {
+      v.sprite.visible = false;
+      continue;
+    }
     showProp(v);
     if (v.pinnedEnemy !== undefined && pinned.has(v.pinnedEnemy)) v.sprite.visible = false;
   }
@@ -1409,6 +1521,12 @@ function draw(): void {
   hud.showHurtFlash();
   hud.showClock(game.clock(), gateOpening, timeSpeed, canvas.width, performance.now());
   hud.showBanners(growthBannerMs, deathBannerMs, DEATH_BANNER_MS, canvas.width, canvas.height);
+  const boss = bossInFight >= 0 ? enemies.find((e) => e.slot === bossInFight && e.life > 0) : undefined;
+  hud.showBoss(
+    boss ? { name: BOSS_NAME[boss.boss] ?? "Boss", life: boss.life, lifeMax: boss.lifeMax } : null,
+    canvas.width,
+    canvas.height,
+  );
   cursor.setShape(book.isOpen && mouse.isOver(book.element) ? (mouse.rightHeld ? "eraser" : "pencil") : "arrow");
   cursor.update(mouse.locked, mouse.x, mouse.y);
   app.render();
@@ -1418,7 +1536,7 @@ function showControlsHint(root: HTMLElement): void {
   const hint = document.createElement("p");
   hint.className = "hint";
   hint.textContent =
-    "W A S D: move · Spear in the right hand: hold the right button to aim (the bar under the feet charges: the fuller, the further), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Next to an enemy: swings at it on its own, one at a time (white ring) · C: support · V: parry · Space: jump (twice in the air with the double jump, Skills tab) · R: punch the ground · F: clock speed · G: test gates · Esc: menu";
+    "W A S D: move · Right button: cover (with a shield you walk slowly) · Spear in the right hand: hold the left button to aim (the bar under the feet charges: the fuller, the further), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Next to an enemy: swings at it on its own, one at a time (white ring) · C: support · V: parry · Space: jump (twice in the air with the double jump, Skills tab) · R: punch the ground · F: clock speed · G: test gates · Esc: menu";
   root.appendChild(hint);
 }
 
@@ -1452,28 +1570,6 @@ function showCoreDebug(core: ReturnType<typeof coreState>): void {
     ["proxima", clock.nextExpansionMs < 0 ? "no crece mas" : formatMs(clock.nextExpansionMs)],
     ["semilla", String(seed)],
   ]);
-}
-
-// The big tree's sheets (whole, trunk, crown) and the grass around its foot.
-async function loadBigTreeArt(): Promise<BigTreeArt> {
-  const [whole, trunk, crown, grassBack, grassFront, sticks, shadow] = await Promise.all([
-    loadSpriteSheet(`${BASE}sprites/arbol_1`),
-    loadSpriteSheet(`${BASE}sprites/arbol_1_tronco`),
-    loadSpriteSheet(`${BASE}sprites/arbol_1_copa`),
-    loadImage(`${BASE}sprites/pasto_arbol_atras.png`),
-    loadImage(`${BASE}sprites/pasto_arbol_frente.png`),
-    loadImage(`${BASE}sprites/palitos.png`),
-    loadImage(`${BASE}sprites/sombra_arbol.png`),
-  ]);
-  return {
-    whole,
-    trunk,
-    crown,
-    grassBack: Texture.from(grassBack),
-    grassFront: Texture.from(grassFront),
-    sticks: Texture.from(sticks),
-    shadow: Texture.from(shadow),
-  };
 }
 
 // `alpha`: below 1 while hidden in a bush.
@@ -1667,6 +1763,146 @@ function playerBody(): Box {
 // Puts a prop on the floor, as a looping animation or as one fixed frame.
 // `item` lying on the floor at (x, y) to be picked up: its floor frame, or
 // its floor animation looping (a spinning coin).
+// ---------------------------------------------------------------- structures
+
+// What the player set up in the world (a workbench): solid, kept in the save.
+interface Structure {
+  item: ItemKind;
+  x: number; // foot, world px
+  y: number;
+  sprite: Sprite;
+}
+const STRUCTURE_AHEAD = 40; // px in front of the player where it goes up
+const STRUCTURE_REACH = 44; // px: E opens it from this close
+const structures: Structure[] = [];
+for (const saved of savedWorld?.structures ?? []) {
+  const item = ITEMS[saved.id];
+  if (item?.structure) addStructure(item, saved.x, saved.y);
+}
+
+function addStructure(item: ItemKind, x: number, y: number): void {
+  const sprite = new Sprite();
+  placeFrame(sprite, sheets.get(item.sprite)!.frames[item.frame], x, y);
+  sprite.zIndex = depthOf(y, DEPTH.prop);
+  standing.addChild(sprite);
+  const { width, depth } = item.structure!;
+  game.maze.addObstacle({ x: x - width / 2, y: y - depth, w: width, h: depth });
+  structures.push({ item, x, y, sprite });
+}
+
+// Sets up the structure of inventory slot `index` in front of the player,
+// where there is floor for it.
+function setUpStructure(index: number, item: ItemKind): void {
+  const [dx, dy] = vectorOf(player.facing);
+  const x = Math.round(player.x + dx * STRUCTURE_AHEAD);
+  const y = Math.round(player.y + dy * STRUCTURE_AHEAD + (dy < 0 ? -8 : 16));
+  const t = map.tileSize;
+  const half = item.structure!.width / 2;
+  const blocked = [
+    [x - half, y],
+    [x + half, y],
+    [x - half, y - item.structure!.depth],
+    [x + half, y - item.structure!.depth],
+  ].some(([px, py]) => {
+    const col = Math.floor(px / t);
+    const row = Math.floor(py / t);
+    return map.isWall(col, row) || map.isDoor(col, row) || map.isLava(col, row);
+  });
+  // Not on top of the player either
+  const overPlayer = Math.abs(player.x - x) < half + 12 && player.y > y - item.structure!.depth - 12 && player.y - 12 < y;
+  if (blocked || overPlayer) {
+    gameLog.log(`No room for the ${item.name.toLowerCase()} there: face open floor.`);
+    return;
+  }
+  inventory.removeOne(index);
+  addStructure(item, x, y);
+  gameLog.log(`You set up the ${item.name.toLowerCase()}. Press E next to it to craft.`);
+  saveGame();
+}
+
+function structureInReach(): Structure | undefined {
+  return structures.find((s) => Math.abs(s.x - player.x) < s.item.structure!.width / 2 + STRUCTURE_REACH / 2 &&
+    Math.abs(s.y - player.y) < STRUCTURE_REACH);
+}
+
+// E next to a workbench: the crafting grid, in the Inventory tab.
+function useStructure(): boolean {
+  const s = structureInReach();
+  if (!s) return false;
+  tabs.select("inventory");
+  gameLog.log(`The ${s.item.name.toLowerCase()}: lay the items in the crafting grid (Inventory tab).`);
+  return true;
+}
+
+// ---------------------------------------------------------------- rocks
+
+const MINE_REACH = 34; // px from the feet to a rock's base
+const MINE_HIT_DELAY_MS = 140; // the blow lands mid-swing
+let pendingBlow: { rock: BigRock; ms: number } | null = null;
+let pickaxeHintShown = false;
+
+function holdsPickaxe(): boolean {
+  return equippedWeapon()?.id === ITEMS.pickaxe.id;
+}
+
+function rockInReach(): BigRock | null {
+  return player.isDead ? null : rockField.nearest(player.x, player.y, MINE_REACH);
+}
+
+// Pebbles on the floor, each with its own shape.
+function addPebbles(pebbles: Pebble[], fall?: { fromX: number; fromY: number }): void {
+  for (const p of pebbles) {
+    const prop: Prop = { sprite: ITEMS.pebble.sprite, frame: p.variant, x: p.x, y: p.y, pickup: ITEMS.pebble };
+    propViews.push(addProp(prop, false, fall ? { fall: { ...fall, ms: DROP_FALL_MS } } : {}));
+  }
+}
+
+// The loose pebbles and fallen branches of newly placed cells.
+function addLoose({ pebbles, branches }: { pebbles: Pebble[]; branches: Pebble[] }): void {
+  addPebbles(pebbles);
+  for (const b of branches) {
+    const prop: Prop = { sprite: ITEMS.branch.sprite, frame: b.variant, x: b.x, y: b.y, pickup: ITEMS.branch };
+    propViews.push(addProp(prop, false));
+  }
+}
+
+// E next to a big rock: with the pickaxe in hand, a swing at it (the light
+// attack, which also hits whoever is in front); without it, how to get one.
+function mineWithKey(): void {
+  const rock = rockInReach();
+  if (!rock) return;
+  if (!holdsPickaxe()) {
+    if (!pickaxeHintShown) {
+      gameLog.log("Too hard by hand: craft a stone pickaxe (3 pebbles across the top, 2 branches down the middle) and hold it.");
+      pickaxeHintShown = true;
+    }
+    return;
+  }
+  game.useAbility(ABILITY.ATAQUE_LIGERO); // the swing comes back through the abilities, see mineAhead
+}
+
+// An attack just started: with the pickaxe, the rock in reach (if any) takes
+// the blow halfway through the swing, and the player turns to it.
+function mineAhead(): void {
+  if (!holdsPickaxe() || pendingBlow) return;
+  const rock = rockInReach();
+  if (!rock) return;
+  pendingBlow = { rock, ms: MINE_HIT_DELAY_MS };
+}
+
+function updateMining(dtMs: number): void {
+  if (!pendingBlow) return;
+  pendingBlow.ms -= dtMs;
+  if (pendingBlow.ms > 0) return;
+  const { rock } = pendingBlow;
+  pendingBlow = null;
+  const pebbles = rockField.hit(rock);
+  camera.shake(90, 1);
+  if (!pebbles) return;
+  addPebbles(pebbles, { fromX: rock.x, fromY: rock.y - 10 });
+  gameLog.log(`The rock breaks into ${pebbles.length} pebbles.`);
+}
+
 function itemOnFloor(
   item: ItemKind,
   x: number,
@@ -1745,6 +1981,7 @@ function coreState() {
     state: STATE[p.state] ?? `unknown (${p.state})`,
     jumping: game.abilities()[ABILITY.SALTAR]?.active ?? false,
     jumps: p.jumps,
+    blocking: game.abilities()[ABILITY.BLOQUEAR]?.active ?? false,
   };
 }
 
@@ -1759,7 +1996,7 @@ function worldToScreen(x: number, y: number): [number, number] {
 
 window.addEventListener("keydown", (e) => {
   if (e.code in WASD && mouse.locked) wasdHeld.add(e.code);
-  if (e.code === "KeyE" && mouse.locked && !e.repeat) pickUpWithKey();
+  if (e.code === "KeyE" && mouse.locked && !e.repeat && !pickUpWithKey() && !useStructure()) mineWithKey();
   if (e.code === "KeyT") game.reset();
   if (isMapKey(e) && mouse.locked) {
     e.preventDefault();

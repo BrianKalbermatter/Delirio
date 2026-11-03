@@ -1,0 +1,169 @@
+{
+ "frames": [
+  {
+   "filename": "rocas 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 23,
+    "h": 26
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 23,
+    "h": 26
+   },
+   "sourceSize": {
+    "w": 23,
+    "h": 26
+   },
+   "duration": 100
+  },
+  {
+   "filename": "rocas 1",
+   "frame": {
+    "x": 23,
+    "y": 0,
+    "w": 28,
+    "h": 26
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 28,
+    "h": 26
+   },
+   "sourceSize": {
+    "w": 28,
+    "h": 26
+   },
+   "duration": 100
+  },
+  {
+   "filename": "rocas 2",
+   "frame": {
+    "x": 51,
+    "y": 0,
+    "w": 33,
+    "h": 26
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 33,
+    "h": 26
+   },
+   "sourceSize": {
+    "w": 33,
+    "h": 26
+   },
+   "duration": 100
+  },
+  {
+   "filename": "rocas 3",
+   "frame": {
+    "x": 84,
+    "y": 0,
+    "w": 21,
+    "h": 26
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 21,
+    "h": 26
+   },
+   "sourceSize": {
+    "w": 21,
+    "h": 26
+   },
+   "duration": 100
+  },
+  {
+   "filename": "rocas 4",
+   "frame": {
+    "x": 105,
+    "y": 0,
+    "w": 27,
+    "h": 26
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 27,
+    "h": 26
+   },
+   "sourceSize": {
+    "w": 27,
+    "h": 26
+   },
+   "duration": 100
+  },
+  {
+   "filename": "rocas 5",
+   "frame": {
+    "x": 132,
+    "y": 0,
+    "w": 24,
+    "h": 26
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 24,
+    "h": 26
+   },
+   "sourceSize": {
+    "w": 24,
+    "h": 26
+   },
+   "duration": 100
+  },
+  {
+   "filename": "rocas 6",
+   "frame": {
+    "x": 156,
+    "y": 0,
+    "w": 31,
+    "h": 26
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 31,
+    "h": 26
+   },
+   "sourceSize": {
+    "w": 31,
+    "h": 26
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "app": "art/rocas.py",
+  "image": "rocas.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 187,
+   "h": 26
+  },
+  "scale": "1",
+  "frameTags": []
+ }
+}

@@ -57,6 +57,9 @@ export interface PlayerStats {
   points: number; // level points not spent yet
   upgrades: number[]; // times each UPGRADE was bought
   upgradeMax: number[]; // how many times each can be
+  // What can be made (domain/crafting.ts): from 1, up with UPGRADE.BUILD,
+  // which needs the player's level above it.
+  buildLevel: number;
 }
 
 // Same order as `enum animo` in src/mecanicas/enemigos.h.
@@ -85,6 +88,9 @@ export interface EnemyState {
   coins: number; // coins it drops when it dies
   weapon: (typeof ENEMY_WEAPON)[number]; // item id of what it holds, or null
   dropsWeapon: boolean; // leaves it on the floor when it dies
+  boss: Zone; // the boss room it guards (ZONE.MAZE: not a boss)
+  scale: number; // drawn this much bigger than a spartan (1: a common one)
+  charge: number; // a boss winding up its blow: 0..1 (0: not charging)
 }
 
 // What an enemy holds, same order as `enum arma_enemigo` in src/mecanicas/enemigos.h.
@@ -119,8 +125,23 @@ export interface PlayerState {
 
 // The upgrades bought with level points, same order as `enum mejora_id` in
 // src/mecanicas/jugador.h.
-export const UPGRADE = { LIFE: 0, MOBILITY: 1, DOUBLE_JUMP: 2, REACH: 3 } as const;
-export const UPGRADE_COUNT = 4;
+export const UPGRADE = { LIFE: 0, MOBILITY: 1, DOUBLE_JUMP: 2, REACH: 3, BUILD: 4 } as const;
+export const UPGRADE_COUNT = 5;
+
+// Floor zones of the bosses, same order as `enum zona` in
+// src/mecanicas/laberinto.h: the Medusas' temple of Zeus near the square,
+// Achilles the centaur of Poseidon halfway out, and the Minotaur's lair
+// (Hades) always at the end of the maze.
+export const ZONE = { MAZE: 0, MEDUSAS: 1, POSEIDON: 2, MINOTAUR: 3 } as const;
+export type Zone = (typeof ZONE)[keyof typeof ZONE];
+
+// What each boss is called, by zone. For now they are bigger spartans, until
+// their own sprites come.
+export const BOSS_NAME: Record<number, string> = {
+  [ZONE.MEDUSAS]: "Medusa",
+  [ZONE.POSEIDON]: "Achilles, centaur of Poseidon",
+  [ZONE.MINOTAUR]: "The Minotaur",
+};
 
 // The maze generated in C (src/mecanicas/laberinto.c).
 export interface MazeInfo {
@@ -129,12 +150,21 @@ export interface MazeInfo {
   version(): number; // goes up every time the maze changes
   isWall(col: number, row: number): boolean;
   isDoor(col: number, row: number): boolean; // part of a gate of the square
+  // The boss zone that weighs most on the tile's floor, and how much (0..1):
+  // it grows as a boss gets closer. Fixed by the seed.
+  zone(col: number, row: number): Zone;
+  zoneWeight(col: number, row: number): number;
+  isLava(col: number, row: number): boolean; // burns whoever steps on it without jumping
+  isLairDoor(col: number, row: number): boolean; // the exit: the Minotaur's door, once carved
+  lair(): { x: number; y: number; open: boolean }; // middle of the Minotaur's lair, world px
   gateOpening(): number; // 1 = fully open, 0 = closed
   // The 8 gate leaves (2 per gate) in world pixels; a fully open leaf is 0 wide.
   gateLeaves(): Rect[];
-  // A solid box on the floor (a tree trunk) in world pixels: feet collide with
-  // it like with a wall. False when C has no room for more.
-  addObstacle(box: Rect): boolean;
+  // A solid box on the floor (a big rock) in world pixels: feet collide with
+  // it like with a wall. Returns its number for removeObstacle, -1 when C has
+  // no room for more.
+  addObstacle(box: Rect): number;
+  removeObstacle(id: number): void;
 }
 
 export interface Rect {
@@ -184,6 +214,8 @@ export interface GameWasm {
   loadGame(clockMs: number, x: number, y: number): void;
   // Game time since the start (the clock's total), to save it.
   clockMs(): number;
+  // Whether the player holds a shield: covering, it can walk (slowly).
+  setShield(held: boolean): void;
   // Spends a level point on an UPGRADE. False if none left or it is maxed.
   upgrade(id: number): boolean;
   // The target as C stored it (null if none yet), to check it arrived.
@@ -196,6 +228,13 @@ export interface GameWasm {
   cover(): PlayerCover;
   // Gives the player life back (a potion), up to the maximum.
   heal(life: number): void;
+  bossFight(): number; // slot of the boss fighting the player, -1 if none
+  bossesDefeated(): number; // bits 1 << zone, for the save
+  loadBossesDefeated(bits: number): void; // after start()
+  burns(): number; // goes up by one every time the lava burns the player
+  // The truce (first day): enemies stay out of the square. After it they
+  // walk in while the gates are open.
+  truce(): boolean;
   medusaLife(): number;
   medusaLifeMax(): number;
   reset(): void;
@@ -213,6 +252,21 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const mazeWall = num("web_lab_muro", 2);
   const mazeDoor = num("web_lab_puerta", 2);
   const gateOpening = num("web_lab_apertura", 0);
+  const mazeZone = num("web_lab_zona", 2);
+  const mazeZoneWeight = num("web_lab_influencia", 2);
+  const lairDoor = num("web_lab_puerta_minotauro", 2);
+  const mazeLava = num("web_lab_lava", 2);
+  const enemyScale = num("web_enemigo_escala", 1);
+  const enemyBoss = num("web_enemigo_jefe", 1);
+  const enemyCharge = num("web_enemigo_carga", 1);
+  const bossFight = num("web_jefe_combate", 0);
+  const bossesDefeated = num("web_jefes_vencidos", 0);
+  const loadBossesDefeated = call("web_cargar_jefes_vencidos", 1);
+  const burns = num("web_jugador_quemaduras", 0);
+  const truce = num("web_tregua", 0);
+  const lairX = num("web_lab_guarida_x", 0);
+  const lairY = num("web_lab_guarida_y", 0);
+  const lairOpen = num("web_lab_guarida_abierta", 0);
   const leaf = num("web_lab_hoja", 3);
   const obstacle = num("web_lab_obstaculo", 4);
   const deaths = num("web_jugador_muertes", 0);
@@ -266,8 +320,10 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const upgradeLevel = num("web_mejora", 1);
   const upgradeTop = num("web_mejora_tope", 1);
   const upgrade = num("web_mejorar", 1);
+  const buildLevel = num("web_jugador_construccion", 0);
   const loadProgress = call("web_cargar_progreso", 2 + UPGRADE_COUNT);
   const jumps = num("web_jugador_saltos", 0);
+  const shield = call("web_escudo", 1);
   const enemyMax = num("web_enemigos_max", 0)();
   const enemy = Object.fromEntries(
     [
@@ -310,6 +366,11 @@ export async function loadGameWasm(): Promise<GameWasm> {
       version: mazeVersion,
       isWall: (col, row) => mazeWall(col, row) === 1,
       isDoor: (col, row) => mazeDoor(col, row) === 1,
+      zone: (col, row) => mazeZone(col, row) as Zone,
+      zoneWeight: mazeZoneWeight,
+      isLava: (col, row) => mazeLava(col, row) === 1,
+      isLairDoor: (col, row) => lairDoor(col, row) === 1,
+      lair: () => ({ x: lairX(), y: lairY(), open: lairOpen() === 1 }),
       gateOpening,
       gateLeaves: () => {
         const leaves: Rect[] = [];
@@ -321,7 +382,8 @@ export async function loadGameWasm(): Promise<GameWasm> {
         }
         return leaves;
       },
-      addObstacle: ({ x, y, w, h }) => obstacle(x, y, w, h) === 1,
+      addObstacle: ({ x, y, w, h }) => obstacle(x, y, w, h),
+      removeObstacle: call("web_lab_quitar_obstaculo", 1),
     },
     setTarget,
     update,
@@ -341,7 +403,13 @@ export async function loadGameWasm(): Promise<GameWasm> {
       points: points(),
       upgrades: Array.from({ length: UPGRADE_COUNT }, (_, m) => upgradeLevel(m)),
       upgradeMax: Array.from({ length: UPGRADE_COUNT }, (_, m) => upgradeTop(m)),
+      buildLevel: buildLevel(),
     }),
+    bossFight,
+    bossesDefeated,
+    loadBossesDefeated,
+    burns,
+    truce: () => truce() === 1,
     enemies: () => {
       const list: EnemyState[] = [];
       for (let i = 0; i < enemyMax; i++) {
@@ -367,6 +435,9 @@ export async function loadGameWasm(): Promise<GameWasm> {
           coins: enemy.monedas(i),
           weapon: ENEMY_WEAPON[enemy.arma(i)] ?? null,
           dropsWeapon: enemy.suelta_arma(i) === 1,
+          boss: enemyBoss(i) as Zone,
+          scale: enemyScale(i),
+          charge: enemyCharge(i),
         });
       }
       return list;
@@ -405,6 +476,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
     loadProgress: (level, xpSaved, upgrades) =>
       loadProgress(level, xpSaved, ...Array.from({ length: UPGRADE_COUNT }, (_, m) => upgrades[m] ?? 0)),
     upgrade: (id) => upgrade(id) === 1,
+    setShield: (held) => shield(held ? 1 : 0),
     loadGame: call("web_cargar_partida", 3),
     clockMs: num("web_reloj_ms_total", 0),
   };

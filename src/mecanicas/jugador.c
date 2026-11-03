@@ -35,6 +35,7 @@ void jugador_iniciar(Jugador *j, const char *nombre, const HabilidadDef *habilid
   j->vida_base = base.vidaMAX;
   j->saltos = 0;
   j->salto_aire = 0;
+  j->escudo = 0;
   j->muerto_ms = 0;
 }
 
@@ -60,7 +61,17 @@ const int MEJORA_TOPE[MEJORA_CANTIDAD] = {
   [MEJORA_MOVILIDAD]   = 5,
   [MEJORA_SALTO_DOBLE] = 1,
   [MEJORA_RECOLECCION] = 5,
+  [MEJORA_CONSTRUCCION] = 4, // construccion 1 a 5
 };
+
+int jugador_nivel_construccion(const Jugador *j){ return 1 + j->mejoras[MEJORA_CONSTRUCCION]; }
+
+// 1 si el jugador puede comprar otro punto de `m` ahora (sin contar los puntos).
+static int puede_subir(const Jugador *j, MejoraId m){
+  if (j->mejoras[m] >= MEJORA_TOPE[m]) return 0;
+  if (m == MEJORA_CONSTRUCCION && j->nivel <= jugador_nivel_construccion(j)) return 0;
+  return 1;
+}
 
 static void aplicar_mejoras(Jugador *j){
   j->entidad.vidaMAX = j->vida_base + j->mejoras[MEJORA_VIDA] * VIDA_POR_MEJORA;
@@ -74,7 +85,7 @@ void jugador_cargar(Jugador *j, int nivel, int experiencia, const int mejoras[ME
   for (int m = 0; m < MEJORA_CANTIDAD; m++) j->mejoras[m] = 0;
   for (int m = 0; m < MEJORA_CANTIDAD; m++){
     int quiere = mejoras[m] < MEJORA_TOPE[m] ? mejoras[m] : MEJORA_TOPE[m];
-    while (j->mejoras[m] < quiere && jugador_puntos(j) > 0) j->mejoras[m]++;
+    while (j->mejoras[m] < quiere && jugador_puntos(j) > 0 && puede_subir(j, (MejoraId)m)) j->mejoras[m]++;
   }
   aplicar_mejoras(j);
   j->entidad.vida = j->entidad.vidaMAX;
@@ -88,7 +99,7 @@ int jugador_puntos(const Jugador *j){
 
 int jugador_mejorar(Jugador *j, MejoraId m){
   if ((int)m < 0 || m >= MEJORA_CANTIDAD) return 0;
-  if (jugador_puntos(j) <= 0 || j->mejoras[m] >= MEJORA_TOPE[m]) return 0;
+  if (jugador_puntos(j) <= 0 || !puede_subir(j, m)) return 0;
   j->mejoras[m]++;
   int antes = j->entidad.vidaMAX;
   aplicar_mejoras(j);
@@ -207,9 +218,15 @@ void jugador_actualizar(Jugador *j, const Laberinto *lab, float dt_ms){
     return;
   }
 
-  // 3. Bloqueando o golpeando el suelo (ulti): se planta en el lugar
-  if (jugador_activa(j, HAB_BLOQUEAR) || jugador_activa(j, HAB_ULTI)){
+  // 3. Bloqueando o golpeando el suelo (ulti): se planta en el lugar. Con un
+  //    escudo se cubre caminando, despacio y sin correr.
+  int cubierto = jugador_activa(j, HAB_BLOQUEAR);
+  if ((cubierto && !j->escudo) || jugador_activa(j, HAB_ULTI)){
     e->estados = QUIETO;
+    return;
+  }
+  if (cubierto){
+    P_mover_hacia(e, j->destino, &j->hay_destino, VELOCIDAD_MOUSE * movilidad(j) * MULTIPLICADOR_CUBIERTO, dt_ms, lab);
     return;
   }
 

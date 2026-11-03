@@ -36,6 +36,16 @@ export function loadProgress(characterId: string): CharacterProgress | null {
   }
 }
 
+// Forgets the character's level, experience and skills: a new game starts
+// it again from level 1.
+export function clearProgress(characterId: string): void {
+  try {
+    localStorage.removeItem(KEY_PREFIX + characterId);
+  } catch {
+    // Nothing to clear.
+  }
+}
+
 export function saveProgress(characterId: string, progress: CharacterProgress): void {
   const saved: Saved = { version: VERSION, savedAt: Date.now(), ...progress };
   try {
