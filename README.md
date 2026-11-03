@@ -23,7 +23,8 @@ Days last 6 real minutes and nights 16 (press **F** to speed up the clock).
 | Mouse | Aim: the character always looks at the cursor |
 | Shift (hold) | Run |
 | Space | Jump · again in the air: double jump (once learned in Skills) |
-| Right click (hold) | With the spear in the right hand: wind up and aim at the cursor while the bar under your feet charges; release to throw it (the fuller the bar, the further it flies). Without it: block |
+| Left click (hold) | With the spear in the right hand: wind up and aim at the cursor while the bar under your feet charges; release to throw it (the fuller the bar, the further it flies) |
+| Right click (hold) | Cover: blocks hits. With the shield in a hand you raise it and can walk, slowly; without it you stand still |
 | V | Parry |
 | C | Support |
 | R | Punch the ground: dirt flies and the screen shakes |
@@ -39,7 +40,7 @@ Days last 6 real minutes and nights 16 (press **F** to speed up the clock).
 | **+** in the Skills tab | Spend a level point |
 | Click a tab | Side panel: Technical, Inventory, Skills |
 | `` ` `` | Map book (left click draws, right click erases) |
-| Esc | Pause menu (also **New game**: a new maze from the base, keeping level and skills) |
+| Esc | Pause menu (also **New game**: starts over from zero: a new maze, level 1, no skills, nothing carried) |
 
 Testing keys: **F** speeds up the clock, **G** makes the gates start closing,
 **T** restarts the game.
@@ -49,8 +50,13 @@ Testing keys: **F** speeds up the clock, **G** makes the gates start closing,
 You wake up in the square, the open meadow in the middle of the maze. It is
 the same in every game; only the maze around it changes with the seed.
 
-- **Grass tufts** (the hand-drawn Gramilla sprite) dot the meadow, in the
-  same places every game. They are scenery: you walk through them.
+- **The meadow** covers the whole square, the same in every game: Brian's
+  flower clumps and tall flowers swaying in the wind, his tall grass
+  (Gramilla) and small flowers growing low under them, in patches with
+  clearings between them. Only in the square: the maze will get its own
+  plants. They are scenery: you walk through them.
+- **Pebbles and fallen branches** lie all over the square (and a branch now
+  and then in the corridors), so the first tools can be made right away.
 - **The dark forest floor** covers the top-right corner, ready for trees.
 
 Past the gates, the maze floor is pale yellow sand dotted with pebbles,
@@ -59,13 +65,63 @@ walls seen in perspective: their sides lean away from the middle of the
 screen, and any wall in front of you opens a round window so you never get
 lost behind it.
 
+### The bosses' zones
+
+Wherever the seed puts them, the bosses always keep the same order, from the
+square outwards, and the floor tells you when one is near: it changes bit by
+bit the closer you get (the walls stay as they are, for now).
+
+- **The Medusas, temple of Zeus**: white marble slabs with gold seams. Their
+  arena is a big open square (smaller than the meadow) in a corner of the
+  first maze, close to the square, with two ways in, both facing the square.
+- **Achilles, the centaur of Poseidon**: a sea-blue mosaic. Its arena is in
+  the opposite corner, halfway out: it opens with the third growth.
+- **The Minotaur, Hades**: dark basalt with embers in the cracks, and lava.
+  Near his lair the corridors have small lava pools you can walk around. The
+  lair is on the outer edge of the world and is **always the end of the
+  maze**: a single door, opened by the last growth. Inside it is all lava:
+  jump (Space) from stone to stone to reach his island. Stepping on lava
+  without jumping burns you (-20 life) and puts you back where you last
+  stood safe; with one foot on the stone you are fine.
+
+**Boss fights.** Walking into a boss's room starts the fight on its own: the
+boss wakes up and its name and life show at the bottom of the screen. For
+now each boss is a bigger spartan in its own colour, until their own sprites
+come. They chase you without leaving their room (the Minotaur, his island),
+never run away, and before each blow they stop and flash, faster and faster:
+that is the moment to step back, jump or cover with the shield. A spear
+hurts them (-60) but does not kill them in one throw. Leave the room for a
+few seconds and the boss goes back to its place, fully healed. Beaten, it
+gives a lot of experience and is gone for good (it is kept in the save).
+
 ## Your character and the inventory
 
 You play Brian's Personaje_3 (masked, with a strap across the black tunic),
 drawn in the 8 directions. Near the start lie an **axe**, a **torch** and a
 round **shield** (best in the left hand).
-The **spear** is crafted: pick up three fallen **branches** around the big
-tree and lay them on a diagonal in the crafting grid (Inventory tab, under
+**Build level.** What you can craft depends on your build level, shown on
+top of the recipe book beside the crafting grid (Inventory tab): every
+recipe of your level with the shape to lay out, and, greyed, what the next
+level unlocks. It starts at 1 (torch, spear, stone pickaxe) and goes up with
+**Build** in the Skills tab, a level point each time, only while your own
+level is above it: build level 2 needs level 2, build level 3 needs level 3.
+Build level 2 unlocks the **workbench** (Brian's MesaDeTrabajo: four
+branches in a square) and the axe. Double click the workbench in the
+inventory to set it up in front of you; it stays there (also in the save),
+and **E** next to it opens the crafting grid.
+
+**Rocks** lie all over the maze (Brian's Roca1 and more shapes in its
+colours): outcrops of one to three big rocks against the corners of the
+corridors, always with room to walk around them, and **pebbles** scattered
+around them and here and there. Pick pebbles up with **E**. Three pebbles
+across the top of the crafting grid and two branches down the middle make a
+**stone pickaxe** (Brian's PicoPiedra), like Minecraft's. Hold it (double
+click it in the inventory) and press **E** at a big rock, or attack it: it
+shakes and throws chips, and the second blow breaks it into 2 or 3 pebbles.
+Broken rocks stay broken in the save. When the maze grows, the new corridors
+get their rocks too.
+The **spear** is crafted: pick up three fallen **branches** in the corner
+of the square (the big tree is gone until its new sprites come) and lay them on a diagonal in the crafting grid (Inventory tab, under
 the player). Pick things up with **E**: the axe and the torch go to the
 inventory (16 slots, in the **Inventory** tab of the side panel); double
 click one, or drag it onto a hand, to hold it. The right hand swings, the
@@ -75,11 +131,12 @@ more around you, by night and by day. Potions give back 30 life.
 ### The spear
 
 The spear always goes straight to your right hand, the throwing one. Hold
-the **right button**: your character winds up far back and turns to the
+the **left button**: your character winds up far back and turns to the
 cursor while a bar under your feet charges. Let go and it throws, as far as
 the bar charged: a full bar reaches all the way (it turns gold), a quick
 tap drops it a few steps ahead. Nothing cuts a throw short: keys pressed
-meanwhile wait for it to end.
+meanwhile wait for it to end. One thing at a time: you either cover (right
+button) or throw, and while covering no other ability goes off.
 
 The spear flies straight and kills the first enemy in its way, then carries
 it on to where its flight ends. If that is the front or a side of a wall,
@@ -105,11 +162,17 @@ side or face down, with a pool of blood growing under the body.
 
 Fewer of them roam now, but not alone: some **hunt in packs** of 3 or 4
 that follow a leader towards you, and some stand in **chatting circles**
-in the square and the maze, talking in turns (a speech bubble over the one
+out in the maze, talking in turns (a speech bubble over the one
 speaking) while one dances in the middle. Chatting, they barely look around,
 so you can sneak up on them; but if one spots you or gets hit, the whole
 circle comes for you. Once they calm down they walk back and pick up the
 chat again. A pack goes after you together too.
+
+**The square is your base.** No enemy is ever born or comes back to life
+inside it. On the first day (the truce, until dusk) none of them walks in
+either: they stop at the gates, so you can gather your first resources and
+get ready. From dusk on they wander in while the gates are open, and
+whoever is inside when the gates close spends the night in there with you.
 
 Some carry a weapon in hand, drawn like yours: a **spear**, an **axe** or a
 **torch**. When one dies it drops 1 to 3 spinning **coins**, now and then
@@ -122,7 +185,9 @@ at it on its own**, once a second, one enemy at a time. The one it is after
 has a **white ring** on the floor around it; it sticks to that one while it
 lives and stays near, then moves on to the next.
 
-**Bushes**, like League of Legends' brush, grow next to every circle and
+**Bushes** are out of the game for now, until their new sprites come (the
+mechanic is kept: `HAY_ARBUSTOS` in `src/mecanicas/enemigos.c`). With them,
+like League of Legends' brush, they grow next to every circle and
 here and there in the square and the corridors. Walk in and you turn
 see-through: enemies cannot see you unless they bump right into you or
 stand in the same bush. Attacking from a bush gives you away for a second.
@@ -173,9 +238,9 @@ browser has its own game:
   lies on the floor.
 
 Enemies start over around the base, and anything being crafted is called
-off (its items stay in the grid). **New game** in the pause menu starts a new
-maze from the base, keeping your level and skills. Clearing the site's data
-wipes it all.
+off (its items stay in the grid). **New game** in the pause menu starts over from
+zero: a new maze, level 1 with no experience, no skills (build level 1),
+nothing carried, the bosses back. Clearing the site's data wipes it all too.
 
 ## Effects
 
@@ -191,7 +256,10 @@ read from its Aseprite file and recoloured to the square's greens.
 
 | What | Source | How to rebuild |
 |---|---|---|
-| Maze tiles (sand floor with pebbles, grass, walls, gates) | `art/maze_tiles.py` | `python3 art/maze_tiles.py client/public/assets` |
+| Small flowers of the meadow, in the colours of Brian's Flores and Flores2 | `art/florcitas.py` | `python3 art/florcitas.py client/public/sprites` |
+| Rocks and pebbles in the colours of Brian's Roca1 (frame 0 of the rocks is his own) | `art/rocas.py` | Export `Plaza/Roca1.aseprite` to a PNG with Aseprite, then `python3 art/rocas.py <roca1.png> client/public/assets` |
+| Stone pickaxe overlays (Brian's `Armas/PicoPiedra.aseprite`) | `art/armas.py` (`WEAPONS`, id `pico`) | `bash art/armas_build.sh` |
+| Maze tiles (sand floor with pebbles, grass, walls, gates, boss zone floors) | `art/maze_tiles.py` | `python3 art/maze_tiles.py client/public/assets` |
 | Inventory icons for items whose sprite does not read at slot size (the spear) | `art/iconos.py` | `python3 art/iconos.py` |
 | Round shield (a weapon in `armas.WEAPONS`, held by the middle) | `art/escudo.py` → `sprites/Armas/Escudo_Redondo.aseprite` | `python3 art/escudo.py <escudo.png>`, `Aseprite -b <escudo.png> --save-as Escudo_Redondo.aseprite`, then `bash art/armas_build.sh` |
 | Coin dropped by enemies (tag `spin`) | `art/moneda.py` | `python3 art/moneda.py` |
