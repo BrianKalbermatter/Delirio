@@ -32,6 +32,7 @@ export interface SavedWorld {
   // What the player set up (a workbench): item id and foot position.
   structures?: { id: string; x: number; y: number }[];
   shrines?: number[]; // the ones awake (ids from domain/shrines.ts)
+  discovered?: string[]; // what the minimap already knows (keys of its marks)
   x: number;
   y: number;
   inventory: (SavedItem | null)[];
@@ -63,6 +64,7 @@ export function loadWorld(characterId: string): SavedWorld | null {
         : undefined,
       felledTrees: Array.isArray(saved.felledTrees) ? saved.felledTrees.filter(Number.isInteger) : [],
       shrines: Array.isArray(saved.shrines) ? saved.shrines.filter(Number.isInteger) : [],
+      discovered: Array.isArray(saved.discovered) ? saved.discovered.filter((k) => typeof k === "string") : [],
       structures: Array.isArray(saved.structures)
         ? saved.structures.filter((s) => typeof s?.id === "string" && Number.isFinite(s.x) && Number.isFinite(s.y))
         : [],

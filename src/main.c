@@ -40,7 +40,6 @@ static Jugador jugador;
 static Entity medusa;
 static Enemigos enemigos;
 static Reloj reloj;
-static float velocidad_tiempo = 1.0f; // para probar: acelera solo el reloj
 
 #define ALCANCE_GOLPE 46.0f     // hasta donde llega un golpe del jugador (pixeles)
 #define RADIO_GOLPE_SUELO 70.0f
@@ -159,7 +158,7 @@ void juego_mantener_habilidad(int habilidad, int apretada){
 
 void juego_actualizar(float dt_ms){
   // 1. El tiempo
-  int eventos = reloj_avanzar(&reloj, dt_ms * velocidad_tiempo);
+  int eventos = reloj_avanzar(&reloj, dt_ms);
   if (eventos & EVENTO_NUEVO_DIA)   printf("Amanece el dia %d\n", reloj.dia);
   if (eventos & EVENTO_ANOCHECER)   printf("Cae la noche del dia %d\n", reloj.dia);
   if (eventos & EVENTO_CAMBIO_FASE) printf("Ahora es %s\n", reloj_nombre_fase(reloj.fase));
@@ -264,8 +263,6 @@ void juego_quitar_obstaculo(int i){
   laberinto_quitar_obstaculo(&laberinto, i);
 }
 
-void juego_velocidad_tiempo(float factor){ velocidad_tiempo = factor; }
-
 void juego_calendario_avanzar_dia(void){ calendario_avanzar_dia(&reloj.calendario); }
 void juego_calendario_fijar(int t){ calendario_fijar(&reloj.calendario, t); }
 
@@ -274,7 +271,6 @@ void juego_prueba_puertas(void){
   float margen = DURACION_TARDE_MS - CIERRE_PUERTAS_MS;
   float antes = margen < 15000.0f ? margen : 15000.0f;
   reloj_saltar_a_cierre(&reloj, antes);
-  velocidad_tiempo = 1.0f;
   jugador.entidad.posicion = laberinto_frente_a_puerta(&laberinto, 0, 120.0f);
   jugador.entidad.dir = (Direccion){0, -1}; // mirando a la puerta
   jugador.hay_destino = 0;
@@ -335,6 +331,7 @@ void juego_cargar_partida(float reloj_ms, float x, float y){
 
 void juego_escudo(int si){ jugador.escudo = si; }
 void juego_armadura(int si){ jugador.armadura = si; }
+void juego_hueso_bosque(float x, float y){ enemigos_hueso_bosque(&enemigos, (Direccion){x, y}); }
 
 void juego_teletransportar(float x, float y){
   jugador.entidad.posicion = pie_seguro = (Direccion){x, y};

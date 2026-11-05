@@ -55,6 +55,7 @@ EMSCRIPTEN_KEEPALIVE int web_mejorar(int m) { return juego_mejorar(m); }
 EMSCRIPTEN_KEEPALIVE int web_jugador_construccion(void) { return jugador_nivel_construccion(juego_jugador_completo()); }
 EMSCRIPTEN_KEEPALIVE void web_escudo(int si) { juego_escudo(si); }
 EMSCRIPTEN_KEEPALIVE void web_armadura(int si) { juego_armadura(si); }
+EMSCRIPTEN_KEEPALIVE void web_hueso_bosque(float x, float y) { juego_hueso_bosque(x, y); }
 EMSCRIPTEN_KEEPALIVE void web_teletransportar(float x, float y) { juego_teletransportar(x, y); }
 EMSCRIPTEN_KEEPALIVE int web_mejora(int m) { return juego_jugador_completo()->mejoras[m]; }
 EMSCRIPTEN_KEEPALIVE int web_mejora_tope(int m) { return MEJORA_TOPE[m]; }
@@ -126,6 +127,9 @@ EMSCRIPTEN_KEEPALIVE int web_tiros_max(void) { return TIROS_MAX; }
 EMSCRIPTEN_KEEPALIVE int web_tiro_activo(int i) { return juego_enemigos()->tiros[i].activo; }
 EMSCRIPTEN_KEEPALIVE float web_tiro_x(int i) { return juego_enemigos()->tiros[i].posicion.x; }
 EMSCRIPTEN_KEEPALIVE float web_tiro_y(int i) { return juego_enemigos()->tiros[i].posicion.y; }
+EMSCRIPTEN_KEEPALIVE float web_tiro_dir_x(int i) { return juego_enemigos()->tiros[i].dir.x; }
+EMSCRIPTEN_KEEPALIVE float web_tiro_dir_y(int i) { return juego_enemigos()->tiros[i].dir.y; }
+EMSCRIPTEN_KEEPALIVE int web_tiro_flecha(int i) { return juego_enemigos()->tiros[i].flecha; }
 
 EMSCRIPTEN_KEEPALIVE int web_enemigo_arbusto(int i) {
   return arbustos_en(&juego_enemigos()->arbustos, enemigo(i)->entidad.posicion);
@@ -214,7 +218,6 @@ EMSCRIPTEN_KEEPALIVE int web_reloj_expansiones(void) { return juego_reloj()->exp
 EMSCRIPTEN_KEEPALIVE float web_reloj_proxima_expansion_ms(void) { return reloj_proxima_expansion(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE float web_reloj_luz(void) { return reloj_luz(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE float web_reloj_sol(void) { return reloj_sol(juego_reloj()); }
-EMSCRIPTEN_KEEPALIVE void web_velocidad_tiempo(float factor) { juego_velocidad_tiempo(factor); }
 EMSCRIPTEN_KEEPALIVE void web_prueba_puertas(void) { juego_prueba_puertas(); }
 EMSCRIPTEN_KEEPALIVE int web_lanzar(float dx, float dy, float fuerza, int probar) { return juego_lanzar(dx, dy, fuerza, probar); }
 EMSCRIPTEN_KEEPALIVE float web_lanza_impacto_x(void) { return juego_lanza_impacto().x; }

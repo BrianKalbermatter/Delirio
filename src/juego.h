@@ -40,10 +40,6 @@ const Laberinto *juego_laberinto(void);
 int juego_agregar_obstaculo(float x, float y, float ancho, float alto);
 void juego_quitar_obstaculo(int i);
 
-// Para probar: multiplica la velocidad del reloj (1 = normal). No acelera el
-// movimiento, solo el paso de los dias.
-void juego_velocidad_tiempo(float factor);
-
 // Para probar: pasa un dia del calendario, o va directo al dia t. No toca el
 // reloj, y al recargar la partida la fecha vuelve a salir del reloj.
 void juego_calendario_avanzar_dia(void);
@@ -100,6 +96,9 @@ void juego_escudo(int si);
 // Si el jugador tiene puesta una armadura (lo dice el navegador, que lleva el
 // equipo): sin ella un golpe lo mata.
 void juego_armadura(int si);
+
+// Una pila de huesos del bosque de la plaza: de ahi se levanta el de la rueda.
+void juego_hueso_bosque(float x, float y);
 
 // Lleva al jugador a (x, y): un santuario despierto.
 void juego_teletransportar(float x, float y);

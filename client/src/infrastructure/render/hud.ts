@@ -135,8 +135,8 @@ export class Hud {
 
   // `gateOpening`: 1 open, 0 closed. A warning when the maze is about to grow
   // or the gates are closing.
-  showClock(clock: ClockState, gateOpening: number, timeSpeed: number, width: number, nowMs: number): void {
-    const line1 = `DAY ${clock.day}  ·  ${PHASE_NAME[clock.phase]} ${formatMs(clock.phaseLeftMs)}${timeSpeed > 1 ? `  ·  x${timeSpeed}` : ""}`;
+  showClock(clock: ClockState, gateOpening: number, width: number, nowMs: number): void {
+    const line1 = `DAY ${clock.day}  ·  ${PHASE_NAME[clock.phase]} ${formatMs(clock.phaseLeftMs)}`;
     const next = clock.nextExpansionMs;
     const line2 =
       next < 0 ? "THE MAZE IS FULL SIZE"

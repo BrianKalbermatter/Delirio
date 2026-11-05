@@ -1,6 +1,7 @@
 // The enemies of src/mecanicas/enemigos.c that are not spartans: the ghost, the
-// spirit that throws and the skeleton (art/espectros.py). Each has one drawing,
-// looking left, mirrored when it looks right. Also what the spirits throw.
+// spirit that throws, the skeletons, Medusa and her little ones (art/espectros.py).
+// Each has one drawing, looking left, mirrored when it looks right. Also what
+// they throw.
 import { type Container, Graphics, Sprite } from "pixi.js";
 import type { EnemyState, Shot } from "../wasm/game-wasm";
 import { STATE } from "../wasm/game-wasm";
@@ -19,15 +20,27 @@ export interface SpectreSheets {
   spirit: SpriteSheet;
   skeleton: SpriteSheet;
   shot: SpriteSheet;
+  medusa: SpriteSheet;
+  mini_medusa: SpriteSheet;
+  wheel: SpriteSheet;
+  centaur: SpriteSheet;
+  arrow: SpriteSheet;
 }
 
-type Kind = "ghost" | "spirit" | "skeleton";
+type Kind = "ghost" | "spirit" | "skeleton" | "medusa" | "mini_medusa" | "wheel" | "centaur";
 
-const BAR_ABOVE: Record<Kind, number> = { ghost: 104, spirit: 86, skeleton: 68 };
-const TAGS: Record<Kind, { idle: string; move: string; strike: string; born: string }> = {
+const BAR_ABOVE: Record<Kind, number> = { ghost: 104, spirit: 86, skeleton: 68, medusa: 0, mini_medusa: 48, wheel: 128, centaur: 0 };
+// Drawn this much bigger, times what C says for a boss (the centaur's picture
+// is already big).
+const SCALE: Record<Kind, number> = { ghost: 1, spirit: 1, skeleton: 1, medusa: 1, mini_medusa: 1, wheel: 1.5, centaur: 0.5 };
+const TAGS: Record<Kind, { idle: string; move: string; strike: string; born: string; charge?: string }> = {
   ghost: { idle: "flota", move: "flota", strike: "ataca", born: "aparece" },
   spirit: { idle: "flota", move: "flota", strike: "lanza", born: "aparece" },
   skeleton: { idle: "quieto", move: "camina", strike: "ataca", born: "levanta" },
+  wheel: { idle: "quieto", move: "camina", strike: "ataca", born: "levanta" },
+  medusa: { idle: "quieto", move: "camina", strike: "dispara", born: "aparece" },
+  mini_medusa: { idle: "quieto", move: "camina", strike: "dispara", born: "aparece" },
+  centaur: { idle: "quieto", move: "camina", strike: "prepara", born: "quieto", charge: "embiste" },
 };
 
 interface SpectreView {
@@ -94,7 +107,8 @@ export class SpectreViews {
       view.animator.seek(Number.MAX_SAFE_INTEGER);
     } else if (dead) view.animator.play("muere", false);
     else if (enemy.birthMs > 0) view.animator.play(tags.born, false);
-    else if (state === "ATACANDO" || enemy.mood === "ATACA") view.animator.play(tags.strike);
+    else if (state === "CORRIENDO" && tags.charge) view.animator.play(tags.charge);
+    else if (state === "ATACANDO" || enemy.mood === "ATACA") view.animator.play(tags.strike, view.kind !== "centaur");
     else {
       view.stillMs = state === "QUIETO" ? view.stillMs + dtMs : 0;
       view.animator.play(view.stillMs >= STEADY_MS ? tags.idle : tags.move);
@@ -106,14 +120,15 @@ export class SpectreViews {
     view.turnMs = turning ? view.turnMs + dtMs : 0;
     if (view.turnMs >= STEADY_MS) view.right = !view.right;
     const { sprite } = view;
-    placeFrame(sprite, frame, enemy.x, enemy.y + FLOOR_MARGIN);
+    const scale = SCALE[view.kind] * enemy.scale;
+    placeFrame(sprite, frame, enemy.x, enemy.y + FLOOR_MARGIN * scale, scale);
     if (view.right) {
-      sprite.scale.x = -1;
-      sprite.x += frame.w;
+      sprite.scale.x = -scale;
+      sprite.x += frame.w * scale;
     }
     sprite.tint = enemy.hitMs > 0 ? HIT_TINT : 0xffffff;
     sprite.zIndex = depthOf(enemy.y, DEPTH.prop);
-    const hurt = !dead && enemy.life < enemy.lifeMax;
+    const hurt = !dead && enemy.life < enemy.lifeMax && !enemy.boss; // a boss's is in the HUD
     view.bar.visible = hurt;
     if (hurt) drawLifeBar(view.bar, enemy.x, enemy.y - BAR_ABOVE[view.kind], BAR_WIDTH, enemy.life, enemy.lifeMax);
   }
@@ -130,11 +145,21 @@ export class SpectreViews {
       const shot = shots[i];
       sprite.visible = shot !== undefined;
       if (!shot) return;
+      sprite.zIndex = depthOf(shot.y, DEPTH.prop);
+      if (shot.arrow) {
+        sprite.texture = this.sheets.arrow.frames[0].texture;
+        sprite.anchor.set(0.5);
+        sprite.scale.set(1);
+        sprite.rotation = Math.atan2(shot.dirY, shot.dirX);
+        sprite.position.set(Math.round(shot.x), Math.round(shot.y - SHOT_ABOVE));
+        return;
+      }
       animator.update(dtMs);
       const frame = animator.currentFrame();
       if (!frame) return;
+      sprite.anchor.set(0);
+      sprite.rotation = 0;
       placeFrame(sprite, frame, shot.x, shot.y - SHOT_ABOVE);
-      sprite.zIndex = depthOf(shot.y, DEPTH.prop);
     });
   }
 }

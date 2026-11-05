@@ -8,6 +8,14 @@
 #define ENEMIGOS_ERRANTES 36
 #define ENEMIGOS_PASEANTES 32 // los que andan por el laberinto a toda hora: mitad espiritus, mitad espartanos
 #define ESQUELETOS_TIRADOS 24 // los que esperan tirados como huesos
+#define MEDUCITAS 6           // las que cuidan a Medusa
+#define RUEDAS 5              // los de la rueda en el bosque, a la vez
+// Donde empieza cada grupo en la lista.
+#define HUECO_ERRANTES (RONDAS_MAX * RONDA_MAX)
+#define HUECO_PASEANTES (HUECO_ERRANTES + ENEMIGOS_ERRANTES)
+#define HUECO_TIRADOS (HUECO_PASEANTES + ENEMIGOS_PASEANTES)
+#define HUECO_MEDUCITAS (HUECO_TIRADOS + ESQUELETOS_TIRADOS)
+#define HUECO_RUEDAS (HUECO_MEDUCITAS + MEDUCITAS)
 
 #define VIDA_ENEMIGO 30
 
@@ -21,7 +29,9 @@
 #define DIST_MIEDO 95.0f    // mas cerca que esto, escapa
 #define DIST_COMODO 160.0f  // le gusta quedarse a esta distancia, rodeandolo
 #define ALCANCE 24.0f       // de pies a pies, para pegar
-#define OLVIDO_MS 2500.0f   // sin verlo este tiempo, vuelve a deambular
+#define OLVIDO_MS 2500.0f   // sin verlo este tiempo, vuelve a deambular...
+#define OLVIDA_LEJOS 450.0f // ...y si se alejo tanto, enseguida
+#define DESINTERES_MS 25000.0f // cuanto tarda en ponerse a buscarlo de nuevo
 #define HUIDA_MS 1300.0f    // cuanto escapa despues de un susto
 #define ATAQUE_MAX_MS 1800.0f // si no lo alcanza en este tiempo, se arrepiente
 #define GOLPEADO_MS 220.0f
@@ -70,8 +80,8 @@
 #define MANADAS 1
 #define MANADA_SEPARACION 34.0f // a cuanto del que manda camina cada uno
 #define MANADA_LEJOS 420.0f     // mas lejos que esto del que manda, se le junta
-#define CAZA_CELDAS 24          // los sueltos cazan al jugador si esta a estas celdas de camino
-#define VEL_CAZA 90.0f
+#define CAZA_CELDAS 15          // los sueltos cazan al jugador si esta a estas celdas de camino
+#define VEL_CAZA 70.0f
 #define VENTAJA_HOGUERA 3       // celdas de camino que tiene que ahorrar volver a salir de otra hoguera
 #define CAZA_RUMBO_MS 400.0f    // cazando miran el camino asi de seguido
 #define RUTA_CADA_MS 1000.0f    // cada cuanto se traza el camino hasta el jugador
@@ -102,6 +112,14 @@
 #define VIDA_FANTASMA 30
 #define VIDA_ESPIRITU 18
 #define VIDA_ESQUELETO 40
+#define VIDA_MEDUCITA 25
+#define VIDA_RUEDA 120
+#define VEL_RUEDA 45.0f
+#define RUEDA_VE 300.0f          // ve menos que un esqueleto: en el bosque hay niebla
+#define RUEDA_VUELVE_MS 40000.0f // otro se levanta de los huesos tanto despues
+#define RUEDA_LEJOS 320.0f       // los huesos de donde se levanta, a esta distancia del jugador
+#define MEDUCITA_VUELVE_MS 30000.0f
+#define MEDUCITA_LEJOS 260.0f    // mas lejos del medio de la sala, vuelve
 #define VEL_ESQUELETO 58.0f
 #define ESQUELETO_VE 420.0f      // despierto ve mas lejos que un espartano
 #define ESQUELETO_RITMO_MS 1300.0f // entre golpe y golpe
@@ -115,10 +133,13 @@
 // El espiritu se queda a esta distancia y tira
 #define TIRO_CERCA 150.0f
 #define TIRO_LEJOS 240.0f
-#define TIRO_RITMO_MS 2600.0f
+#define TIRO_RITMO_MS 3800.0f
 #define TIRO_PREPARA_MS 720.0f   // la animacion de lanzar (8 frames de 90 ms)...
 #define TIRO_SALE_MS 360.0f      // ...y le queda esto cuando sale la sombra
 #define TIRO_VEL 190.0f
+#define FLECHA_VEL 270.0f
+#define MEDUSA_ALCANCE 330.0f    // tira si el jugador esta a esto...
+#define MEDUSA_CERCA 130.0f      // ...y mas cerca que esto se aleja
 #define TIRO_VUELO_MS 2200.0f
 #define TIRO_REBOTE_DANIO 30    // lo que le saca a un enemigo la sombra que volvio del escudo
 #define TIRO_REBOTE_BUSCA 420.0f // hasta donde busca a quien darle
@@ -142,7 +163,7 @@
 #define DELATADO_MS 1000.0f     // pegar desde un arbusto lo deja a la vista
 #define LEJOS_DE_LA_BASE 650.0f // nada de rondas ni arbustos tan cerca del inicio
 
-_Static_assert(RONDAS_MAX * RONDA_MAX + ENEMIGOS_ERRANTES + ENEMIGOS_PASEANTES + ESQUELETOS_TIRADOS + RONDAS_MAX + JEFES <= ENEMIGOS_MAX, "no entran todos en la lista");
+_Static_assert(HUECO_RUEDAS + RUEDAS + RONDAS_MAX + JEFES <= ENEMIGOS_MAX, "no entran todos en la lista");
 _Static_assert(RONDAS_LABERINTO + LAB_EXPANSIONES <= RONDAS_MAX, "demasiadas rondas");
 _Static_assert(MANADAS <= MANADAS_MAX && MANADAS * MANADA_MAX <= ENEMIGOS_ERRANTES, "demasiadas manadas");
 
@@ -317,6 +338,12 @@ static int rumbo_al_jugador(const Enemigos *e, const Laberinto *lab, Direccion p
 
 static int vivo(const Enemigo *en){ return en->activo && !en->tirado && en->entidad.estados != MUERTO; }
 
+// Los que caminan derecho al jugador y no se asustan.
+static int es_caminante(const Enemigo *en){ return en->tipo == ENEMIGO_ESQUELETO || en->tipo == ENEMIGO_RUEDA; }
+
+// Los que se quedan lejos y tiran.
+static int es_tirador(const Enemigo *en){ return en->tipo == ENEMIGO_ESPIRITU || en->tipo == ENEMIGO_MEDUCITA; }
+
 // Lo que le saca un golpe: sin armadura, toda la vida.
 static int danio_de_golpe(const Jugador *j){
   int vida = j->entidad.vidaMAX;
@@ -347,7 +374,7 @@ static Direccion asiento(const Ronda *r, int asiento){
 
 static void nuevo_coraje(Enemigos *e, Enemigo *en){
   en->coraje = 0;
-  en->valor = entre(e, 1800.0f, 4500.0f);
+  en->valor = entre(e, 3000.0f, 7000.0f);
 }
 
 static void cambiar_animo(Enemigo *en, Animo animo){
@@ -403,6 +430,9 @@ static const JefeDef JEFE[ZONA_CANTIDAD] = {
   [ZONA_POSEIDON]  = {600,  115.0f, 2.4f, 550.0f, 950.0f},
   [ZONA_MINOTAURO] = {1000, 100.0f, 2.8f, 600.0f, 1000.0f},
 };
+#define CENTAURO_ALCANCE 340.0f  // embiste si el jugador esta a esto
+#define CENTAURO_EMBISTE_MS 1100.0f
+#define CENTAURO_VEL_EMBISTE 340.0f
 #define JEFE_RADIO 9.0f          // radio del cuerpo de un espartano: se multiplica por la escala
 #define JEFE_VUELVE_MS 4000.0f   // el jugador fuera de la sala este tiempo: se calma y se cura
 #define LANZA_DANIO_JEFE 60      // una lanza no lo mata de un tiro: le saca esto
@@ -431,6 +461,7 @@ static int dentro_rect(RectPx r, Direccion p){
 }
 
 static void nacer(Enemigos *e, Enemigo *en, Direccion lugar, Animo animo);
+static void tirar(Enemigos *e, Direccion desde, Direccion hacia, int flecha);
 
 // El jefe de la sala `z`, quieto en el medio de su terreno, esperando.
 static void nacer_jefe(Enemigos *e, const Laberinto *lab, Zona z){
@@ -438,11 +469,36 @@ static void nacer_jefe(Enemigos *e, const Laberinto *lab, Zona z){
   en->ronda = en->manada = -1;
   nacer(e, en, centro_rect(terreno_jefe(lab, z)), ANIMO_DEAMBULA);
   en->jefe = z;
+  if (z == ZONA_MEDUSAS) en->tipo = ENEMIGO_MEDUSA;
+  if (z == ZONA_POSEIDON) en->tipo = ENEMIGO_CENTAURO;
   en->entidad.vidaMAX = en->entidad.vida = JEFE[z].vida;
   en->arma = z == ZONA_POSEIDON ? ARMA_LANZA : z == ZONA_MINOTAURO ? ARMA_HACHA : ARMA_NINGUNA;
   en->suelta_arma = 0;
   en->botin = BOTIN_POCION;
   en->monedas = 10 * z;
+}
+
+// El centauro embistiendo: galopa derecho hasta chocar o cansarse, y al que
+// agarra en el camino le pega una vez. Devuelve el danio que le hizo.
+static int embestir(Enemigos *e, Enemigo *en, const Laberinto *lab, Jugador *j, RectPx terreno, float dt_ms){
+  const JefeDef *def = &JEFE[en->jefe];
+  float paso = CENTAURO_VEL_EMBISTE * dt_ms / 1000.0f;
+  float movido = laberinto_mover(lab, &en->entidad.posicion, en->embiste.x * paso, en->embiste.y * paso);
+  en->embiste_ms -= dt_ms;
+  en->mira = en->entidad.dir = en->embiste;
+  en->entidad.estados = CORRIENDO;
+  e->combate = (int)(en - e->lista);
+  int choco = movido < paso * 0.3f || !dentro_rect(terreno, en->entidad.posicion);
+  if (choco || en->embiste_ms <= 0){
+    en->embiste_ms = 0;
+    en->espera_ms = def->espera_ms * 2; // queda agitado: es el momento de pegarle
+  }
+  int alcanzo = distancia(en->entidad.posicion, j->entidad.posicion) <= ALCANCE + cuerpo(en);
+  int a_salvo = jugador_activa(j, HAB_BLOQUEAR) || jugador_activa(j, HAB_SALTAR);
+  if (!alcanzo || en->embiste_pego || a_salvo || jugador_muerto(j)) return 0;
+  en->embiste_pego = 1;
+  j->entidad.vida -= danio_de_golpe(j);
+  return danio_de_golpe(j);
 }
 
 // Un paso del jefe. Devuelve el danio que le hizo al jugador.
@@ -483,8 +539,10 @@ static int paso_jefe(Enemigos *e, Enemigo *en, int yo, const Laberinto *lab, Jug
     }
   } else en->afuera_ms = 0;
 
-  float alcance = ALCANCE + cuerpo(en);
+  int arquera = z == ZONA_MEDUSAS, jinete = z == ZONA_POSEIDON;
+  float alcance = arquera ? MEDUSA_ALCANCE : jinete ? CENTAURO_ALCANCE : ALCANCE + cuerpo(en);
   int danio = 0;
+  if (en->embiste_ms > 0) return embestir(e, en, lab, j, terreno, dt_ms);
   Direccion dir = {0, 0};
   float velocidad = 0;
   if (en->carga_ms > 0){
@@ -496,7 +554,12 @@ static int paso_jefe(Enemigos *e, Enemigo *en, int yo, const Laberinto *lab, Jug
       en->carga_ms = 0;
       en->espera_ms = def->espera_ms;
       int a_salvo = jugador_activa(j, HAB_BLOQUEAR) || jugador_activa(j, HAB_SALTAR);
-      if (dist <= alcance * 1.15f && !a_salvo && !jugador_muerto(j)){
+      if (arquera) tirar(e, pies, hacia, 1);
+      else if (jinete){
+        en->embiste = hacia;
+        en->embiste_ms = CENTAURO_EMBISTE_MS;
+        en->embiste_pego = 0;
+      } else if (dist <= alcance * 1.15f && !a_salvo && !jugador_muerto(j)){
         danio = danio_de_golpe(j);
         j->entidad.vida -= danio;
       }
@@ -509,7 +572,10 @@ static int paso_jefe(Enemigos *e, Enemigo *en, int yo, const Laberinto *lab, Jug
     en->entidad.estados = ATACANDO;
     return 0;
   }
-  if (adentro && dist > alcance * 0.7f){
+  if (adentro && arquera && dist < MEDUSA_CERCA){
+    dir = (Direccion){-hacia.x, -hacia.y};
+    velocidad = def->velocidad;
+  } else if (adentro && dist > alcance * 0.7f){
     dir = hacia;
     velocidad = def->velocidad;
   } else if (!adentro){
@@ -531,14 +597,17 @@ static int paso_jefe(Enemigos *e, Enemigo *en, int yo, const Laberinto *lab, Jug
     en->entidad.dir = dir;
     en->mira = adentro ? hacia : dir;
   }
-  en->entidad.estados = movido < 0.01f ? QUIETO : CORRIENDO;
+  en->entidad.estados = movido < 0.01f ? QUIETO : jinete ? CAMINANDO : CORRIENDO;
   return 0;
 }
 
 static void nacer(Enemigos *e, Enemigo *en, Direccion lugar, Animo animo){
   int ronda = en->ronda, sitio = en->asiento, manada = en->manada, es_paseante = en->es_paseante;
+  int guardia = en->guardia, de_bosque = en->de_bosque;
   TipoEnemigo paseante = en->paseante;
   *en = (Enemigo){0};
+  en->guardia = guardia;
+  en->de_bosque = de_bosque;
   en->es_paseante = es_paseante;
   en->paseante = paseante;
   en->ronda = ronda;
@@ -566,9 +635,10 @@ static void volverse(Enemigos *e, Enemigo *en, TipoEnemigo tipo){
   en->suelta_arma = 0;
   en->botin = BOTIN_NADA;
   en->monedas = 1;
-  en->naciendo_ms = tipo == ENEMIGO_ESQUELETO ? LEVANTA_MS : APARECE_MS;
+  en->naciendo_ms = es_caminante(en) ? LEVANTA_MS : APARECE_MS;
   en->tiro_ms = entre(e, 800.0f, TIRO_RITMO_MS);
-  int vida = tipo == ENEMIGO_FANTASMA ? VIDA_FANTASMA : tipo == ENEMIGO_ESPIRITU ? VIDA_ESPIRITU : VIDA_ESQUELETO;
+  int vida = tipo == ENEMIGO_FANTASMA ? VIDA_FANTASMA : tipo == ENEMIGO_ESPIRITU ? VIDA_ESPIRITU
+             : tipo == ENEMIGO_MEDUCITA ? VIDA_MEDUCITA : tipo == ENEMIGO_RUEDA ? VIDA_RUEDA : VIDA_ESQUELETO;
   en->entidad.vidaMAX = en->entidad.vida = vida;
 }
 
@@ -658,7 +728,7 @@ static int sueltos_permitidos(const Enemigos *e){
 static void soltar(Enemigos *e, const Laberinto *lab, Direccion jugador, float dt_ms){
   e->salida_ms -= dt_ms;
   if (e->salida_ms > 0 || sueltos_permitidos(e) - e->sueltos < e->tanda) return;
-  int desde = RONDAS_MAX * RONDA_MAX, salieron = 0;
+  int desde = HUECO_ERRANTES, salieron = 0;
   for (int i = desde; i < desde + ENEMIGOS_ERRANTES && salieron < e->tanda; i++){
     if (e->lista[i].activo) continue;
     if (!aparecer(e, &e->lista[i], lab, jugador)) break;
@@ -862,9 +932,28 @@ static void poner_errantes(Enemigos *e){
   }
 }
 
+// Una meducita en la sala de Medusa, a un lado del medio.
+static void poner_meducita(Enemigos *e, Enemigo *en, const Laberinto *lab){
+  Direccion centro = centro_rect(laberinto_sala_px(lab, ZONA_MEDUSAS));
+  Direccion d = girar((Direccion){entre(e, 120.0f, 240.0f), 0}, entre(e, 0, 360));
+  nacer(e, en, (Direccion){centro.x + d.x, centro.y + d.y}, ANIMO_DEAMBULA);
+  volverse(e, en, ENEMIGO_MEDUCITA);
+}
+
+// El de la rueda se levanta de unos huesos del bosque que el jugador no tenga
+// encima. 0 si ahora no hay ninguno.
+static int levantar_rueda(Enemigos *e, Enemigo *en, Direccion jugador){
+  if (e->cant_huesos_bosque == 0) return 0;
+  Direccion lugar = e->huesos_bosque[siguiente(e) % (unsigned)e->cant_huesos_bosque];
+  if (distancia(lugar, jugador) < RUEDA_LEJOS) return 0;
+  nacer(e, en, lugar, ANIMO_ACECHA);
+  volverse(e, en, ENEMIGO_RUEDA);
+  return 1;
+}
+
 // Los esqueletos que esperan tirados por el laberinto, como otra pila de huesos.
 static void poner_tirados(Enemigos *e, const Laberinto *lab){
-  int desde = RONDAS_MAX * RONDA_MAX + ENEMIGOS_ERRANTES + ENEMIGOS_PASEANTES;
+  int desde = HUECO_TIRADOS;
   int puestos = 0;
   for (int intento = 0; intento < 4000 && puestos < ESQUELETOS_TIRADOS; intento++){
     Direccion lugar;
@@ -892,6 +981,15 @@ void enemigos_iniciar(Enemigos *e, const Laberinto *lab, Direccion jugador, unsi
   if (HAY_ARBUSTOS) poner_arbustos(e, lab, jugador);
   poner_errantes(e);
   poner_tirados(e, lab);
+  for (int n = 0; n < MEDUCITAS; n++) e->lista[HUECO_MEDUCITAS + n].guardia = 1;
+  for (int n = 0; n < RUEDAS; n++){
+    e->lista[HUECO_RUEDAS + n].de_bosque = 1;
+    e->lista[HUECO_RUEDAS + n].reaparece_ms = entre(e, 3000.0f, RUEDA_VUELVE_MS);
+  }
+}
+
+void enemigos_hueso_bosque(Enemigos *e, Direccion lugar){
+  if (e->cant_huesos_bosque < HUESOS_BOSQUE_MAX) e->huesos_bosque[e->cant_huesos_bosque++] = lugar;
 }
 
 // ---------------------------------------------------------------- golpes
@@ -917,7 +1015,7 @@ static int herir(Enemigos *e, Enemigo *en, int danio){
     } else e->muertos++;
   } else if (en->jefe){
     en->despierto = 1; // un jefe no escapa: pelea
-  } else if (en->tipo != ENEMIGO_HOGUERA && en->tipo != ENEMIGO_ESQUELETO){
+  } else if (en->tipo != ENEMIGO_HOGUERA && !es_caminante(en)){
     cambiar_animo(en, ANIMO_HUYE);
   }
   alertar_grupo(e, en);
@@ -1041,7 +1139,7 @@ int enemigos_golpe_suelo(Enemigos *e, Direccion centro, float radio, int danio){
     if (!vivo(en)) continue;
     float d = distancia(en->entidad.posicion, centro) - cuerpo(en);
     if (d <= radio) golpes += herir(e, en, danio);
-    else if (d <= radio * 3 && !en->jefe && en->tipo != ENEMIGO_HOGUERA && en->tipo != ENEMIGO_ESQUELETO){ // el temblor los asusta
+    else if (d <= radio * 3 && !en->jefe && en->tipo != ENEMIGO_HOGUERA && !es_caminante(en)){ // el temblor los asusta
       cambiar_animo(en, ANIMO_HUYE);
       alertar_grupo(e, en);
     }
@@ -1241,6 +1339,16 @@ static float deambular(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jug
     }
   }
 
+  // Las meducitas no se van de la sala
+  if (en->guardia){
+    Direccion centro = centro_rect(laberinto_sala_px(lab, ZONA_MEDUSAS));
+    if (distancia(pies, centro) > MEDUCITA_LEJOS){
+      *dir = unitario((Direccion){centro.x - pies.x, centro.y - pies.y});
+      en->mira = *dir;
+      return VEL_PASEO;
+    }
+  }
+
   // De una ronda y ya calmado: vuelve a su lugar
   if (con_ronda(e, en) && en->animo_ms > CALMA_MS){
     Direccion lugar = asiento(&e->rondas[en->ronda], en->asiento);
@@ -1268,11 +1376,11 @@ static float deambular(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jug
     int afuera = !en_plaza((int)(pies.x / LAB_TILE), (int)(pies.y / LAB_TILE));
     int a_su_alcance = e->plaza_permitida || !en_plaza_px(j->entidad.posicion);
     Direccion rumbo;
-    en->cazando = en->ronda < 0 && !en->es_paseante && a_su_alcance && rumbo_al_jugador(e, lab, pies, j->entidad.posicion, &rumbo);
+    en->cazando = en->ronda < 0 && !en->es_paseante && !en->guardia && en->desinteres_ms <= 0 && a_su_alcance && rumbo_al_jugador(e, lab, pies, j->entidad.posicion, &rumbo);
     if (en->cazando){
       en->entidad.dir = rumbo;
       en->rumbo_ms = CAZA_RUMBO_MS;
-    } else if (afuera && !en->es_paseante && (int)(siguiente(e) % 100) < (e->plaza_permitida ? TIRA_A_LA_PLAZA : TIRA_EN_TREGUA)){
+    } else if (afuera && !en->es_paseante && !en->guardia && (int)(siguiente(e) % 100) < (e->plaza_permitida ? TIRA_A_LA_PLAZA : TIRA_EN_TREGUA)){
       Direccion a_plaza = unitario((Direccion){e->plaza.x - pies.x, e->plaza.y - pies.y});
       en->entidad.dir = girar(a_plaza, entre(e, -70.0f, 70.0f));
     } else {
@@ -1286,11 +1394,11 @@ static float deambular(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jug
 }
 
 // Una sombra hacia el jugador, desde la altura del espiritu.
-static void tirar(Enemigos *e, Direccion desde, Direccion hacia){
+static void tirar(Enemigos *e, Direccion desde, Direccion hacia, int flecha){
   for (int i = 0; i < TIROS_MAX; i++){
     Tiro *t = &e->tiros[i];
     if (t->activo) continue;
-    *t = (Tiro){.activo = 1, .posicion = desde, .dir = hacia, .vuelo_ms = TIRO_VUELO_MS};
+    *t = (Tiro){.activo = 1, .flecha = flecha, .posicion = desde, .dir = hacia, .vuelo_ms = TIRO_VUELO_MS};
     return;
   }
 }
@@ -1302,7 +1410,7 @@ static float acosar(Enemigos *e, Enemigo *en, int lo_ve, float dist, Direccion h
   if (en->lanzando_ms > 0){
     float antes = en->lanzando_ms;
     en->lanzando_ms -= dt_ms;
-    if (antes > TIRO_SALE_MS && en->lanzando_ms <= TIRO_SALE_MS) tirar(e, en->entidad.posicion, hacia);
+    if (antes > TIRO_SALE_MS && en->lanzando_ms <= TIRO_SALE_MS) tirar(e, en->entidad.posicion, hacia, en->tipo == ENEMIGO_MEDUCITA);
     *dir = (Direccion){0, 0};
     return 0;
   }
@@ -1328,7 +1436,7 @@ static float perseguir(Enemigo *en, int lo_ve, float dist, Direccion hacia, Dire
   en->mira = hacia;
   if (dist <= ALCANCE) return 0;
   *dir = hacia;
-  return VEL_ESQUELETO;
+  return en->tipo == ENEMIGO_RUEDA ? VEL_RUEDA : VEL_ESQUELETO;
 }
 
 // Elige como moverse segun el animo. Devuelve la velocidad y deja el rumbo
@@ -1338,12 +1446,13 @@ static float decidir(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jugad
   Direccion al_jugador = {j->entidad.posicion.x - pies.x, j->entidad.posicion.y - pies.y};
   float dist = largo(al_jugador);
   Direccion hacia = unitario(al_jugador);
-  float vision = en->animo == ANIMO_CHARLA ? VISION_CHARLA : en->tipo == ENEMIGO_ESQUELETO ? ESQUELETO_VE : VISION;
+  float vision = en->animo == ANIMO_CHARLA ? VISION_CHARLA : en->tipo == ENEMIGO_ESQUELETO ? ESQUELETO_VE : en->tipo == ENEMIGO_RUEDA ? RUEDA_VE : VISION;
   int lo_ve = !jugador_muerto(j) && dist < vision && !escondido_de(e, en, dist) &&
               linea_libre(lab, pies, j->entidad.posicion);
 
   en->animo_ms += dt_ms;
-  if (en->tipo == ENEMIGO_ESQUELETO) return perseguir(en, lo_ve, dist, hacia, dir);
+  if (en->desinteres_ms > 0) en->desinteres_ms -= dt_ms;
+  if (es_caminante(en)) return perseguir(en, lo_ve, dist, hacia, dir);
   switch (en->animo){
     case ANIMO_CHARLA:
       if (lo_ve){
@@ -1363,11 +1472,16 @@ static float decidir(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jugad
 
     case ANIMO_ACECHA:
       if (!lo_ve){
-        if (en->animo_ms > OLVIDO_MS) cambiar_animo(en, ANIMO_DEAMBULA);
+        if (en->animo_ms > OLVIDO_MS || dist > OLVIDA_LEJOS){
+          cambiar_animo(en, ANIMO_DEAMBULA);
+          en->desinteres_ms = DESINTERES_MS;
+          en->lanzando_ms = 0;
+          break;
+        }
       } else {
         en->animo_ms = 0;
       }
-      if (en->tipo == ENEMIGO_ESPIRITU) return acosar(e, en, lo_ve, dist, hacia, dt_ms, dir);
+      if (es_tirador(en)) return acosar(e, en, lo_ve, dist, hacia, dt_ms, dir);
       en->mira = hacia; // no le saca los ojos de encima
       if (dist < DIST_MIEDO && en->tipo == ENEMIGO_ESPARTANO){ // los fantasmas no tienen miedo
         cambiar_animo(en, ANIMO_HUYE);
@@ -1463,7 +1577,7 @@ static int mover_tiros(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_m
   for (int i = 0; i < TIROS_MAX; i++){
     Tiro *t = &e->tiros[i];
     if (!t->activo) continue;
-    float paso = TIRO_VEL * dt_ms / 1000.0f;
+    float paso = (t->flecha ? FLECHA_VEL : TIRO_VEL) * dt_ms / 1000.0f;
     t->posicion.x += t->dir.x * paso;
     t->posicion.y += t->dir.y * paso;
     t->vuelo_ms -= dt_ms;
@@ -1501,7 +1615,7 @@ static int mover_tiros(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_m
 // vuelven a su lugar y los de una manada se juntan con el que manda. Devuelve
 // 1 si lo movio.
 static int acomodar_lejos(Enemigos *e, Enemigo *en, const Laberinto *lab, Direccion jugador, int *reciclados){
-  if (en->animo != ANIMO_DEAMBULA || en->es_paseante) return 0;
+  if (en->animo != ANIMO_DEAMBULA || en->es_paseante || en->guardia) return 0;
   Direccion pies = en->entidad.posicion;
   float lejos = distancia(pies, jugador);
 
@@ -1547,7 +1661,7 @@ static int acomodar_lejos(Enemigos *e, Enemigo *en, const Laberinto *lab, Direcc
   int pasos_hoguera = k >= 0 ? pasos_desde(e, e->rondas[k].centro) : -1;
   int mas_cerca = pasos_hoguera >= 0 ? pasos < 0 || pasos_hoguera + VENTAJA_HOGUERA < pasos
                                      : k >= 0 && lejos > DEMASIADO_LEJOS && distancia(e->rondas[k].centro, jugador) < lejos;
-  if (mas_cerca && lejos > APARECE_DESDE && *reciclados < RECICLA_POR_PASO){
+  if (mas_cerca && en->desinteres_ms <= 0 && lejos > APARECE_DESDE && *reciclados < RECICLA_POR_PASO){
     aparecer(e, en, lab, jugador);
     (*reciclados)++;
     // El que manda se lleva a los suyos que andaban con el
@@ -1592,7 +1706,10 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
   danio_total += mover_tiros(e, lab, j, dt_ms);
   // Los jefes aparecen cuando su sala ya esta tallada (y no los vencio)
   for (int z = ZONA_LABERINTO + 1; z < ZONA_CANTIDAD; z++){
-    if (!e->lista[hueco_jefe(z)].activo && !(e->vencidos & (1 << z)) && lab->salas[z].tallada) nacer_jefe(e, lab, (Zona)z);
+    if (e->lista[hueco_jefe(z)].activo || (e->vencidos & (1 << z)) || !lab->salas[z].tallada) continue;
+    nacer_jefe(e, lab, (Zona)z);
+    if (z != ZONA_MEDUSAS) continue;
+    for (int n = 0; n < MEDUCITAS; n++) poner_meducita(e, &e->lista[HUECO_MEDUCITAS + n], lab);
   }
   e->combate = -1;
   for (int i = 0; i < ENEMIGOS_MAX; i++){
@@ -1601,6 +1718,17 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
       if (en->reaparece_ms > 0){
         en->reaparece_ms -= dt_ms * (1.0f + RONDA_NOCHE * e->noche);
         if (en->reaparece_ms > 0) continue;
+        if (en->guardia){
+          // Vuelve mientras viva Medusa y el jugador no este mirando
+          if (e->vencidos & (1 << ZONA_MEDUSAS)) continue;
+          if (distancia(centro_rect(laberinto_sala_px(lab, ZONA_MEDUSAS)), jugador) > APARECE_DESDE) poner_meducita(e, en, lab);
+          else en->reaparece_ms = 3000.0f;
+          continue;
+        }
+        if (en->de_bosque){
+          if (!levantar_rueda(e, en, jugador)) en->reaparece_ms = 3000.0f;
+          continue;
+        }
         if (en->es_paseante){
           if (!salir_a_pasear(e, en, lab, jugador)) en->reaparece_ms = 3000.0f;
           continue;
@@ -1630,7 +1758,8 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
           continue;
         }
         en->activo = 0;
-        en->reaparece_ms = en->es_paseante ? PASEANTE_VUELVE_MS
+        en->reaparece_ms = en->guardia ? MEDUCITA_VUELVE_MS : en->de_bosque ? RUEDA_VUELVE_MS
+                           : en->es_paseante ? PASEANTE_VUELVE_MS
                            : !en->jefe && en->tipo != ENEMIGO_HOGUERA && con_ronda(e, en) ? REAPARECE_RONDA_MS : 0;
       }
       continue;
@@ -1688,10 +1817,10 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
 
     // El esqueleto no escapa: pega cada tanto mientras lo tenga al alcance. Si
     // el jugador se fue lejos, se deshace
-    if (en->tipo == ENEMIGO_ESQUELETO){
+    if (es_caminante(en)){
       en->tiro_ms -= dt_ms;
       float dist = distancia(jugador, en->entidad.posicion);
-      if (dist > DEMASIADO_LEJOS){
+      if (dist > DEMASIADO_LEJOS && en->tipo == ENEMIGO_ESQUELETO){
         en->activo = 0;
         en->reaparece_ms = en->es_paseante ? PASEANTE_VUELVE_MS : con_ronda(e, en) ? REAPARECE_RONDA_MS : 0;
       } else if (dist <= ALCANCE && en->tiro_ms <= 0){

@@ -19,6 +19,12 @@
 //   - Esqueletos: se levantan de algunos espartanos muertos y caminan derecho
 //     al jugador, despacio, sin asustarse. Algunos ya estaban ahi, tirados
 //     como otra pila de huesos, y se levantan cuando el jugador pasa cerca.
+//   - La rueda: esqueleto grande que se levanta de los huesos del bosque oscuro
+//     de la plaza (enemigos_huesos_bosque). Lento y duro.
+//   - Aquiles, el centauro, baja la lanza y embiste en linea recta. Si no te
+//     corres te lleva puesto; despues se queda agitado un rato.
+//   - Medusa, jefa de su sala, tira flechas y mantiene la distancia, y las
+//     meducitas la cuidan: tiran flechas y no salen de la sala mientras viva.
 //
 // Un golpe mata: sin armadura el jugador no aguanta ninguno, con armadura
 // GOLPES_CON_ARMADURA. Cubierto con el escudo, las sombras rebotan y lastiman
@@ -27,7 +33,8 @@
 // Y segun con quien andan:
 //   - Sueltos: los fantasmas y espiritus que salen de la hoguera mas cercana
 //     al jugador (y lejos de su vista). Tiran para la plaza y, adentro, dan
-//     vueltas, y si el jugador anda cerca lo buscan. De dia son pocos; a
+//     vueltas, y si el jugador anda cerca lo buscan, hasta que lo pierden y
+//     se olvidan un rato. De dia son pocos; a
 //     medida que pasa la noche salen mas y mas seguido, cada dia un poco mas,
 //     y al amanecer los que sobran vuelven al fuego. Cuanto mas tiempo pasa el
 //     jugador en el laberinto, mas salen a buscarlo; en la plaza se le pasa.
@@ -66,7 +73,7 @@
 #include "jugador.h"
 #include "laberinto.h"
 
-#define ENEMIGOS_MAX 200
+#define ENEMIGOS_MAX 208
 #define RONDAS_MAX 20  // rondas (una por hoguera: entran en los bits de hogueras_apagadas)
 #define RONDA_MAX 4    // enemigos por ronda, como mucho
 #define MANADAS_MAX 6
@@ -75,7 +82,8 @@
 #define EXPERIENCIA_JEFE 250
 #define EXPERIENCIA_HOGUERA 100
 #define GOLPES_CON_ARMADURA 3 // los que aguanta con armadura; sin ella, uno
-#define TIROS_MAX 16   // sombras en el aire a la vez
+#define TIROS_MAX 16   // sombras y flechas en el aire a la vez
+#define HUESOS_BOSQUE_MAX 32
 
 // Contra que cara de un muro lo clavo una lanza (solo las que el juego
 // muestra: la de adelante y los costados). El enemigo mira hacia el tiro.
@@ -98,7 +106,11 @@ typedef enum animo {
 // Que es. Una hoguera tambien va en la lista: asi le llegan los golpes, la
 // lanza y el pegar solo como a cualquiera (no se mueve ni piensa).
 typedef enum tipo_enemigo {
-  ENEMIGO_ESPARTANO, ENEMIGO_FANTASMA, ENEMIGO_ESPIRITU, ENEMIGO_ESQUELETO, ENEMIGO_HOGUERA
+  ENEMIGO_ESPARTANO, ENEMIGO_FANTASMA, ENEMIGO_ESPIRITU, ENEMIGO_ESQUELETO, ENEMIGO_HOGUERA,
+  ENEMIGO_MEDUSA,   // la jefa de su sala: tira flechas
+  ENEMIGO_MEDUCITA, // las chicas de su sala: tiran flechas desde lejos
+  ENEMIGO_RUEDA,    // el de la rueda: se levanta de los huesos del bosque de la plaza
+  ENEMIGO_CENTAURO  // Aquiles, jefe de la sala de Poseidon: embiste con la lanza
 } TipoEnemigo;
 
 // Lo que lleva encima y suelta al morir, ademas de sus monedas. Pocas veces
@@ -125,9 +137,12 @@ typedef struct enemigo {
   float valor;         // cuanto coraje necesita este enemigo (cada uno distinto)
   int lado;            // +1 o -1: de que costado rodea al jugador
   int cazando;         // 1: suelto que va por los pasillos hacia el jugador
+  float desinteres_ms; // > 0 despues de perderlo de vista: no lo busca
   int es_paseante;     // 1: anda por el laberinto sin buscar a nadie
   TipoEnemigo paseante; // y sale de la hoguera siendo esto
   int tirado;          // 1: esqueleto tirado como pila de huesos, esperando al jugador
+  int guardia;         // 1: meducita, se queda en la sala de Medusa
+  int de_bosque;       // 1: el de la rueda, vuelve de los huesos del bosque
   float golpeado_ms;   // > 0 justo despues de recibir un golpe (para el parpadeo)
   float muerto_ms;     // > 0 mientras esta MUERTO: cuenta hasta desaparecer
   Clavado clavado;     // muerto clavado a un muro por una lanza
@@ -150,6 +165,9 @@ typedef struct enemigo {
   float carga_ms;      // > 0 mientras carga el golpe (al llegar a 0, pega)
   float espera_ms;     // hasta que puede cargar otro golpe
   float afuera_ms;     // cuanto hace que el jugador salio de su sala
+  float embiste_ms;    // > 0 mientras el centauro embiste
+  Direccion embiste;   // para donde
+  int embiste_pego;    // 1: ya le pego en esta embestida
 } Enemigo;
 
 // Un grupo bailando en circulo alrededor de la hoguera de `centro`.
@@ -171,6 +189,7 @@ typedef struct ronda {
 // Una sombra tirada por un espiritu.
 typedef struct tiro {
   int activo;
+  int flecha;     // 1: flecha de medusa; 0: sombra de espiritu
   int rebotado;   // 1: volvio del escudo y ahora lastima enemigos
   Direccion posicion, dir;
   float vuelo_ms; // cuanto le queda antes de deshacerse
@@ -193,6 +212,8 @@ typedef struct enemigos {
   Manada manadas[MANADAS_MAX];
   int cant_manadas;
   Tiro tiros[TIROS_MAX];
+  Direccion huesos_bosque[HUESOS_BOSQUE_MAX]; // de donde se levanta el de la rueda
+  int cant_huesos_bosque;
   Arbustos arbustos;
   int arbusto_jugador; // en que arbusto esta el jugador (-1: en ninguno)
   float delatado_ms;   // > 0: pego desde un arbusto y se lo ve igual
@@ -289,6 +310,10 @@ float enemigos_carga(const Enemigos *e, int i);
 // Si los enemigos pueden entrar a la plaza (0: tregua, se frenan en las puertas
 // salvo unos pocos que se cuelan).
 void enemigos_plaza_permitida(Enemigos *e, int si);
+
+// Una pila de huesos en el bosque de la plaza (la pone el navegador, que sabe
+// donde esta el bosque): de ahi se levanta el de la rueda.
+void enemigos_hueso_bosque(Enemigos *e, Direccion lugar);
 
 // Cuan vieja esta la noche (0..1) y que dia es: cuanto mas, mas enemigos salen
 // de las hogueras.

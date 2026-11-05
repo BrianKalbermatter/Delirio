@@ -13,7 +13,7 @@ still see the old one, reload with **Ctrl + Shift + R**.
 
 Your game is kept in your browser: reload the page and you go on where you
 left off, in the same maze (see [Saving](#saving)).
-Days last 6 real minutes and nights 16 (press **F** to speed up the clock).
+Days last 4 real minutes and nights 6.
 
 ## Controls
 
@@ -98,10 +98,12 @@ Wherever the seed puts them, the bosses always keep the same order, from the
 square outwards, and the floor tells you when one is near: it changes bit by
 bit the closer you get (the walls stay as they are, for now).
 
-- **The Medusas, temple of Zeus**: white marble slabs with gold seams. Their
+- **Medusa, temple of Zeus**, shoots arrows and keeps her distance, with her little
+  ones shooting too. Her floor is white marble slabs with gold seams. Their
   arena is a big open square (smaller than the meadow) in a corner of the
   first maze, close to the square, with two ways in, both facing the square.
-- **Achilles, the centaur of Poseidon**: a sea-blue mosaic. Its arena is in
+- **Achilles, the centaur of Poseidon** lowers his spear and charges in a straight
+  line: step aside, and hit him while he gets his breath back. His floor is a sea-blue mosaic. Its arena is in
   the opposite corner, halfway out: it opens with the third growth.
 - **The Minotaur, Hades**: dark basalt with embers in the cracks, and lava.
   Near his lair the corridors have small lava pools you can walk around. The
@@ -112,9 +114,8 @@ bit the closer you get (the walls stay as they are, for now).
   stood safe; with one foot on the stone you are fine.
 
 **Boss fights.** Walking into a boss's room starts the fight on its own: the
-boss wakes up and its name and life show at the bottom of the screen. For
-now each boss is a bigger spartan in its own colour, until their own sprites
-come. They chase you without leaving their room (the Minotaur, his island),
+boss wakes up and its name and life show at the bottom of the screen. The
+Minotaur is still a bigger spartan, until his own sprite comes. Bosses chase you without leaving their room (the Minotaur, his island),
 never run away, and before each blow they stop and flash, faster and faster:
 that is the moment to step back, jump or cover with the shield. A spear
 hurts them (-60) but does not kill them in one throw. Leave the room for a
@@ -202,7 +203,8 @@ heap, a potion, coins and 100 experience, and stays broken in your save. Every
 time the maze grows, a new one lights up further out.
 
 Fires also let strays out, from the living one closest to you and out of your
-sight, and they go looking for you through the corridors. They come out
+sight, and they go looking for you through the corridors if you are close. Get
+far enough and they forget you for a while. They come out
 together, **5 at a time and sometimes 9**. By day there are 14 at most, a group
 every 40 seconds. **As the night goes on, more come out and faster**, up to 22
 at its end, a group every 25 seconds, and every day that passes brings a few
@@ -223,8 +225,15 @@ that; some get up when you walk past.
 - **Ghosts** float and have no fear: they stalk you and throw themselves at you.
 - **Spirits** keep their distance and throw clots of darkness. A clot stops at
   walls; blocking or jumping saves you from it.
+- **The wheel skeleton** gets up from the bones of the square's dark forest: big,
+  slow and tough, with a wheel of spikes on its back.
 - **Skeletons** get up from some dead spartans and walk straight at you, slowly,
   without ever running away.
+
+**Minimap.** Top left, round, a little past what the screen shows: walls, floor,
+enemies (red dots) and symbols. What you have had on screen shows what it is
+(shrines, bonfires, bosses) and stays on the rim pointing the way once it is out
+of range; what you have not found yet shows as a "?". What you found is saved.
 
 **Shrines.** You start next to the book's shrine, in the middle of the square:
 press E on it and it lights up and lets the map book go. Nine more stand around the
@@ -368,6 +377,8 @@ read from its Aseprite file and recoloured to the square's greens.
 | Old enemy (Enemigo1, not used now) | `art/enemigo1.py` | Same as Espartano1, with `body=Enemigo` |
 | Bonfire, the spawner (tags `arde`, `herida`, `agoniza`, `apagada`) | `art/hoguera_original.png` + `art/hoguera.py` (needs scipy) → `client/public/sprites/hoguera.{png,json}` | `python3 art/hoguera.py` |
 | Ghost, spirit and skeleton (one drawing each looking left, moved by the script) and the spirit's shot | `art/fantasma_original.png`, `art/espiritu_original.png`, `art/esqueleto_original.png` + `art/espectros.py` (needs scipy) → `client/public/sprites/{fantasma,espiritu,esqueleto,espiritu_tiro}.{png,json}` | `python3 art/espectros.py` |
+| Achilles the centaur (`quieto`, `camina`, `prepara`, `embiste`, `muere`) | `art/centauro_original.png` + `art/espectros.py` → `client/public/sprites/centauro.{png,json}` | `python3 art/espectros.py` |
+| Medusa and her little ones (`quieto`, `camina`, `dispara`, `aparece`, `muere`), the arrow, and the wheel skeleton | `art/medusa_original.png`, `art/rueda_original.png` + `art/espectros.py` → `client/public/sprites/{medusa,medusa_mini,flecha,rueda}.{png,json}` | `python3 art/espectros.py` |
 | Shrines (10, awake and asleep) | `art/santuarios_original.png` + `art/santuarios.py` (needs scipy) → `client/public/sprites/santuarios.{png,json}` | `python3 art/santuarios.py` |
 | Torch fire | `art/antorcha_fuego.py` | `python3 art/antorcha_fuego.py` |
 | Aseprite sprites to sheets | `client/scripts/export-sprites.sh` | `bash client/scripts/export-sprites.sh` |

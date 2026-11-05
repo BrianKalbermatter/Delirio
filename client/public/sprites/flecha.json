@@ -1,0 +1,33 @@
+{
+ "frames": [
+  {
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 5
+   },
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 20,
+    "h": 5
+   },
+   "sourceSize": {
+    "w": 20,
+    "h": 5
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "frameTags": [
+   {
+    "name": "vuela",
+    "from": 0,
+    "to": 0,
+    "direction": "forward"
+   }
+  ]
+ }
+}

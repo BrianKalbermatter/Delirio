@@ -4,10 +4,12 @@ from the dead (art/esqueleto_original.png). This takes each picture back to its
 real pixels, cuts it out and moves it. All three look left: the game mirrors them.
 
 Usage: python3 art/espectros.py   (needs numpy and scipy)
-Writes client/public/sprites/{fantasma,espiritu,esqueleto,espiritu_tiro}.{png,json}.
+Writes client/public/sprites/{fantasma,espiritu,esqueleto,espiritu_tiro,rueda,
+medusa,medusa_mini,flecha}.{png,json}.
 Each stands on the bottom middle of its frame, on the shadow drawn there.
 Tags: fantasma flota/ataca/aparece/muere, espiritu flota/lanza/aparece/muere,
-esqueleto quieto/camina/ataca/levanta/muere, espiritu_tiro vuela.
+esqueleto and rueda quieto/camina/ataca/levanta/muere, espiritu_tiro and flecha vuela,
+medusa and medusa_mini quieto/camina/dispara/aparece/muere.
 """
 import json
 import math
@@ -227,6 +229,10 @@ def thrown():
 BONES_FRAME = (64, 80)
 BONES_SHRINK = 0.75  # the picture is a head too tall next to a spartan
 HIP = 0.53  # share of its height, from the top
+WHEEL_FRAME = (96, 88)
+WHEEL_HIP = 0.7
+WHEEL_OFFSET = (0, 0)
+WHEEL_BOX = (10, 10, 160, 86)  # inside the picture's frame, in real pixels
 WALK_STEPS = 8
 
 
@@ -237,9 +243,27 @@ def skeleton():
     full = trimmed(np.dstack([px, solid * np.uint8(255)]))
     small = Image.fromarray(full, "RGBA")
     small = small.resize((round(small.width * BONES_SHRINK), round(small.height * BONES_SHRINK)), Image.NEAREST)
-    body = padded(np.asarray(small), 12)
+    walker("esqueleto", padded(np.asarray(small), 12), HIP, BONES_FRAME, 24)
+
+
+def wheel():
+    """The skeleton with a wheel of spikes on its back. Whatever is not as blue as
+    the panel and its shadow is drawing."""
+    px = real_pixels("rueda_original.png", 3, ox=WHEEL_OFFSET[0], oy=WHEEL_OFFSET[1])
+    r, b = px[..., 0].astype(int), px[..., 2].astype(int)
+    solid = r - b >= -6
+    left, top, right, bottom = WHEEL_BOX
+    box = np.zeros_like(solid)
+    box[top:bottom, left:right] = True
+    labels, n = ndimage.label(solid & box, structure=np.ones((3, 3)))
+    biggest = 1 + int(np.argmax(ndimage.sum(solid & box, labels, range(1, n + 1))))
+    walker("rueda", padded(trimmed(np.dstack([px, (labels == biggest) * np.uint8(255)])), 12), WHEEL_HIP, WHEEL_FRAME, 44)
+
+
+def walker(name, body, hip_share, size, shadow):
+    """Quieto, camina, ataca, levanta and muere for a body with two legs."""
     height, width = body.shape[:2]
-    hip = int(height * HIP)
+    hip = int(height * hip_share)
     middle = width // 2 + 1
     top = body.copy()
     top[hip:] = 0
@@ -263,17 +287,17 @@ def skeleton():
         swing = 6 * math.sin(phase)
         bob = -round(abs(math.sin(phase)) * 2)
         lean = shear(top, lambda y: -1.5 * (1 - y / hip) if y < hip else 0)
-        return on_frame(BONES_FRAME, [(leg(left, swing), 0, 0), (leg(right, -swing), 0, 0), (lean, 0, bob)], 24)
+        return on_frame(size, [(leg(left, swing), 0, 0), (leg(right, -swing), 0, 0), (lean, 0, bob)], shadow)
 
     def idle(step):
         sway = shear(top, lambda y: math.sin(step * math.pi / 2) * (1 - y / hip) if y < hip else 0)
-        return on_frame(BONES_FRAME, [(legs, 0, 0), (sway, 0, 0)], 24)
+        return on_frame(size, [(legs, 0, 0), (sway, 0, 0)], shadow)
 
     def reach(step):
         phase = 2 * math.pi * step / 4
         swing = 7 * math.sin(phase)
         lean = shear(top, lambda y: -5 * (1 - y / hip) if y < hip else 0)
-        return on_frame(BONES_FRAME, [(leg(left, swing), 0, 0), (leg(right, -swing), 0, 0), (lean, 0, 0)], 24)
+        return on_frame(size, [(leg(left, swing), 0, 0), (leg(right, -swing), 0, 0), (lean, 0, 0)], shadow)
 
     def rise(step, steps=10):
         up = (step + 1) / steps
@@ -282,11 +306,11 @@ def skeleton():
         part[height - shown:] = body[:shown]
         rng = random.Random(step)
         wobble = shear(part, lambda y: math.sin(step * 2.1) * 1.5 * (1 - up))
-        img = on_frame(BONES_FRAME, [(wobble, 0, 0)], round(24 * up))
+        img = on_frame(size, [(wobble, 0, 0)], round(shadow * up))
         d = ImageDraw.Draw(img)
         for _ in range(12):  # the dirt it pushes aside
-            x = BONES_FRAME[0] // 2 + rng.randint(-13, 13)
-            y = BONES_FRAME[1] - 3 + rng.randint(-2, 1)
+            x = size[0] // 2 + rng.randint(-13, 13)
+            y = size[1] - 3 + rng.randint(-2, 1)
             d.point((x, y), fill=(58, 44, 36, 255))
         return img
 
@@ -306,7 +330,7 @@ def skeleton():
         for part, drop, side, speed in pieces:
             k = min(1.0, t * t / speed)
             parts.append((part, round(side * k), round(drop * k)))
-        return on_frame(BONES_FRAME, parts, 24)
+        return on_frame(size, parts, shadow)
 
     tags = {
         "quieto": [idle(s) for s in range(4)],
@@ -315,8 +339,196 @@ def skeleton():
         "levanta": [rise(s) for s in range(10)],
         "muere": [fall(s) for s in range(9)],
     }
-    write("esqueleto", tags, BONES_FRAME, {"quieto": 220, "camina": 110, "ataca": 90, "levanta": 110, "muere": 90})
-    print("skeleton", body.shape, "bones", n)
+    write(name, tags, size, {"quieto": 220, "camina": 110, "ataca": 90, "levanta": 110, "muere": 90})
+    print(name, body.shape, "bones", n)
+
+
+# ---------------------------------------------------------------- Medusa
+
+MEDUSA_STEPS = 8
+# Where the arrow stands in the drawing, from the top, and the two sizes used:
+# box in the picture (px), frame and name.
+MEDUSAS = [
+    ((78, 208, 231, 373), (72, 72), "medusa"),
+    ((101, 83, 205, 195), (56, 52), "medusa_mini"),
+]
+ARROW_BACK = [0, 1, 2, 3, 3, -99, -99, -99]  # px it is pulled, -99: gone
+
+
+def best_offset(image, grid):
+    def spread(ox, oy):
+        h, w = (image.shape[0] - oy) // grid, (image.shape[1] - ox) // grid
+        cut = image[oy:oy + h * grid, ox:ox + w * grid].astype(float)
+        return cut.reshape(h, grid, w, grid, 3).std(axis=(1, 3)).mean()
+
+    return min(((ox, oy) for ox in range(grid) for oy in range(grid)), key=lambda o: spread(*o))
+
+
+def medusa(box, size, name):
+    image = np.asarray(Image.open(os.path.join(HERE, "medusa_original.png")).convert("RGB"))
+    ox, oy = best_offset(image, 3)
+    px = real_pixels("medusa_original.png", 3, ox=ox, oy=oy)
+    left, top, right, bottom = ((v - o) // 3 for v, o in zip(box, (ox, oy, ox, oy)))
+    part = px[top:bottom, left:right]
+    solid = np.abs(part.astype(int) - background(px)).sum(2) > 30
+    # She looks right in the picture: the game wants them all looking left
+    rgba = trimmed(np.dstack([part, solid * np.uint8(255)]))[:, ::-1]
+    height, width = rgba.shape[:2]
+    r, g, b = (rgba[..., i].astype(int) for i in range(3))
+    brown = (r > g) & (g > b) & (r < 150) & (rgba[..., 3] > 0)
+    row = int(np.argmax(brown[:, :width * 3 // 4].sum(axis=1)))
+    # The arrow: its row and the outline at each side, from the tip to the fletching
+    arrow = np.zeros(rgba.shape[:2], bool)
+    arrow[row - 1:row + 2] = rgba[row - 1:row + 2, :, 3] > 0
+    cols = np.nonzero(brown[row])[0]
+    arrow[:, :max(0, cols.min() - 3)] = False
+    arrow[:, cols.max() + 4:] = False
+    bare = rgba.copy()
+    bare[arrow] = 0
+    # What the arrow crossed goes on under it, where there is drawing at both sides
+    for x in np.nonzero(arrow.any(axis=0))[0]:
+        if rgba[row - 2, x, 3] and rgba[row + 2, x, 3]:
+            bare[row - 1:row + 2, x] = rgba[row - 2, x]
+    shaft = np.zeros_like(rgba)
+    shaft[arrow] = rgba[arrow]
+    body = padded(bare, 10)
+    shaft = padded(shaft, 10)
+    hair_to = height * 0.42
+    tail_from = height * 0.68
+
+    def pose(step, slither=1.0, back=0, lean=0.0):
+        phase = 2 * math.pi * step / MEDUSA_STEPS
+
+        def row_shift(y):
+            hair = 1.2 * max(0.0, 1 - y / hair_to) * math.sin(phase + y * 0.4)
+            tail = 2.0 * slither * max(0.0, (y - tail_from) / (height - tail_from)) * math.sin(phase * 2 + y * 0.5)
+            return hair + tail + lean * (1 - y / height)
+
+        moved = shear(body, row_shift)
+        parts = [(moved, 0, 0)]
+        if back > -50:
+            parts.append((shear(shaft, row_shift), back, 0))  # pulled away from where it looks
+        return parts
+
+    def drawn(step, **kwargs):
+        share = kwargs.pop("share", 0)
+        parts = pose(step, **kwargs)
+        if share:
+            parts = [(dissolved(p, share, 21, round(share * 6)), x, y) for p, x, y in parts]
+        return on_frame(size, parts, round(width * 0.6 * (1 - share)))
+
+    tags = {
+        "quieto": [drawn(s, slither=0.5) for s in range(MEDUSA_STEPS)],
+        "camina": [drawn(s, slither=1.6) for s in range(MEDUSA_STEPS)],
+        "dispara": [drawn(s, slither=0.3, back=ARROW_BACK[s], lean=-2.0 if ARROW_BACK[s] < 0 else 1.0) for s in range(MEDUSA_STEPS)],
+        "aparece": [drawn(s, share=1 - (s + 1) / MEDUSA_STEPS) for s in range(MEDUSA_STEPS)],
+        "muere": [drawn(s, share=(s + 1) / MEDUSA_STEPS) for s in range(MEDUSA_STEPS)],
+    }
+    write(name, tags, size, {"quieto": 130, "camina": 100, "dispara": 90, "aparece": 90, "muere": 110})
+    print(name, rgba.shape, "arrow row", row)
+
+
+def arrow():
+    """What the Medusas shoot, flying right: the game turns it."""
+    size = (20, 5)
+    img = Image.new("RGBA", size)
+    d = ImageDraw.Draw(img)
+    d.line((3, 2, 16, 2), fill=(92, 58, 34, 255))
+    d.line((3, 1, 15, 1), fill=(20, 14, 16, 255))
+    d.line((3, 3, 15, 3), fill=(20, 14, 16, 255))
+    d.polygon([(16, 0), (19, 2), (16, 4)], fill=(200, 208, 214, 255))
+    d.line((0, 1, 3, 1), fill=(214, 96, 40, 255))
+    d.line((0, 3, 3, 3), fill=(214, 96, 40, 255))
+    write("flecha", {"vuela": [img]}, size, {"vuela": 100})
+
+
+# ---------------------------------------------------------------- centaur
+
+CENTAUR_GRID = 1080 / 186  # the picture is a little blurred
+CENTAUR_BOX = (24, 26, 156, 154)  # left, top, right, bottom in real pixels, over the floor line
+CENTAUR_FRAME = (272, 148)
+CENTAUR_CANVAS = (256, 136)
+SPEAR_FROM = 134  # real pixel: from this column on, the spear (and the hand on it)
+BELLY = 0.72  # share of its height where the legs start
+WAIST = 0.46  # and where the man starts
+LEG_SPLITS = (0.32, 0.5, 0.67)  # share of its width between the four legs
+LEG_PHASE = (0.0, 0.3, 0.5, 0.8)  # of the gallop, hind to fore
+SPEAR_DOWN = [12, 38, 64, 90]  # degrees as it lowers it to charge
+
+
+def centaur():
+    px = real_pixels("centauro_original.png", CENTAUR_GRID, ox=2, oy=2)
+    left, top, right, bottom = CENTAUR_BOX
+    part = px[top:bottom, left:right]
+    solid = np.abs(part.astype(int) - background(px)).sum(2) > 34
+    r, b = part[..., 0].astype(int), part[..., 2].astype(int)
+    rgba = np.dstack([part, solid * np.uint8(255)])
+    cut_at = SPEAR_FROM - left
+    spear = np.zeros_like(rgba)
+    spear[:, cut_at:] = rgba[:, cut_at:]
+    skin = r - b > 60
+    spear[skin] = 0
+    body = rgba.copy()
+    body[:, cut_at:][~skin[:, cut_at:]] = 0
+    height, width = body.shape[:2]
+    waist, belly = int(height * WAIST), int(height * BELLY)
+    hand = (cut_at + 7, int(height * 0.42))
+    ox, oy = 30, CENTAUR_CANVAS[1] - height  # where the body goes on the canvas
+
+    def placed(layer, dx=0):
+        canvas = np.zeros((CENTAUR_CANVAS[1], CENTAUR_CANVAS[0], 4), np.uint8)
+        canvas[oy:oy + height, ox + dx:ox + dx + width] = layer
+        return canvas
+
+    upper = body.copy()
+    upper[belly + 2:] = 0
+    splits = [0] + [int(width * s) for s in LEG_SPLITS] + [width]
+    legs = []
+    for i in range(4):
+        leg = body.copy()
+        leg[:belly] = 0
+        leg[:, :splits[i]] = 0
+        leg[:, splits[i + 1]:] = 0
+        legs.append(leg)
+
+    def spear_at(angle, lean):
+        img = Image.fromarray(np.ascontiguousarray(placed(spear)), "RGBA")
+        centre = (ox + hand[0], oy + hand[1])
+        turned = img.rotate(-angle, resample=Image.NEAREST, center=centre)
+        if angle >= 80:  # held by a third of its length: more of it ahead
+            moved = Image.new("RGBA", img.size)
+            moved.alpha_composite(turned.crop((0, 0, img.width - 26, img.height)), (26, 0))
+            turned = moved
+        return shear(np.asarray(turned), lambda y: lean)
+
+    def pose(step, steps, stride, lean=0, bob=0, spear_angle=0):
+        phase = 2 * math.pi * step / steps
+        layers = [spear_at(spear_angle, lean)]
+        for leg, offset in zip(legs, LEG_PHASE):
+            swing = stride * math.sin(phase + offset * 2 * math.pi)
+            moved = shear(leg, lambda y: swing * max(0, y - belly) / (height - belly))
+            lift = round(max(0, -swing) * 0.3)
+            layers.append(placed(np.roll(moved, -lift, axis=0)))
+        torso = shear(upper, lambda y: lean * (1 - y / waist) if y < waist else 0)
+        layers.append(np.roll(placed(torso), -bob, axis=0))
+        img = Image.new("RGBA", (CENTAUR_CANVAS[0], CENTAUR_CANVAS[1]))
+        for layer in layers:
+            img.alpha_composite(Image.fromarray(np.ascontiguousarray(layer), "RGBA"))
+        return np.asarray(img)[:, ::-1]  # it looks right in the picture
+
+    def framed(canvas, share=0.0):
+        canvas = dissolved(canvas, share, 31, 0) if share else canvas
+        return on_frame(CENTAUR_FRAME, [(canvas, 0, 0)], round(100 * (1 - share)))
+
+    tags = {
+        "quieto": [framed(pose(s, 6, 0, bob=round(math.sin(s * math.pi / 3)))) for s in range(6)],
+        "camina": [framed(pose(s, 8, 5, bob=abs(round(math.sin(s * math.pi / 4))))) for s in range(8)],
+        "prepara": [framed(pose(0, 4, 0, lean=-3 + s, spear_angle=SPEAR_DOWN[s])) for s in range(4)],
+        "embiste": [framed(pose(s, 6, 12, lean=7, bob=2 * (s % 2), spear_angle=90)) for s in range(6)],
+        "muere": [framed(pose(0, 8, 0), (s + 1) / 8) for s in range(8)],
+    }
+    write("centauro", tags, CENTAUR_FRAME, {"quieto": 160, "camina": 110, "prepara": 140, "embiste": 70, "muere": 120})
+    print("centauro", rgba.shape)
 
 
 if __name__ == "__main__":
@@ -324,3 +536,8 @@ if __name__ == "__main__":
     spirit()
     thrown()
     skeleton()
+    wheel()
+    for box, size, name in MEDUSAS:
+        medusa(box, size, name)
+    arrow()
+    centaur()

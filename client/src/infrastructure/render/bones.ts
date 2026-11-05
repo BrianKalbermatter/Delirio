@@ -5,6 +5,7 @@
 import { Container, Sprite } from "pixi.js";
 import type { TileMap } from "../../domain/tile-map";
 import { MAZE_CELLS, random } from "../../domain/rocks";
+import type { Square } from "../../domain/square";
 import { placeFrame, type SpriteSheet } from "./sprite-sheet";
 
 const TILE = 32; // LAB_TILE
@@ -15,6 +16,9 @@ const CHANCE = 0.55; // cells with a heap...
 const SECOND_CHANCE = 0.2; // ...and with a second one
 const START_CLEAR = 200; // px around the spawn with nothing
 const HEAPS = 3; // the last frames of the skeleton's death: the bones landing
+const FOREST_HEAPS = 14; // in the dark forest of the square: the wheel skeleton gets up from them
+const FOREST_TRIES = 600;
+const FOREST_DEPTH = 80; // px inside the forest, at least
 
 export class BoneField {
   // Flat on the floor. The owner adds it to the world.
@@ -27,6 +31,24 @@ export class BoneField {
     private readonly map: TileMap,
     private readonly spawn: { x: number; y: number },
   ) {}
+
+  // Heaps in the forest of the square, told to `add`.
+  placeForest(square: Square, add: (x: number, y: number) => void): void {
+    const frames = this.sheet.animations.get("muere")!.slice(-HEAPS);
+    const rng = random(this.seed ^ 0x1b873593, 0, 0);
+    const { x: cornerX, y: cornerY, radius } = square.forest;
+    let placed = 0;
+    for (let t = 0; t < FOREST_TRIES && placed < FOREST_HEAPS; t++) {
+      const x = cornerX - rng() * radius;
+      const y = cornerY + rng() * radius;
+      if (square.forestDepth(x, y) < FOREST_DEPTH || !this.fits(x, y)) continue;
+      const sprite = new Sprite();
+      placeFrame(sprite, frames[placed % frames.length], x, y);
+      this.view.addChild(sprite);
+      add(Math.round(x), Math.round(y));
+      placed++;
+    }
+  }
 
   // Fills the cells carved since the last time.
   update(): void {

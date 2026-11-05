@@ -22,7 +22,7 @@
 #define SEGUNDO_MS 1000.0f
 
 // 1 = tiempos de prueba: dia de 10 s y noche de 10 s, para ver el mecanismo.
-// 0 = tiempos del juego: dia de 6 min (con su tarde) y noche de 16 min.
+// 0 = tiempos del juego: dia de 4 min (con su tarde) y noche de 6 min.
 #define TIEMPO_DE_PRUEBA 0
 
 // Duracion de cada fase, en milisegundos de juego (la pausa no cuenta).
@@ -35,12 +35,12 @@
 #define APERTURA_PUERTAS_MS  (2 * SEGUNDO_MS)  // y 2 s en abrirse
 #define PRIMERA_EXPANSION_MS (5 * SEGUNDO_MS)  // el laberinto crece a los 5 s de empezar
 #else
-#define DURACION_DIA_MS      (5 * MINUTO_MS)    // dia pleno...
-#define DURACION_TARDE_MS    (1 * MINUTO_MS)    // ...y la tarde: 6 min de luz
-#define DURACION_NOCHE_MS    (16 * MINUTO_MS)
-#define DURACION_AMANECER_MS (40 * SEGUNDO_MS)  // primeros segundos del dia: va aclarando
-#define CIERRE_PUERTAS_MS    (40 * SEGUNDO_MS)  // en la tarde, antes de la noche
-#define APERTURA_PUERTAS_MS  (20 * SEGUNDO_MS)
+#define DURACION_DIA_MS      (3 * MINUTO_MS)    // dia pleno...
+#define DURACION_TARDE_MS    (1 * MINUTO_MS)    // ...y la tarde: 4 min de luz
+#define DURACION_NOCHE_MS    (6 * MINUTO_MS)
+#define DURACION_AMANECER_MS (20 * SEGUNDO_MS)  // primeros segundos del dia: va aclarando
+#define CIERRE_PUERTAS_MS    (30 * SEGUNDO_MS)  // en la tarde, antes de la noche
+#define APERTURA_PUERTAS_MS  (15 * SEGUNDO_MS)
 #define PRIMERA_EXPANSION_MS (30 * SEGUNDO_MS) // el laberinto crece a los 30 segundos de empezar
 #endif
 #define DIAS_DE_CRECIMIENTO 6          // despues crece cada anochecer, hasta el dia 6

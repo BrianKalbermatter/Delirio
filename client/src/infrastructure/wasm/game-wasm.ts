@@ -85,7 +85,7 @@ export interface PlayerStats {
 export const MOOD = ["DEAMBULA", "ACECHA", "ATACA", "HUYE", "CHARLA"] as const;
 
 // What it is, same order as `enum tipo_enemigo` in src/mecanicas/enemigos.h.
-export const ENEMY_KIND = ["spartan", "ghost", "spirit", "skeleton", "bonfire"] as const;
+export const ENEMY_KIND = ["spartan", "ghost", "spirit", "skeleton", "bonfire", "medusa", "mini_medusa", "wheel", "centaur"] as const;
 
 // A spawner (src/mecanicas/enemigos.c), by the circle that dances around it.
 export interface Bonfire {
@@ -97,10 +97,13 @@ export interface Bonfire {
   hitMs: number; // > 0 right after being hit
 }
 
-// What a spirit threw, in the air.
+// What a spirit threw or a Medusa shot, in the air.
 export interface Shot {
   x: number; // over this point of the floor
   y: number;
+  dirX: number; // where it flies (unit)
+  dirY: number;
+  arrow: boolean; // a Medusa's
 }
 
 // An enemy (src/mecanicas/enemigos.c), by its slot in C's list.
@@ -233,8 +236,6 @@ export interface GameWasm {
   maze: MazeInfo;
   setTarget(worldX: number, worldY: number): void;
   update(dtMs: number): void;
-  // Testing aid: multiplies the speed of the clock only (1 = normal).
-  setTimeSpeed(factor: number): void;
   // Testing aid: clock 15 s before the gates start closing (normal speed),
   // player in front of the top gate.
   testGates(): void;
@@ -276,6 +277,7 @@ export interface GameWasm {
   // Whether the player holds a shield: covering, it can walk (slowly).
   setShield(held: boolean): void;
   setArmor(worn: boolean): void; // without it one hit kills
+  addForestBones(x: number, y: number): void; // the wheel skeleton gets up from these
   teleport(x: number, y: number): void;
   // Spends a level point on an UPGRADE. False if none left or it is maxed.
   upgrade(id: number): boolean;
@@ -331,6 +333,9 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const shotActive = num("web_tiro_activo", 1);
   const shotX = num("web_tiro_x", 1);
   const shotY = num("web_tiro_y", 1);
+  const shotDirX = num("web_tiro_dir_x", 1);
+  const shotDirY = num("web_tiro_dir_y", 1);
+  const shotArrow = num("web_tiro_flecha", 1);
   const sheepX = num("web_oveja_x", 1);
   const sheepY = num("web_oveja_y", 1);
   const sheepDirX = num("web_oveja_dir_x", 1);
@@ -489,7 +494,6 @@ export async function loadGameWasm(): Promise<GameWasm> {
     },
     setTarget,
     update,
-    setTimeSpeed: call("web_velocidad_tiempo", 1),
     testGates: call("web_prueba_puertas", 0),
     throwSpear: (dirX, dirY, force, dryRun = false) => {
       const enemy = spear(dirX, dirY, force, dryRun ? 1 : 0);
@@ -560,7 +564,9 @@ export async function loadGameWasm(): Promise<GameWasm> {
       })),
     shots: () => {
       const list: Shot[] = [];
-      for (let i = 0; i < shotMax; i++) if (shotActive(i)) list.push({ x: shotX(i), y: shotY(i) });
+      for (let i = 0; i < shotMax; i++) {
+        if (shotActive(i)) list.push({ x: shotX(i), y: shotY(i), dirX: shotDirX(i), dirY: shotDirY(i), arrow: shotArrow(i) === 1 });
+      }
       return list;
     },
     bonfiresOut: num("web_hogueras_apagadas", 0),
@@ -617,6 +623,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
     upgrade: (id) => upgrade(id) === 1,
     setShield: (held) => shield(held ? 1 : 0),
     setArmor: (worn) => armor(worn ? 1 : 0),
+    addForestBones: call("web_hueso_bosque", 2),
     teleport: call("web_teletransportar", 2),
     loadGame: call("web_cargar_partida", 3),
     clockMs: num("web_reloj_ms_total", 0),

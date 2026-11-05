@@ -83,6 +83,7 @@ import { DOLL_HEIGHT, DOLL_SCALE, DOLL_WIDTH, InventoryPanel } from "./infrastru
 import { GameLog } from "./infrastructure/ui/game-log";
 import { SideTabs } from "./infrastructure/ui/side-tabs";
 import { MapBook } from "./infrastructure/ui/map-book";
+import { type Mark, Minimap } from "./infrastructure/ui/minimap";
 import { ShrineMenu } from "./infrastructure/ui/shrine-menu";
 import { PauseMenu } from "./infrastructure/ui/pause-menu";
 import {
@@ -214,9 +215,6 @@ type Hand = "rightHand" | "leftHand";
 const HANDS: Hand[] = ["rightHand", "leftHand"];
 const GROWTH_BANNER_MS = 2500; // "the maze grows" message on screen
 const DEATH_BANNER_MS = 3000;
-// Testing aid: F cycles the clock speed, to see dusk and night without waiting
-// half an hour. Only the clock goes faster, not the movement.
-const TIME_SPEEDS = [1, 60, 600];
 
 const gameEl = document.getElementById("game")!;
 const panelEl = document.getElementById("panel")!;
@@ -271,6 +269,11 @@ const [
   spiritSheet,
   skeletonSheet,
   spiritShotSheet,
+  medusaSheet,
+  miniMedusaSheet,
+  wheelSheet,
+  centaurSheet,
+  arrowSheet,
   shrineSheet,
   treeImage,
   treeShadowImage,
@@ -325,6 +328,13 @@ const [
   loadSpriteSheet(`${BASE}sprites/espiritu`),
   loadSpriteSheet(`${BASE}sprites/esqueleto`),
   loadSpriteSheet(`${BASE}sprites/espiritu_tiro`),
+  // Medusa, her little ones, the arrow, and the wheel skeleton of the forest
+  // (art/espectros.py).
+  loadSpriteSheet(`${BASE}sprites/medusa`),
+  loadSpriteSheet(`${BASE}sprites/medusa_mini`),
+  loadSpriteSheet(`${BASE}sprites/rueda`),
+  loadSpriteSheet(`${BASE}sprites/centauro`),
+  loadSpriteSheet(`${BASE}sprites/flecha`),
   // The shrines (art/santuarios.py).
   loadSpriteSheet(`${BASE}sprites/santuarios`),
   // The trees of the square with their shadows, and the stones and tufts at
@@ -420,7 +430,6 @@ const enemiesAlive = new Set<number>();
 let enemyAnimMs = 0; // game time the enemies' animations have to catch up on
 let seenAutoAttacks = 0; // swings C made on its own (an enemy got too close)
 let deathBannerMs = 0;
-let timeSpeed = 1;
 syncMaze();
 const pitBox = game.maze.pit();
 map.fillPit(pitBox, game.maze.isPit);
@@ -638,11 +647,17 @@ const spectreViews = new SpectreViews(standing, {
   spirit: spiritSheet,
   skeleton: skeletonSheet,
   shot: spiritShotSheet,
+  medusa: medusaSheet,
+  mini_medusa: miniMedusaSheet,
+  wheel: wheelSheet,
+  centaur: centaurSheet,
+  arrow: arrowSheet,
 });
 const bonfireViews = new BonfireViews(bonfireSheet, standing);
 const shrineViews = new ShrineViews(shrines, shrineSheet, standing, game.maze, savedWorld?.shrines ?? []);
 const boneField = new BoneField(seed, skeletonSheet, map, baseSpawn);
 boneField.update();
+boneField.placeForest(square, game.addForestBones);
 const targetMarker = new TargetMarker();
 const sunShadow = new Sprite({ tint: 0x000000 });
 // The white ring under the enemy the player swings at on its own.
@@ -687,6 +702,7 @@ window.addEventListener("resize", () => {
   levelWave.resize(canvas.width, canvas.height);
   cursor.setScale(screenScale);
   book.setScale(screenScale);
+  minimap.setScale(screenScale);
 });
 
 function fitCanvas(): void {
@@ -814,6 +830,8 @@ const book = new MapBook(gameEl);
 book.setScale(screenScale);
 mouse.addPressSurface(book.element);
 const shrineMenu = new ShrineMenu(gameEl, shrineSheet, travelTo);
+const minimap = new Minimap(gameEl, map, square, savedWorld?.discovered ?? []);
+minimap.setScale(screenScale);
 
 // Abilities go straight to C. Held ones (run with Shift, block with the right
 // button) are sent on press and release.
@@ -1629,6 +1647,7 @@ function snapshotWorld(): SavedWorld {
     rocks: { broken: rockField.brokenIds, loose: LOOSE_VERSION },
     felledTrees: treeViews.felledIds,
     shrines: shrineViews.awakeIds,
+    discovered: minimap.foundKeys,
     structures: structures.map((s) => ({ id: s.item.id, x: s.x, y: s.y })),
     x: p.x,
     y: p.y,
@@ -1677,7 +1696,7 @@ function kickUpDust(dtMs: number): void {
   for (const e of game.enemies()) {
     const key = `enemy${e.slot}`;
     seen.add(key);
-    const walks = (e.kind === "spartan" || e.kind === "skeleton") && !e.lying;
+    const walks = (e.kind === "spartan" || e.kind === "skeleton" || e.kind === "wheel") && !e.lying;
     dust.track(key, e.x, e.y, walks && STATE[e.state] !== "MUERTO" && e.pinned === null && e.bush < 0, dtMs);
   }
   dust.keep(seen);
@@ -1705,6 +1724,7 @@ function draw(): void {
   spectreViews.show(enemies.filter((e) => e.kind !== "spartan" && e.kind !== "bonfire"), game.shots(), enemyAnimMs);
   bonfireViews.update(enemyAnimMs, game.bonfires(), view, worldToScreen, game.clock().daylight);
   shrineViews.update(enemyAnimMs, worldToScreen);
+  showMinimap(enemies);
   showFocusRing(enemies, cover);
   enemyAnimMs = 0;
   targetMarker.show(target, performance.now());
@@ -1747,7 +1767,7 @@ function draw(): void {
   showAbilityEffects();
   levelWave.show(worldToScreen);
   hud.showHurtFlash();
-  hud.showClock(game.clock(), gateOpening, timeSpeed, canvas.width, performance.now());
+  hud.showClock(game.clock(), gateOpening, canvas.width, performance.now());
   hud.showMoonClock(game.calendar().frame);
   hud.showBanners(growthBannerMs, deathBannerMs, DEATH_BANNER_MS, canvas.width, canvas.height);
   const boss = bossInFight >= 0 ? enemies.find((e) => e.slot === bossInFight && e.life > 0) : undefined;
@@ -1765,7 +1785,7 @@ function showControlsHint(root: HTMLElement): void {
   const hint = document.createElement("p");
   hint.className = "hint";
   hint.textContent =
-    "W A S D: move · Right button: cover (with a shield you walk slowly) · Spear in the right hand: hold the left button to aim (the bar under the feet charges: the fuller, the further), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · E on a shrine: wake it up, or pick one awake to travel to · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Next to an enemy: swings at it on its own, one at a time (white ring) · C: support · V: parry · Space: jump (twice in the air with the double jump, Skills tab) · R: punch the ground · F: clock speed · G: test gates · Esc: menu";
+    "W A S D: move · Right button: cover (with a shield you walk slowly) · Spear in the right hand: hold the left button to aim (the bar under the feet charges: the fuller, the further), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · E on a shrine: wake it up, or pick one awake to travel to · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Next to an enemy: swings at it on its own, one at a time (white ring) · C: support · V: parry · Space: jump (twice in the air with the double jump, Skills tab) · R: punch the ground · G: test gates · Esc: menu";
   root.appendChild(hint);
 }
 
@@ -2095,6 +2115,22 @@ function useShrine(): boolean {
   return true;
 }
 
+// The places on the minimap: shrines, bonfires and the bosses alive.
+function minimapMarks(enemies: EnemyState[]): Mark[] {
+  const marks: Mark[] = shrines.map((s) => ({ key: `shrine${s.id}`, kind: shrineViews.isAwake(s.id) ? "shrine" : "shrine_asleep", x: s.x, y: s.y }));
+  game.bonfires().forEach((b, i) => marks.push({ key: `bonfire${i}`, kind: b.out ? "bonfire_out" : "bonfire", x: b.x, y: b.y }));
+  for (const e of enemies) {
+    if (e.boss && STATE[e.state] !== "MUERTO") marks.push({ key: `boss${e.boss}`, kind: "boss", x: e.x, y: e.y });
+  }
+  return marks;
+}
+
+function showMinimap(enemies: EnemyState[]): void {
+  const hunters = enemies.filter((e) => e.kind !== "bonfire" && !e.lying && !e.boss && STATE[e.state] !== "MUERTO");
+  const view = { halfW: canvas.width / 2, halfH: canvas.height / 2 };
+  if (minimap.update(enemyAnimMs, player, view, minimapMarks(enemies), hunters)) saveGame();
+}
+
 function travelTo(shrine: Shrine): void {
   game.teleport(shrine.x, shrine.y + SHRINE_ARRIVAL);
   camera.x = shrine.x;
@@ -2322,17 +2358,11 @@ window.addEventListener("keydown", (e) => {
   }
   if (e.code === "KeyG") {
     game.testGates();
-    timeSpeed = 1;
     target = null;
     player.sync(coreState(), 0);
     camera.x = player.x; // jump there instead of sliding across the square
     camera.y = playerCenterY();
     gameLog.log("Test: the gates are about to close.");
-  }
-  if (e.code === "KeyF") {
-    timeSpeed = TIME_SPEEDS[(TIME_SPEEDS.indexOf(timeSpeed) + 1) % TIME_SPEEDS.length];
-    game.setTimeSpeed(timeSpeed);
-    gameLog.log(`Clock speed x${timeSpeed}`);
   }
   if (e.code === "KeyX" && mouse.locked) dropItem(inventory.selected);
   const digit = /^Digit([1-9])$/.exec(e.code);
