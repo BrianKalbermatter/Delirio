@@ -22,6 +22,7 @@ export interface SavedWorld {
   seed: number;
   clockMs: number;
   bossesDefeated: number; // bits 1 << zone (ZONE in game-wasm.ts): they stay dead
+  bonfiresOut: number; // bits, one per bonfire: they stay broken
   // The big rocks broken (ids from domain/rocks.ts). Missing in a save from
   // before the rocks: then the pebbles are placed on load.
   // `loose`: the version of the loose pebbles and branches already placed.
@@ -55,6 +56,7 @@ export function loadWorld(characterId: string): SavedWorld | null {
       seed: saved.seed!,
       clockMs: saved.clockMs!,
       bossesDefeated: Number.isInteger(saved.bossesDefeated) ? saved.bossesDefeated! : 0,
+      bonfiresOut: Number.isInteger(saved.bonfiresOut) ? saved.bonfiresOut! : 0,
       rocks: Array.isArray(saved.rocks?.broken)
         ? { broken: saved.rocks.broken.filter(Number.isInteger), loose: Number(saved.rocks.loose) || 1 }
         : undefined,

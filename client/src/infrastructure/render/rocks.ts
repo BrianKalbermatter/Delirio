@@ -40,6 +40,8 @@ interface Chip {
   color: number;
 }
 
+const BONFIRE_CLEAR = 120; // px around a bonfire: its circle of dancers
+
 export class RockField {
   // Pieces flying off on a hit, over the rocks.
   readonly chips = new Graphics();
@@ -56,6 +58,8 @@ export class RockField {
     private readonly map: TileMap,
     private readonly maze: MazeInfo,
     broken: number[],
+    // Nothing lies where one dances around a bonfire.
+    private readonly bonfires: () => { x: number; y: number }[],
   ) {
     this.plan = planRocks(seed);
     this.broken = new Set(broken);
@@ -175,9 +179,10 @@ export class RockField {
     placeFrame(view.sprite, frame, view.rock.x + dx, view.rock.y);
   }
 
-  // Floor around (x, y): not a wall, not lava, not the pit.
+  // Floor around (x, y): not a wall, not lava, not the pit, not a bonfire's.
   private fits(x: number, y: number): boolean {
     const t = this.map.tileSize;
+    if (this.bonfires().some((b) => Math.hypot(b.x - x, b.y - y) < BONFIRE_CLEAR)) return false;
     for (const [px, py] of [
       [x - 12, y - 12],
       [x + 12, y - 12],

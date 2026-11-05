@@ -3,9 +3,9 @@
 #include <math.h>
 #include <stdio.h>
 
-// Sueltos a la vez: los que deambulan (y cazan en manada) alrededor del
-// jugador. Los de las rondas van aparte.
-#define ENEMIGOS_ERRANTES 40
+// Sueltos a la vez: los que salen de las hogueras a deambular (y a cazar en
+// manada). Los de las rondas van aparte.
+#define ENEMIGOS_ERRANTES 14
 
 #define VIDA_ENEMIGO 30
 #define DANIO_ENEMIGO 6
@@ -30,30 +30,80 @@
 #define CLAVADO_MS 20000.0f // cuanto queda clavado al muro antes de desaparecer
 #define LANZA_ESPALDA 9.0f  // de sus pies a la cara del muro (art/enemigo1.py SPEAR)
 #define LANZA_ANCHO 16.0f   // a esta distancia de la linea del vuelo le da
-#define REAPARECE_MS 6000.0f
-// Aparecen en un anillo alrededor del jugador, fuera de su pantalla...
+// Cuantos sueltos andan a la vez y cada cuanto sale uno de una hoguera, de
+// pleno dia y con la noche cerrada: cuanto mas oscuro, mas y mas seguido.
+#define SUELTOS_DE_DIA 3
+#define SUELTOS_DE_NOCHE ENEMIGOS_ERRANTES
+#define SALIDA_DIA_MS 60000.0f
+#define SALIDA_NOCHE_MS 9000.0f
+#define SALIDA_PRIMERA_MS 20000.0f // el primero, al empezar la partida
+#define SALIDA_SIN_LUGAR_MS 4000.0f // no habia hoguera fuera de la vista: prueba de nuevo
+// Salen de una hoguera fuera de la pantalla del jugador...
 #define APARECE_DESDE 480.0f
-#define APARECE_HASTA 1150.0f
-// ...y los que deambulan mas lejos que esto vuelven a aparecer cerca suyo.
+// ...y los que deambulan mas lejos que esto vuelven a salir de la mas cercana.
 #define DEMASIADO_LEJOS 1700.0f
 #define RECICLA_POR_PASO 4 // cuantos como mucho por paso, para no hacerlo de golpe
 #define TIRA_A_LA_PLAZA 55 // % de los rumbos que van hacia la plaza (desde afuera)
+// El primer dia casi nadie entra: tiran poco para la plaza y, de los que llegan
+// a una puerta abierta, se cuelan unos pocos en todo el dia.
+#define TIRA_EN_TREGUA 12
+#define COLADOS_MAX 2
+#define COLARSE_POR_100 4  // cada vez que uno empuja la puerta
 
 // Manadas: cuantas y de cuantos (salen de los ENEMIGOS_ERRANTES).
-#define MANADAS 4
+#define MANADAS 1
 #define MANADA_SEPARACION 34.0f // a cuanto del que manda camina cada uno
 #define MANADA_LEJOS 420.0f     // mas lejos que esto del que manda, se le junta
 #define RASTREO 950.0f          // el que manda caza al jugador si esta a menos que esto...
 #define CAZA 50                 // ...en este % de sus rumbos
 
-// Rondas: cuantas en la plaza y en el laberinto, y como son.
-#define RONDAS_PLAZA 0      // en la plaza no hay: es la base del jugador
+// Rondas: cuantas al empezar y como son. En la plaza no hay: es la base.
 #define RONDAS_LABERINTO 6
-#define RONDA_RADIO 46.0f       // radio del circulo en el que se paran
-#define VISION_CHARLA 140.0f    // charlando ven poco: se los puede sorprender
+#define EMBRUJADA_CADA 3        // una de cada tantas la bailan fantasmas y espiritus
+#define RONDA_MIN 3             // bailan pocos: de RONDA_MIN a RONDA_MAX
+#define RONDA_RADIO 72.0f       // radio del circulo en el que bailan
+#define BAILE_GIRO 0.8f         // radianes por segundo que gira el circulo
+#define BAILE_VEL 100.0f        // lo que corre cada uno para no perder su lugar
+#define VISION_CHARLA 170.0f    // bailando ven poco: se los puede sorprender
 #define CALMA_MS 6000.0f        // deambulando sin verlo este tiempo, vuelven a la ronda
 #define VUELTA_MAX_MS 15000.0f  // si no llegan en este tiempo (y nadie mira), aparecen ahi
-#define REAPARECE_RONDA_MS 45000.0f // un muerto de la ronda vuelve tanto despues
+#define REAPARECE_RONDA_MS 90000.0f // un muerto de la ronda vuelve tanto despues...
+#define RONDA_NOCHE 3.0f            // ...y con la noche cerrada, tantas veces mas rapido
+
+// La hoguera
+#define VIDA_HOGUERA 200
+#define HOGUERA_CUERPO 26.0f     // radio, para que los golpes la alcancen
+#define HOGUERA_ANCHO 56.0f      // su caja solida, centrada en la pila de huesos
+#define HOGUERA_ALTO 26.0f
+#define LANZA_DANIO_HOGUERA 40
+#define LANZA_CAE_HOGUERA 36.0f  // la lanza rebota: cae a esta distancia, afuera de la caja
+#define MONEDAS_HOGUERA 6
+
+// Los que no son espartanos
+#define VIDA_FANTASMA 30
+#define DANIO_FANTASMA 5
+#define VIDA_ESPIRITU 18
+#define VIDA_ESQUELETO 40
+#define DANIO_ESQUELETO 8
+#define VEL_ESQUELETO 58.0f
+#define ESQUELETO_VE 420.0f      // despierto ve mas lejos que un espartano
+#define ESQUELETO_RITMO_MS 1300.0f // entre golpe y golpe
+#define ESQUELETO_GOLPE_MS 360.0f // lo que se ve el golpe (4 frames de 90 ms)
+#define ESQUELETO_POR_100 30     // de cada 100 espartanos muertos, los que se levantan
+#define APARECE_MS 720.0f        // la animacion de aparecer (8 frames de 90 ms)
+#define LEVANTA_MS 1100.0f       // la de levantarse (10 de 110 ms)
+#define FANTASMA_POR_100 60      // de cada 100 sueltos, fantasmas (el resto, espiritus)
+
+// El espiritu se queda a esta distancia y tira
+#define TIRO_CERCA 150.0f
+#define TIRO_LEJOS 240.0f
+#define TIRO_RITMO_MS 2600.0f
+#define TIRO_PREPARA_MS 720.0f   // la animacion de lanzar (8 frames de 90 ms)...
+#define TIRO_SALE_MS 360.0f      // ...y le queda esto cuando sale la sombra
+#define TIRO_VEL 190.0f
+#define TIRO_VUELO_MS 2200.0f
+#define TIRO_DANIO 7
+#define TIRO_RADIO 16.0f
 
 // Arbustos
 // Con HAY_ARBUSTOS en 0 no hay ninguno: nadie se esconde y la mecanica queda
@@ -73,8 +123,8 @@
 #define DELATADO_MS 1000.0f     // pegar desde un arbusto lo deja a la vista
 #define LEJOS_DE_LA_BASE 650.0f // nada de rondas ni arbustos tan cerca del inicio
 
-_Static_assert(RONDAS_MAX * RONDA_MAX + ENEMIGOS_ERRANTES <= ENEMIGOS_MAX, "no entran todos en la lista");
-_Static_assert(RONDAS_PLAZA + RONDAS_LABERINTO <= RONDAS_MAX, "demasiadas rondas");
+_Static_assert(RONDAS_MAX * RONDA_MAX + ENEMIGOS_ERRANTES + RONDAS_MAX + JEFES <= ENEMIGOS_MAX, "no entran todos en la lista");
+_Static_assert(RONDAS_LABERINTO + LAB_EXPANSIONES <= RONDAS_MAX, "demasiadas rondas");
 _Static_assert(MANADAS <= MANADAS_MAX && MANADAS * MANADA_MAX <= ENEMIGOS_ERRANTES, "demasiadas manadas");
 
 // ---------------------------------------------------------------- azar
@@ -177,23 +227,6 @@ static int lugar_al_azar(Enemigos *e, const Laberinto *lab, int en_la_plaza, int
   return 1;
 }
 
-// Un lugar de piso (laberinto o plaza) en el anillo alrededor del jugador.
-// Devuelve 0 si no encontro (prueba un numero limitado de veces).
-static int buscar_lugar(Enemigos *e, const Laberinto *lab, Direccion jugador, Direccion *lugar){
-  for (int intento = 0; intento < 60; intento++){
-    Direccion d = girar((Direccion){1, 0}, entre(e, 0, 360));
-    float r = entre(e, APARECE_DESDE, APARECE_HASTA);
-    Direccion p = {jugador.x + d.x * r, jugador.y + d.y * r};
-    if (p.x < 0 || p.y < 0) continue;
-    int col = (int)(p.x / LAB_TILE);
-    int fila = (int)(p.y / LAB_TILE);
-    if (en_plaza(col, fila) || !lugar_libre(lab, col, fila)) continue; // en la plaza nunca nace nadie
-    *lugar = centro_de_tile(col, fila);
-    return 1;
-  }
-  return 0;
-}
-
 // ---------------------------------------------------------------- grupos
 
 static int vivo(const Enemigo *en){ return en->activo && en->entidad.estados != MUERTO; }
@@ -207,9 +240,14 @@ static int lider(const Enemigos *e, int m){
   return -1;
 }
 
-// Donde se para el que tiene el asiento `asiento` en la ronda.
+// 1 si `en` tiene una ronda a la que volver (la hoguera sigue encendida).
+static int con_ronda(const Enemigos *e, const Enemigo *en){
+  return en->ronda >= 0 && !e->rondas[en->ronda].apagada;
+}
+
+// Donde va el que tiene el asiento `asiento` en la ronda, que gira.
 static Direccion asiento(const Ronda *r, int asiento){
-  float a = 2.0f * 3.14159265f * asiento / r->cant;
+  float a = r->giro + 2.0f * 3.14159265f * asiento / r->cant;
   return (Direccion){r->centro.x + cosf(a) * RONDA_RADIO, r->centro.y + sinf(a) * RONDA_RADIO};
 }
 
@@ -282,6 +320,7 @@ static int hueco_jefe(Zona z){ return ENEMIGOS_MAX - JEFES + (z - 1); }
 // Lo que ocupa su cuerpo mas alla de los pies (para que el jugador y la
 // lanza lo alcancen aunque sea grande). 0 en los comunes.
 static float cuerpo(const Enemigo *en){
+  if (en->tipo == ENEMIGO_HOGUERA) return HOGUERA_CUERPO;
   return en->jefe ? JEFE_RADIO * JEFE[en->jefe].escala : 0.0f;
 }
 
@@ -417,7 +456,6 @@ static void nacer(Enemigos *e, Enemigo *en, Direccion lugar, Animo animo){
   en->entidad.estados = QUIETO;
   en->mira = (Direccion){0, 1};
   en->lado = (siguiente(e) & 1) ? 1 : -1;
-  en->ajuste_ms = entre(e, 0, 3000.0f);
   en->botin = elegir_botin(e);
   en->monedas = 1 + (int)(siguiente(e) % 3);
   en->arma = elegir_arma(e);
@@ -426,11 +464,31 @@ static void nacer(Enemigos *e, Enemigo *en, Direccion lugar, Animo animo){
   cambiar_animo(en, animo);
 }
 
-// En su lugar de la ronda, charlando.
+// Lo convierte en algo que no es un espartano: sin arma ni botin, y aparece
+// de a poco.
+static void volverse(Enemigos *e, Enemigo *en, TipoEnemigo tipo){
+  en->tipo = tipo;
+  en->arma = ARMA_NINGUNA;
+  en->suelta_arma = 0;
+  en->botin = BOTIN_NADA;
+  en->monedas = 1;
+  en->naciendo_ms = tipo == ENEMIGO_ESQUELETO ? LEVANTA_MS : APARECE_MS;
+  en->tiro_ms = entre(e, 800.0f, TIRO_RITMO_MS);
+  int vida = tipo == ENEMIGO_FANTASMA ? VIDA_FANTASMA : tipo == ENEMIGO_ESPIRITU ? VIDA_ESPIRITU : VIDA_ESQUELETO;
+  en->entidad.vidaMAX = en->entidad.vida = vida;
+  en->entidad.danio = tipo == ENEMIGO_ESQUELETO ? DANIO_ESQUELETO : DANIO_FANTASMA;
+}
+
+static TipoEnemigo tipo_suelto(Enemigos *e){
+  return (int)(siguiente(e) % 100) < FANTASMA_POR_100 ? ENEMIGO_FANTASMA : ENEMIGO_ESPIRITU;
+}
+
+// En su lugar de la ronda, bailando.
 static void sentar(Enemigos *e, Enemigo *en){
   Ronda *r = &e->rondas[en->ronda];
   nacer(e, en, asiento(r, en->asiento), ANIMO_CHARLA);
   en->mira = unitario((Direccion){r->centro.x - en->entidad.posicion.x, r->centro.y - en->entidad.posicion.y});
+  if (r->embrujada) volverse(e, en, en->asiento % 2 ? ENEMIGO_ESPIRITU : ENEMIGO_FANTASMA);
 }
 
 // Casi encima del que manda (lo mueve sin hacerlo nacer de nuevo). Bien
@@ -440,27 +498,54 @@ static void juntar_con_lider(Enemigo *en, const Enemigo *jefe, int rango){
   en->entidad.posicion = (Direccion){jefe->entidad.posicion.x + d.x, jefe->entidad.posicion.y + d.y};
 }
 
-static void aparecer(Enemigos *e, Enemigo *en, const Laberinto *lab, Direccion jugador){
-  // Uno de una manada, si el que manda esta lejos de la vista: al lado suyo
-  if (en->manada >= 0){
-    int jefe = lider(e, en->manada);
-    if (jefe >= 0 && &e->lista[jefe] != en && distancia(e->lista[jefe].entidad.posicion, jugador) > APARECE_DESDE){
-      nacer(e, en, e->lista[jefe].entidad.posicion, ANIMO_DEAMBULA);
-      return;
+// La hoguera encendida mas cercana a `cerca_de` y fuera de la vista del
+// jugador. -1 si no hay ninguna.
+static int hoguera_mas_cercana(const Enemigos *e, Direccion cerca_de, Direccion jugador){
+  int mejor = -1;
+  float mejor_d = 0;
+  for (int k = 0; k < e->cant_rondas; k++){
+    const Ronda *r = &e->rondas[k];
+    if (r->apagada || distancia(r->centro, jugador) < APARECE_DESDE) continue;
+    float d = distancia(r->centro, cerca_de);
+    if (mejor < 0 || d < mejor_d){
+      mejor = k;
+      mejor_d = d;
     }
   }
-  Direccion lugar;
-  int hallado = buscar_lugar(e, lab, jugador, &lugar);
-  // El jugador en la plaza: el anillo alrededor cae casi todo adentro. Nace
-  // en cualquier lugar del laberinto, fuera de su vista.
-  for (int intento = 0; !hallado && intento < 60; intento++){
-    hallado = lugar_al_azar(e, lab, 0, 1, &lugar) && distancia(lugar, jugador) > APARECE_DESDE;
+  return mejor;
+}
+
+// Sale de la hoguera mas cercana al jugador. Sin hogueras no sale nadie:
+// devuelve 0.
+static int aparecer(Enemigos *e, Enemigo *en, const Laberinto *lab, Direccion jugador){
+  int k = hoguera_mas_cercana(e, jugador, jugador);
+  for (int intento = 0; k >= 0 && intento < 24; intento++){
+    Direccion d = girar((Direccion){RONDA_RADIO + 16.0f, 0}, entre(e, 0, 360));
+    Direccion lugar = {e->rondas[k].centro.x + d.x, e->rondas[k].centro.y + d.y};
+    if (!lugar_libre(lab, (int)(lugar.x / LAB_TILE), (int)(lugar.y / LAB_TILE))) continue;
+    nacer(e, en, lugar, ANIMO_DEAMBULA);
+    volverse(e, en, en->manada >= 0 ? ENEMIGO_FANTASMA : tipo_suelto(e));
+    return 1;
   }
-  if (!hallado){
-    en->reaparece_ms = 2000.0f; // probar de nuevo en un rato
+  return 0;
+}
+
+// Cuantos sueltos pueden andar ahora.
+static int sueltos_permitidos(const Enemigos *e){
+  return SUELTOS_DE_DIA + (int)((SUELTOS_DE_NOCHE - SUELTOS_DE_DIA) * e->noche);
+}
+
+// Cada tanto sale otro de una hoguera, si faltan.
+static void soltar(Enemigos *e, const Laberinto *lab, Direccion jugador, float dt_ms){
+  e->salida_ms -= dt_ms;
+  if (e->salida_ms > 0 || e->sueltos >= sueltos_permitidos(e)) return;
+  int desde = RONDAS_MAX * RONDA_MAX;
+  for (int i = desde; i < desde + ENEMIGOS_ERRANTES; i++){
+    if (e->lista[i].activo) continue;
+    int salio = aparecer(e, &e->lista[i], lab, jugador);
+    e->salida_ms = salio ? SALIDA_DIA_MS + (SALIDA_NOCHE_MS - SALIDA_DIA_MS) * e->noche : SALIDA_SIN_LUGAR_MS;
     return;
   }
-  nacer(e, en, lugar, ANIMO_DEAMBULA);
 }
 
 // Toda la ronda o la manada de `en` se pone a acechar (los que estaban en
@@ -485,36 +570,104 @@ static void alertar_grupo(Enemigos *e, const Enemigo *en){
 
 // ---------------------------------------------------------------- iniciar
 
-static void poner_rondas(Enemigos *e, const Laberinto *lab, Direccion base, int *hueco){
-  for (int n = 0; n < RONDAS_PLAZA + RONDAS_LABERINTO; n++){
-    int en_la_plaza = n < RONDAS_PLAZA;
-    float minimo = en_la_plaza ? LEJOS_DE_LA_BASE : 2 * LEJOS_DE_LA_BASE;
-    Direccion centro;
-    int hallado = 0;
-    for (int intento = 0; intento < 800 && !hallado; intento++){
-      if (!lugar_al_azar(e, lab, en_la_plaza, 3, &centro)) continue;
-      if (distancia(centro, base) < minimo) continue;
-      hallado = 1;
-      for (int k = 0; k < e->cant_rondas; k++){
-        if (distancia(centro, e->rondas[k].centro) < 700.0f) hallado = 0;
-      }
-    }
-    if (!hallado) continue;
-    Ronda *r = &e->rondas[e->cant_rondas];
-    *r = (Ronda){.centro = centro, .habla = -1};
-    r->cant = 4 + (int)(siguiente(e) % (RONDA_MAX - 4 + 1));
-    r->turno_ms = entre(e, 0, 2000.0f);
-    r->baile_ms = entre(e, 2000.0f, 9000.0f);
-    for (int k = 0; k < r->cant; k++){
-      Enemigo *en = &e->lista[*hueco];
-      r->miembros[k] = (*hueco)++;
-      en->ronda = e->cant_rondas;
-      en->asiento = k;
-      en->manada = -1;
-      sentar(e, en);
-    }
-    e->cant_rondas++;
+static int hueco_hoguera(int ronda){ return ENEMIGOS_MAX - JEFES - RONDAS_MAX + ronda; }
+
+// Una hoguera en `centro` con su ronda.
+static void encender(Enemigos *e, Direccion centro){
+  int k = e->cant_rondas++;
+  Ronda *r = &e->rondas[k];
+  *r = (Ronda){.centro = centro, .habla = -1, .obstaculo = -1, .hoguera = hueco_hoguera(k)};
+  r->embrujada = k % EMBRUJADA_CADA == EMBRUJADA_CADA - 1;
+  r->cant = RONDA_MIN + (int)(siguiente(e) % (RONDA_MAX - RONDA_MIN + 1));
+  r->turno_ms = entre(e, 0, 2000.0f);
+  r->giro = entre(e, 0, 6.28f);
+  r->sentido = (siguiente(e) & 1) ? 1.0f : -1.0f;
+  r->paso_ms = entre(e, 3000.0f, 7000.0f);
+  for (int m = 0; m < r->cant; m++){
+    Enemigo *en = &e->lista[k * RONDA_MAX + m];
+    r->miembros[m] = k * RONDA_MAX + m;
+    en->ronda = k;
+    en->asiento = m;
+    en->manada = -1;
+    sentar(e, en);
   }
+  Enemigo *h = &e->lista[r->hoguera];
+  h->ronda = k;
+  h->manada = -1;
+  nacer(e, h, centro, ANIMO_DEAMBULA);
+  h->tipo = ENEMIGO_HOGUERA;
+  h->entidad.vidaMAX = h->entidad.vida = VIDA_HOGUERA;
+  h->arma = ARMA_NINGUNA;
+  h->suelta_arma = 0;
+  h->botin = BOTIN_POCION;
+  h->monedas = MONEDAS_HOGUERA;
+}
+
+// 1 si en `col`, `fila` entra una hoguera con su ronda. No mira los
+// obstaculos: las rocas las pone el navegador despues, esquivando las hogueras
+// (y al cargar la partida todavia no estan, y tiene que salir lo mismo).
+static int entra_hoguera(const Enemigos *e, const Laberinto *lab, int col, int fila, Direccion base){
+  for (int f = fila - 3; f <= fila + 3; f++){
+    for (int c = col - 3; c <= col + 3; c++){
+      if (laberinto_es_muro(lab, c, f) || laberinto_es_puerta(lab, c, f)) return 0;
+      if (laberinto_sala(lab, c, f) != ZONA_LABERINTO || laberinto_es_lava(lab, c, f)) return 0;
+    }
+  }
+  Direccion centro = centro_de_tile(col, fila);
+  if (distancia(centro, base) < 2 * LEJOS_DE_LA_BASE) return 0;
+  for (int k = 0; k < e->cant_rondas; k++){
+    if (distancia(centro, e->rondas[k].centro) < 700.0f) return 0;
+  }
+  return 1;
+}
+
+// Busca lugar en el laberinto tallado, fuera del cuadrado de tiles de
+// `viejo_desde` a `viejo_hasta` (lo que ya estaba). 1 si encendio una.
+static int buscar_hoguera(Enemigos *e, const Laberinto *lab, int viejo_desde, int viejo_hasta){
+  if (e->cant_rondas >= RONDAS_MAX) return 0;
+  int desde = lab->c_min * LAB_CELDA;
+  int hasta = (lab->c_max + 1) * LAB_CELDA + LAB_MURO;
+  for (int intento = 0; intento < 1500; intento++){
+    int col = desde + (int)(siguiente(e) % (unsigned)(hasta - desde));
+    int fila = desde + (int)(siguiente(e) % (unsigned)(hasta - desde));
+    if (en_plaza(col, fila)) continue;
+    if (col >= viejo_desde && col <= viejo_hasta && fila >= viejo_desde && fila <= viejo_hasta) continue;
+    if (!entra_hoguera(e, lab, col, fila, e->plaza)) continue;
+    encender(e, centro_de_tile(col, fila));
+    return 1;
+  }
+  return 0;
+}
+
+void enemigos_nueva_hoguera(Enemigos *e, const Laberinto *lab){
+  unsigned int azar = e->azar;
+  e->azar = e->azar_hogueras;
+  int viejo_desde = (lab->c_min + LAB_ANILLO) * LAB_CELDA + LAB_MURO;
+  int viejo_hasta = (lab->c_max - LAB_ANILLO + 1) * LAB_CELDA;
+  buscar_hoguera(e, lab, viejo_desde, viejo_hasta);
+  e->azar_hogueras = e->azar;
+  e->azar = azar;
+}
+
+void enemigos_hogueras_solidas(Enemigos *e, Laberinto *lab){
+  for (int k = 0; k < e->cant_rondas; k++){
+    Ronda *r = &e->rondas[k];
+    if (r->apagada && r->obstaculo >= 0){
+      laberinto_quitar_obstaculo(lab, r->obstaculo);
+      r->obstaculo = -1;
+    } else if (!r->apagada && r->obstaculo < 0){
+      r->obstaculo = laberinto_agregar_obstaculo(lab, (RectPx){r->centro.x - HOGUERA_ANCHO / 2, r->centro.y - HOGUERA_ALTO / 2,
+                                                               HOGUERA_ANCHO, HOGUERA_ALTO});
+    }
+  }
+}
+
+static void poner_rondas(Enemigos *e, const Laberinto *lab){
+  unsigned int azar = e->azar;
+  e->azar = e->azar_hogueras;
+  for (int n = 0; n < RONDAS_LABERINTO; n++) buscar_hoguera(e, lab, 1, 0);
+  e->azar_hogueras = e->azar;
+  e->azar = azar;
 }
 
 // 1 si un arbusto en `centro` no tapa una ronda, no pisa otro arbusto, no
@@ -561,31 +714,28 @@ static void poner_arbustos(Enemigos *e, const Laberinto *lab, Direccion base){
   }
 }
 
-static void poner_errantes(Enemigos *e, const Laberinto *lab, Direccion jugador, int hueco){
-  int desde = hueco;
+// Quienes son los sueltos. Ninguno esta todavia: van saliendo de las hogueras.
+static void poner_errantes(Enemigos *e){
+  int desde = RONDAS_MAX * RONDA_MAX;
+  int hueco = desde;
   for (int m = 0; m < MANADAS; m++){
     Manada *ma = &e->manadas[e->cant_manadas];
     *ma = (Manada){0};
     ma->cant = 3 + (int)(siguiente(e) % (MANADA_MAX - 3 + 1));
     for (int k = 0; k < ma->cant; k++){
       ma->miembros[k] = hueco;
-      e->lista[hueco].ronda = -1;
       e->lista[hueco].manada = e->cant_manadas;
       hueco++;
     }
     e->cant_manadas++;
   }
-  for (; hueco < desde + ENEMIGOS_ERRANTES; hueco++){
-    e->lista[hueco].ronda = -1;
-    e->lista[hueco].manada = -1;
-  }
-  // El que manda aparece en el anillo; los suyos, a su lado
-  for (int i = desde; i < hueco; i++) aparecer(e, &e->lista[i], lab, jugador);
+  e->salida_ms = SALIDA_PRIMERA_MS;
 }
 
 void enemigos_iniciar(Enemigos *e, const Laberinto *lab, Direccion jugador, unsigned int semilla){
   *e = (Enemigos){0};
   e->azar = semilla ^ 0x9e3779b9u;
+  e->azar_hogueras = semilla ^ 0x51ed270bu;
   e->plaza = laberinto_aparicion(lab);
   e->arbusto_jugador = -1;
   for (int i = 0; i < ENEMIGOS_MAX; i++){
@@ -593,24 +743,27 @@ void enemigos_iniciar(Enemigos *e, const Laberinto *lab, Direccion jugador, unsi
     e->lista[i].manada = -1;
   }
   e->combate = -1;
-  int hueco = 0;
-  poner_rondas(e, lab, jugador, &hueco);
+  poner_rondas(e, lab);
   if (HAY_ARBUSTOS) poner_arbustos(e, lab, jugador);
-  poner_errantes(e, lab, jugador, hueco);
+  poner_errantes(e);
 }
 
 // ---------------------------------------------------------------- golpes
 
 // Le saca vida. Si sobrevive, se asusta y escapa. Su grupo se alerta.
 static int herir(Enemigos *e, Enemigo *en, int danio){
-  if (!vivo(en)) return 0;
+  if (!vivo(en) || en->naciendo_ms > 0) return 0; // el que aparece todavia no esta
   en->entidad.vida -= danio;
   en->golpeado_ms = GOLPEADO_MS;
   if (en->entidad.vida <= 0){
     en->entidad.vida = 0;
     en->entidad.estados = MUERTO;
     en->muerto_ms = MUERTE_MS;
-    if (en->jefe){
+    if (en->tipo == ENEMIGO_HOGUERA){
+      e->rondas[en->ronda].apagada = 1;
+      e->rondas[en->ronda].habla = -1;
+      e->hogueras_rotas++;
+    } else if (en->jefe){
       e->jefes_muertos++;
       e->vencidos |= 1 << en->jefe;
       e->combate = -1;
@@ -618,7 +771,7 @@ static int herir(Enemigos *e, Enemigo *en, int danio){
     } else e->muertos++;
   } else if (en->jefe){
     en->despierto = 1; // un jefe no escapa: pelea
-  } else {
+  } else if (en->tipo != ENEMIGO_HOGUERA && en->tipo != ENEMIGO_ESQUELETO){
     cambiar_animo(en, ANIMO_HUYE);
   }
   alertar_grupo(e, en);
@@ -682,6 +835,12 @@ int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion
   if (mejor < 0) return -1;
   Enemigo *en = &e->lista[mejor];
   *impacto = *cae = en->entidad.posicion;
+  if (en->tipo == ENEMIGO_HOGUERA){
+    // Le saca vida y rebota: cae antes de la caja solida, donde se la levanta
+    *cae = (Direccion){en->entidad.posicion.x - tiro.x * LANZA_CAE_HOGUERA, en->entidad.posicion.y - tiro.y * LANZA_CAE_HOGUERA};
+    if (!probar) herir(e, en, LANZA_DANIO_HOGUERA);
+    return -1;
+  }
   if (probar) return en->jefe ? -1 : mejor;
   // A un jefe la lanza le pega y cae a sus pies: no lo mata ni lo clava
   if (en->jefe){
@@ -693,7 +852,7 @@ int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion
   // Se lo lleva ensartado hasta donde termina el vuelo. Clavado solo contra
   // las caras que se ven: la de adelante (venia de abajo) o un costado; no
   // contra la de atras, una esquina (entro en diagonal) ni una puerta.
-  if (!pared) return mejor;
+  if (!pared || en->tipo != ENEMIGO_ESPARTANO) return mejor; // los espectros no se clavan
   int dc = col - antes_col, df = fila - antes_fila;
   Clavado lado;
   if (dc == 0 && df == -1) lado = CLAVADO_FRENTE;
@@ -736,7 +895,7 @@ int enemigos_golpe_suelo(Enemigos *e, Direccion centro, float radio, int danio){
     if (!vivo(en)) continue;
     float d = distancia(en->entidad.posicion, centro) - cuerpo(en);
     if (d <= radio) golpes += herir(e, en, danio);
-    else if (d <= radio * 3 && !en->jefe){ // el temblor los asusta
+    else if (d <= radio * 3 && !en->jefe && en->tipo != ENEMIGO_HOGUERA && en->tipo != ENEMIGO_ESQUELETO){ // el temblor los asusta
       cambiar_animo(en, ANIMO_HUYE);
       alertar_grupo(e, en);
     }
@@ -749,7 +908,7 @@ int enemigos_mas_cercano(const Enemigos *e, Direccion pies, float radio, Direcci
   float mejor_d = radio;
   for (int i = 0; i < ENEMIGOS_MAX; i++){
     const Enemigo *en = &e->lista[i];
-    if (!vivo(en)) continue;
+    if (!vivo(en) || en->naciendo_ms > 0) continue;
     float d = distancia(en->entidad.posicion, pies) - cuerpo(en);
     if (d <= mejor_d){
       mejor = i;
@@ -780,6 +939,8 @@ int enemigos_grupo(const Enemigos *e, int i){
 
 void enemigos_plaza_permitida(Enemigos *e, int si){ e->plaza_permitida = si; }
 
+void enemigos_noche(Enemigos *e, float noche){ e->noche = noche; }
+
 float enemigos_distancia(const Enemigos *e, int i, Direccion pies){
   const Enemigo *en = &e->lista[i];
   return distancia(en->entidad.posicion, pies) - cuerpo(en);
@@ -803,6 +964,22 @@ void enemigos_cargar_vencidos(Enemigos *e, int vencidos){
   }
 }
 
+int enemigos_hogueras_apagadas(const Enemigos *e){
+  int apagadas = 0;
+  for (int k = 0; k < e->cant_rondas; k++) if (e->rondas[k].apagada) apagadas |= 1 << k;
+  return apagadas;
+}
+
+void enemigos_cargar_hogueras(Enemigos *e, int apagadas){
+  for (int k = 0; k < e->cant_rondas; k++){
+    Ronda *r = &e->rondas[k];
+    if (!(apagadas & (1 << k))) continue;
+    r->apagada = 1;
+    e->lista[r->hoguera].activo = 0;
+    for (int m = 0; m < r->cant; m++) e->lista[r->miembros[m]].activo = 0;
+  }
+}
+
 int enemigos_habla(const Enemigos *e, int i){
   const Enemigo *en = &e->lista[i];
   return vivo(en) && en->ronda >= 0 && en->animo == ANIMO_CHARLA && e->rondas[en->ronda].habla == i;
@@ -810,15 +987,28 @@ int enemigos_habla(const Enemigos *e, int i){
 
 // ---------------------------------------------------------------- rondas
 
-// Turnos para hablar y quien baila, una vez por paso en cada ronda.
+// El giro del circulo y quien grita, una vez por paso en cada ronda.
 static void actualizar_rondas(Enemigos *e, float dt_ms){
   for (int k = 0; k < e->cant_rondas; k++){
     Ronda *r = &e->rondas[k];
-    // Los que charlan ahora (y no bailan)
+    if (r->apagada) continue;
+    r->giro += r->sentido * BAILE_GIRO * dt_ms / 1000.0f;
+    r->paso_ms -= dt_ms;
+    if (r->paso_ms <= 0){
+      // Cambian de sentido, y a veces paran un momento a gritar en el lugar
+      if (r->sentido != 0 && siguiente(e) % 100 < 30){
+        r->sentido = 0;
+        r->paso_ms = entre(e, 900.0f, 1800.0f);
+      } else {
+        r->sentido = (siguiente(e) & 1) ? 1.0f : -1.0f;
+        r->paso_ms = entre(e, 3000.0f, 7000.0f);
+      }
+    }
+    // Los que bailan ahora
     int libres[RONDA_MAX], cant = 0;
     for (int m = 0; m < r->cant; m++){
       const Enemigo *en = &e->lista[r->miembros[m]];
-      if (vivo(en) && en->animo == ANIMO_CHARLA && en->baile_ms <= 0) libres[cant++] = r->miembros[m];
+      if (vivo(en) && en->animo == ANIMO_CHARLA && en->tipo == ENEMIGO_ESPARTANO) libres[cant++] = r->miembros[m];
     }
     if (r->habla >= 0){
       const Enemigo *el = &e->lista[r->habla];
@@ -826,23 +1016,13 @@ static void actualizar_rondas(Enemigos *e, float dt_ms){
     }
     r->turno_ms -= dt_ms;
     if (r->turno_ms <= 0){
-      // A veces se callan todos un momento; si no, habla otro
-      if (cant < 2 || siguiente(e) % 100 < 25){
+      // Casi siempre grita alguno: no tienen que oir nada
+      if (cant == 0 || siguiente(e) % 100 < 15){
         r->habla = -1;
-        r->turno_ms = entre(e, 500.0f, 1200.0f);
+        r->turno_ms = entre(e, 300.0f, 700.0f);
       } else {
-        int nuevo = libres[siguiente(e) % (unsigned)cant];
-        if (nuevo == r->habla) nuevo = libres[(siguiente(e) % (unsigned)cant)];
-        r->habla = nuevo;
-        r->turno_ms = entre(e, 1500.0f, 3500.0f);
-      }
-    }
-    r->baile_ms -= dt_ms;
-    if (r->baile_ms <= 0){
-      r->baile_ms = entre(e, 7000.0f, 15000.0f);
-      if (cant >= 3){
-        int bailarin = libres[siguiente(e) % (unsigned)cant];
-        if (bailarin != r->habla) e->lista[bailarin].baile_ms = entre(e, 2500.0f, 4500.0f);
+        r->habla = libres[siguiente(e) % (unsigned)cant];
+        r->turno_ms = entre(e, 900.0f, 1800.0f);
       }
     }
   }
@@ -861,35 +1041,14 @@ static float ir_a(Direccion pies, Direccion destino, float maxima, float dt_ms, 
   return justo < maxima ? justo : maxima;
 }
 
-// En la ronda: en su lugar, mirando al que habla, acomodandose; o bailando
-// en el medio.
-static float charlar(Enemigos *e, Enemigo *en, int yo, float dt_ms, Direccion *dir){
+// En la ronda: corre detras de su lugar, que gira alrededor de la hoguera.
+// Cuando el circulo para, se da vuelta a gritarle al fuego.
+static float bailar(Enemigos *e, Enemigo *en, float dt_ms, Direccion *dir){
   const Ronda *r = &e->rondas[en->ronda];
   Direccion pies = en->entidad.posicion;
-  Direccion lugar = asiento(r, en->asiento);
-  if (en->baile_ms > 0){
-    // Da vueltitas entre su lugar y el centro
-    en->baile_ms -= dt_ms;
-    float a = en->baile_ms / 1000.0f * 4.0f;
-    Direccion medio = {lugar.x + (r->centro.x - lugar.x) * 0.6f, lugar.y + (r->centro.y - lugar.y) * 0.6f};
-    Direccion paso = {medio.x + cosf(a) * 12.0f, medio.y + sinf(a) * 12.0f};
-    float v = ir_a(pies, paso, VEL_PASEO * 1.5f, dt_ms, dir);
-    if (largo(*dir) > 0) en->mira = *dir;
-    return v;
-  }
-  // Cada tanto se acomoda un poco (se balancea)
-  en->ajuste_ms -= dt_ms;
-  if (en->ajuste_ms <= 0){
-    en->ajuste_ms = entre(e, 1200.0f, 4000.0f);
-    en->ajuste = (Direccion){entre(e, -5.0f, 5.0f), entre(e, -5.0f, 5.0f)};
-  }
-  Direccion destino = {lugar.x + en->ajuste.x, lugar.y + en->ajuste.y};
-  float v = ir_a(pies, destino, VEL_PASEO, dt_ms, dir);
-  // Mira al que habla; el que habla, al centro
-  Direccion foco = r->centro;
-  if (r->habla >= 0 && r->habla != yo) foco = e->lista[r->habla].entidad.posicion;
-  Direccion hacia = unitario((Direccion){foco.x - pies.x, foco.y - pies.y});
-  if (largo(hacia) > 0) en->mira = hacia;
+  float v = ir_a(pies, asiento(r, en->asiento), BAILE_VEL, dt_ms, dir);
+  if (r->sentido != 0 && largo(*dir) > 0) en->mira = *dir;
+  else en->mira = unitario((Direccion){r->centro.x - pies.x, r->centro.y - pies.y});
   return v;
 }
 
@@ -932,7 +1091,7 @@ static float deambular(Enemigos *e, Enemigo *en, const Jugador *j, float dt_ms, 
   }
 
   // De una ronda y ya calmado: vuelve a su lugar
-  if (en->ronda >= 0 && en->animo_ms > CALMA_MS){
+  if (con_ronda(e, en) && en->animo_ms > CALMA_MS){
     Direccion lugar = asiento(&e->rondas[en->ronda], en->asiento);
     if (distancia(pies, lugar) < 30.0f){
       cambiar_animo(en, ANIMO_CHARLA);
@@ -958,7 +1117,7 @@ static float deambular(Enemigos *e, Enemigo *en, const Jugador *j, float dt_ms, 
     Direccion al_jugador = {j->entidad.posicion.x - pies.x, j->entidad.posicion.y - pies.y};
     if (en->manada >= 0 && largo(al_jugador) < RASTREO && (int)(siguiente(e) % 100) < CAZA){
       en->entidad.dir = girar(unitario(al_jugador), entre(e, -35.0f, 35.0f));
-    } else if (afuera && e->plaza_permitida && (int)(siguiente(e) % 100) < TIRA_A_LA_PLAZA){
+    } else if (afuera && (int)(siguiente(e) % 100) < (e->plaza_permitida ? TIRA_A_LA_PLAZA : TIRA_EN_TREGUA)){
       Direccion a_plaza = unitario((Direccion){e->plaza.x - pies.x, e->plaza.y - pies.y});
       en->entidad.dir = girar(a_plaza, entre(e, -70.0f, 70.0f));
     } else {
@@ -971,26 +1130,72 @@ static float deambular(Enemigos *e, Enemigo *en, const Jugador *j, float dt_ms, 
   return VEL_PASEO;
 }
 
+// Una sombra hacia el jugador, desde la altura del espiritu.
+static void tirar(Enemigos *e, Direccion desde, Direccion hacia){
+  for (int i = 0; i < TIROS_MAX; i++){
+    Tiro *t = &e->tiros[i];
+    if (t->activo) continue;
+    *t = (Tiro){.activo = 1, .posicion = desde, .dir = hacia, .vuelo_ms = TIRO_VUELO_MS};
+    return;
+  }
+}
+
+// El espiritu que vio al jugador: se queda a tiro y cada tanto le tira una
+// sombra. Quieto mientras la prepara.
+static float acosar(Enemigos *e, Enemigo *en, int lo_ve, float dist, Direccion hacia, float dt_ms, Direccion *dir){
+  en->mira = hacia;
+  if (en->lanzando_ms > 0){
+    float antes = en->lanzando_ms;
+    en->lanzando_ms -= dt_ms;
+    if (antes > TIRO_SALE_MS && en->lanzando_ms <= TIRO_SALE_MS) tirar(e, en->entidad.posicion, hacia);
+    *dir = (Direccion){0, 0};
+    return 0;
+  }
+  en->tiro_ms -= dt_ms;
+  if (lo_ve && en->tiro_ms <= 0 && dist < TIRO_LEJOS * 1.25f){
+    en->tiro_ms = TIRO_RITMO_MS;
+    en->lanzando_ms = TIRO_PREPARA_MS;
+    *dir = (Direccion){0, 0};
+    return 0;
+  }
+  if (dist < TIRO_CERCA) *dir = girar((Direccion){-hacia.x, -hacia.y}, 20.0f * en->lado);
+  else if (dist > TIRO_LEJOS) *dir = girar(hacia, 25.0f * en->lado);
+  else *dir = girar(hacia, 90.0f * en->lado);
+  if (siguiente(e) % 1000 < 4) en->lado = -en->lado;
+  return VEL_ACECHO;
+}
+
+// El esqueleto: si ve al jugador va derecho y pega cada tanto; si no, espera.
+// Devuelve la velocidad; el golpe lo da enemigos_actualizar.
+static float perseguir(Enemigo *en, int lo_ve, float dist, Direccion hacia, Direccion *dir){
+  *dir = (Direccion){0, 0};
+  if (!lo_ve) return 0;
+  en->mira = hacia;
+  if (dist <= ALCANCE) return 0;
+  *dir = hacia;
+  return VEL_ESQUELETO;
+}
+
 // Elige como moverse segun el animo. Devuelve la velocidad y deja el rumbo
 // en `dir` (y hacia donde mira en en->mira).
-static float decidir(Enemigos *e, Enemigo *en, int yo, const Laberinto *lab, const Jugador *j, float dt_ms, Direccion *dir){
+static float decidir(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jugador *j, float dt_ms, Direccion *dir){
   Direccion pies = en->entidad.posicion;
   Direccion al_jugador = {j->entidad.posicion.x - pies.x, j->entidad.posicion.y - pies.y};
   float dist = largo(al_jugador);
   Direccion hacia = unitario(al_jugador);
-  float vision = en->animo == ANIMO_CHARLA ? VISION_CHARLA : VISION;
+  float vision = en->animo == ANIMO_CHARLA ? VISION_CHARLA : en->tipo == ENEMIGO_ESQUELETO ? ESQUELETO_VE : VISION;
   int lo_ve = !jugador_muerto(j) && dist < vision && !escondido_de(e, en, dist) &&
               linea_libre(lab, pies, j->entidad.posicion);
 
   en->animo_ms += dt_ms;
+  if (en->tipo == ENEMIGO_ESQUELETO) return perseguir(en, lo_ve, dist, hacia, dir);
   switch (en->animo){
     case ANIMO_CHARLA:
       if (lo_ve){
-        en->baile_ms = 0;
         alertar_grupo(e, en); // la ronda entera
         break;
       }
-      return charlar(e, en, yo, dt_ms, dir);
+      return bailar(e, en, dt_ms, dir);
 
     case ANIMO_DEAMBULA:
       if (lo_ve){
@@ -1007,8 +1212,9 @@ static float decidir(Enemigos *e, Enemigo *en, int yo, const Laberinto *lab, con
       } else {
         en->animo_ms = 0;
       }
+      if (en->tipo == ENEMIGO_ESPIRITU) return acosar(e, en, lo_ve, dist, hacia, dt_ms, dir);
       en->mira = hacia; // no le saca los ojos de encima
-      if (dist < DIST_MIEDO){
+      if (dist < DIST_MIEDO && en->tipo == ENEMIGO_ESPARTANO){ // los fantasmas no tienen miedo
         cambiar_animo(en, ANIMO_HUYE);
         break;
       }
@@ -1057,13 +1263,47 @@ static float decidir(Enemigos *e, Enemigo *en, int yo, const Laberinto *lab, con
 
 // ---------------------------------------------------------------- paso
 
+// Las sombras en el aire: siguen derecho hasta un muro, el fin de su vuelo o
+// el jugador. Devuelve el danio que le hicieron.
+static int mover_tiros(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_ms){
+  int danio = 0;
+  for (int i = 0; i < TIROS_MAX; i++){
+    Tiro *t = &e->tiros[i];
+    if (!t->activo) continue;
+    float paso = TIRO_VEL * dt_ms / 1000.0f;
+    t->posicion.x += t->dir.x * paso;
+    t->posicion.y += t->dir.y * paso;
+    t->vuelo_ms -= dt_ms;
+    int col = (int)(t->posicion.x / LAB_TILE), fila = (int)(t->posicion.y / LAB_TILE);
+    if (t->vuelo_ms <= 0 || laberinto_es_muro(lab, col, fila)) t->activo = 0;
+    else if (!jugador_muerto(j) && distancia(t->posicion, j->entidad.posicion) <= TIRO_RADIO){
+      t->activo = 0;
+      if (!jugador_activa(j, HAB_BLOQUEAR) && !jugador_activa(j, HAB_SALTAR)){
+        j->entidad.vida -= TIRO_DANIO;
+        danio += TIRO_DANIO;
+      }
+    }
+  }
+  return danio;
+}
+
 // Los que estan lejos de la vista del jugador se acomodan sin caminar: los
-// sueltos reaparecen cerca suyo, los de una ronda vuelven a su lugar y los
-// de una manada se juntan con el que manda. Devuelve 1 si lo movio.
+// sueltos salen de nuevo de la hoguera mas cercana a el, los de una ronda
+// vuelven a su lugar y los de una manada se juntan con el que manda. Devuelve
+// 1 si lo movio.
 static int acomodar_lejos(Enemigos *e, Enemigo *en, const Laberinto *lab, Direccion jugador, int *reciclados){
   if (en->animo != ANIMO_DEAMBULA) return 0;
   Direccion pies = en->entidad.posicion;
   float lejos = distancia(pies, jugador);
+
+  if (en->ronda >= 0 && !con_ronda(e, en)) return 0; // sin hoguera: queda por ahi
+
+  // Amanece y sobran: los que nadie ve vuelven al fuego
+  if (en->ronda < 0 && e->sueltos > sueltos_permitidos(e) && lejos > APARECE_DESDE){
+    en->activo = 0;
+    e->sueltos--;
+    return 1;
+  }
 
   if (en->ronda >= 0){
     // Ya calmado, lejos, y tarda en volver (o quedo muy lejos): aparece en su lugar
@@ -1091,7 +1331,10 @@ static int acomodar_lejos(Enemigos *e, Enemigo *en, const Laberinto *lab, Direcc
     }
   }
 
-  if (lejos > DEMASIADO_LEJOS && *reciclados < RECICLA_POR_PASO){
+  // Solo si hay una hoguera mas cerca del jugador que el: si ya rompio las de
+  // su zona, por ahi no vuelve nadie
+  int k = hoguera_mas_cercana(e, jugador, jugador);
+  if (lejos > DEMASIADO_LEJOS && *reciclados < RECICLA_POR_PASO && k >= 0 && distancia(e->rondas[k].centro, jugador) < lejos){
     aparecer(e, en, lab, jugador);
     (*reciclados)++;
     // El que manda se lleva a los suyos que andaban con el
@@ -1119,7 +1362,13 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
     const Enemigo *en = &e->lista[i];
     if (vivo(en) && en->animo == ANIMO_ATACA) e->atacando++;
   }
+  e->sueltos = 0;
+  for (int i = RONDAS_MAX * RONDA_MAX; i < RONDAS_MAX * RONDA_MAX + ENEMIGOS_ERRANTES; i++){
+    if (vivo(&e->lista[i])) e->sueltos++;
+  }
+  soltar(e, lab, jugador, dt_ms);
   actualizar_rondas(e, dt_ms);
+  danio_total += mover_tiros(e, lab, j, dt_ms);
   // Los jefes aparecen cuando su sala ya esta tallada (y no los vencio)
   for (int z = ZONA_LABERINTO + 1; z < ZONA_CANTIDAD; z++){
     if (!e->lista[hueco_jefe(z)].activo && !(e->vencidos & (1 << z)) && lab->salas[z].tallada) nacer_jefe(e, lab, (Zona)z);
@@ -1129,9 +1378,9 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
     Enemigo *en = &e->lista[i];
     if (!en->activo){
       if (en->reaparece_ms > 0){
-        en->reaparece_ms -= dt_ms;
+        en->reaparece_ms -= dt_ms * (1.0f + RONDA_NOCHE * e->noche);
         if (en->reaparece_ms > 0) continue;
-        if (en->ronda < 0) aparecer(e, en, lab, jugador);
+        if (!con_ronda(e, en)) continue; // se apago su hoguera mientras esperaba
         // Los de una ronda vuelven a su lugar solo si el jugador no esta cerca
         else if (distancia(asiento(&e->rondas[en->ronda], en->asiento), jugador) > APARECE_DESDE) sentar(e, en);
         else en->reaparece_ms = 3000.0f;
@@ -1142,9 +1391,23 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
     if (en->entidad.estados == MUERTO){
       en->muerto_ms -= dt_ms;
       if (en->muerto_ms <= 0){
+        // Algunos espartanos no se quedan muertos
+        if (en->tipo == ENEMIGO_ESPARTANO && !en->jefe && !en->clavado && (int)(siguiente(e) % 100) < ESQUELETO_POR_100){
+          nacer(e, en, en->entidad.posicion, ANIMO_ACECHA);
+          volverse(e, en, ENEMIGO_ESQUELETO);
+          continue;
+        }
         en->activo = 0;
-        en->reaparece_ms = en->jefe ? 0 : en->ronda >= 0 ? REAPARECE_RONDA_MS : REAPARECE_MS;
+        en->reaparece_ms = !en->jefe && en->tipo != ENEMIGO_HOGUERA && con_ronda(e, en) ? REAPARECE_RONDA_MS : 0;
       }
+      continue;
+    }
+
+    if (en->tipo == ENEMIGO_HOGUERA) continue;
+
+    if (en->naciendo_ms > 0){
+      en->naciendo_ms -= dt_ms;
+      en->entidad.estados = QUIETO;
       continue;
     }
 
@@ -1156,15 +1419,20 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
     if (acomodar_lejos(e, en, lab, jugador, &reciclados)) continue;
 
     Direccion dir;
-    float velocidad = decidir(e, en, i, lab, j, dt_ms, &dir);
+    float velocidad = decidir(e, en, lab, j, dt_ms, &dir);
     float paso = velocidad * dt_ms / 1000.0f;
     Direccion antes = en->entidad.posicion;
     float movido = laberinto_mover(lab, &en->entidad.posicion, dir.x * paso, dir.y * paso);
-    // Tregua: no cruzan las puertas (se quedan del lado de afuera)
+    // Tregua: no cruzan las puertas (se quedan del lado de afuera), salvo
+    // alguno que se cuela
     if (!e->plaza_permitida && en_plaza_px(en->entidad.posicion) && !en_plaza_px(antes)){
-      en->entidad.posicion = antes;
-      movido = 0;
-      if (en->animo == ANIMO_DEAMBULA) en->rumbo_ms = 0; // otro rumbo
+      if (e->colados < COLADOS_MAX && (int)(siguiente(e) % 100) < COLARSE_POR_100){
+        e->colados++;
+      } else {
+        en->entidad.posicion = antes;
+        movido = 0;
+        if (en->animo == ANIMO_DEAMBULA) en->rumbo_ms = 0; // otro rumbo
+      }
     }
     if (largo(dir) > 0) en->entidad.dir = dir;
     // Contra un muro al deambular: busca otro rumbo enseguida (o, volviendo
@@ -1178,9 +1446,30 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
       }
     }
 
-    if (movido < 0.01f) en->entidad.estados = QUIETO;
+    if (en->lanzando_ms > 0) en->entidad.estados = ATACANDO;
+    else if (movido < 0.01f) en->entidad.estados = QUIETO;
     else if (velocidad >= VEL_ATAQUE || velocidad >= VEL_HUIDA) en->entidad.estados = CORRIENDO;
     else en->entidad.estados = CAMINANDO;
+
+    // El esqueleto no escapa: pega cada tanto mientras lo tenga al alcance. Si
+    // el jugador se fue lejos, se deshace
+    if (en->tipo == ENEMIGO_ESQUELETO){
+      en->tiro_ms -= dt_ms;
+      float dist = distancia(jugador, en->entidad.posicion);
+      if (dist > DEMASIADO_LEJOS){
+        en->activo = 0;
+        en->reaparece_ms = con_ronda(e, en) ? REAPARECE_RONDA_MS : 0;
+      } else if (dist <= ALCANCE && en->tiro_ms <= 0){
+        en->tiro_ms = ESQUELETO_RITMO_MS;
+        int a_salvo = jugador_activa(j, HAB_BLOQUEAR) || jugador_activa(j, HAB_SALTAR);
+        if (!a_salvo && !jugador_muerto(j)){
+          j->entidad.vida -= en->entidad.danio;
+          danio_total += en->entidad.danio;
+        }
+      }
+      if (en->tiro_ms > ESQUELETO_RITMO_MS - ESQUELETO_GOLPE_MS) en->entidad.estados = ATACANDO;
+      continue;
+    }
 
     // Llego al jugador: un golpe y a escapar
     if (en->animo == ANIMO_ATACA){

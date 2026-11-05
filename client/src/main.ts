@@ -47,6 +47,7 @@ import { type BigRock, type Pebble, planRocks } from "./domain/rocks";
 import { Camera } from "./infrastructure/render/camera";
 import { CursorOverlay, TargetMarker } from "./infrastructure/render/cursor";
 import { DEPTH, depthOf } from "./infrastructure/render/depth";
+import { BonfireViews } from "./infrastructure/render/bonfires";
 import { EnemyViews } from "./infrastructure/render/enemies";
 import { FlameGlow } from "./infrastructure/render/flame-glow";
 import { Glow } from "./infrastructure/render/glow";
@@ -60,6 +61,7 @@ import { LevelAura } from "./infrastructure/render/level-aura";
 import { LevelWave } from "./infrastructure/render/level-wave";
 import { ForestGloom } from "./infrastructure/render/forest-gloom";
 import { Lighting } from "./infrastructure/render/lighting";
+import { SpectreViews } from "./infrastructure/render/spectres";
 import { type Box, loadMazeTiles, MazeRenderer, type View } from "./infrastructure/render/maze-renderer";
 import {
   animationDurationMs,
@@ -169,6 +171,8 @@ const SPEAR_HAND_HEIGHT = 30; // px over the feet
 const SPEAR_HIT_HEIGHT = 14;
 const SPEAR_HAND_AHEAD = 12; // px ahead of the feet
 const SPEAR_BAR_WIDTH = 24;
+const SCREAMS_HEARD_FROM = 420; // px from a bonfire
+
 // The ring under the enemy the player swings at on its own, around its feet.
 const FOCUS_RING_RX = 13; // px
 const FOCUS_RING_RY = 5;
@@ -258,6 +262,11 @@ const [
   stumpSheet,
   sheepSheet,
   birdSheet,
+  bonfireSheet,
+  ghostSheet,
+  spiritSheet,
+  skeletonSheet,
+  spiritShotSheet,
   treeImage,
   treeShadowImage,
   orangeTreeImage,
@@ -303,6 +312,14 @@ const [
   loadSpriteSheet(`${BASE}sprites/oveja`),
   // The wild birds (art/aves.py).
   loadSpriteSheet(`${BASE}sprites/aves`),
+  // The enemies' spawners (art/hoguera.py), and the enemies without a spartan's
+  // body: the ghost, the spirit, the skeleton and what the spirit throws
+  // (art/espectros.py).
+  loadSpriteSheet(`${BASE}sprites/hoguera`),
+  loadSpriteSheet(`${BASE}sprites/fantasma`),
+  loadSpriteSheet(`${BASE}sprites/espiritu`),
+  loadSpriteSheet(`${BASE}sprites/esqueleto`),
+  loadSpriteSheet(`${BASE}sprites/espiritu_tiro`),
   // The trees of the square with their shadows, and the stones and tufts at
   // their foot (art/arbol2_build.sh, art/arbol3_build.sh).
   loadImage(`${BASE}sprites/arbol_2.png`),
@@ -356,6 +373,7 @@ const baseSpawn = game.player();
 if (savedWorld) {
   game.loadGame(savedWorld.clockMs, savedWorld.x, savedWorld.y);
   game.loadBossesDefeated(savedWorld.bossesDefeated);
+  game.loadBonfiresOut(savedWorld.bonfiresOut);
 }
 const savedProgress = loadProgress(CHARACTER_ID);
 if (savedProgress) game.loadProgress(savedProgress.level, savedProgress.xp, savedProgress.upgrades);
@@ -369,6 +387,8 @@ let seenBurns = 0;
 let inTruce = game.truce();
 let bossInFight = -1;
 let seenDefeated = game.bossesDefeated();
+let seenBonfiresOut = game.bonfiresOut();
+let heardTheScreams = false; // told once what they do around the fire
 let lastLife = -1;
 let seenLevel = game.playerStats().level;
 let levelBeforeAura = seenLevel; // what the bar shows until the aura bursts
@@ -476,7 +496,7 @@ if (!savedWorld) propViews.push(
 // pick up with E, placed cell by cell as the maze is carved. Going on, the
 // pebbles lying around are among the saved floor items, and the broken rocks
 // stay broken (a save from before the rocks gets its pebbles now).
-const rockField = new RockField(seed, standing, sheets.get("rocas")!, map, game.maze, savedWorld?.rocks?.broken ?? []);
+const rockField = new RockField(seed, standing, sheets.get("rocas")!, map, game.maze, savedWorld?.rocks?.broken ?? [], game.bonfires);
 // What lies loose changed with LOOSE_VERSION: an older save gets what is new
 // added on load (the pebbles and branches at 2, the saplings at 3).
 const LOOSE_VERSION = 3;
@@ -602,6 +622,13 @@ const enemyWeaponFx = new Map(
   ]),
 );
 const enemyViews = new EnemyViews(standing, enemySheet, (id) => enemyWeaponFx.get(id));
+const spectreViews = new SpectreViews(standing, {
+  ghost: ghostSheet,
+  spirit: spiritSheet,
+  skeleton: skeletonSheet,
+  shot: spiritShotSheet,
+});
+const bonfireViews = new BonfireViews(bonfireSheet, standing);
 const targetMarker = new TargetMarker();
 const sunShadow = new Sprite({ tint: 0x000000 });
 // The white ring under the enemy the player swings at on its own.
@@ -629,7 +656,7 @@ const hud = new Hud();
 const levelWave = new LevelWave(scene, canvas.width, canvas.height);
 const levelAura = new LevelAura(levelAuraBehindSheet, levelAuraFrontSheet);
 standing.addChild(levelAura.behind);
-scene.addChild(forestGloom.view, lighting.view, torchGlows.rightHand.view, torchGlows.leftHand.view, playerGlow.view, levelAura.front);
+scene.addChild(forestGloom.view, lighting.view, bonfireViews.light, torchGlows.rightHand.view, torchGlows.leftHand.view, playerGlow.view, levelAura.front);
 app.stage.addChild(
   playerBar.view,
   keyPrompt,
@@ -675,7 +702,7 @@ const tabs = new SideTabs(
 const coreDebug = new CoreDebug(tabs.page("technical"));
 const gameLog = new GameLog(tabs.page("technical"));
 if (savedProgress) gameLog.log(`Progress loaded from this browser: level ${savedProgress.level}.`);
-if (inTruce) gameLog.log("The square is safe today: no enemy comes in. Gather what you can and get ready.");
+if (inTruce) gameLog.log("The square is almost safe today: only a stray enemy slips in through the gates. Gather what you can and get ready.");
 showControlsHint(tabs.page("technical"));
 // The cursor is read lazily: the mouse is set up further down.
 const panelCursor = {
@@ -934,6 +961,16 @@ function update(dtMs: number): void {
     }
     seenDefeated = defeated;
     saveGame();
+  }
+  const bonfiresOut = game.bonfiresOut();
+  if (bonfiresOut !== seenBonfiresOut) {
+    gameLog.log("The bonfire goes out. Nothing else will come out of it.");
+    seenBonfiresOut = bonfiresOut;
+    saveGame();
+  }
+  if (!heardTheScreams && game.bonfires().some((b) => !b.out && Math.hypot(b.x - player.x, b.y - player.y) < SCREAMS_HEARD_FROM)) {
+    heardTheScreams = true;
+    gameLog.log("They dance and scream around the fire, so as not to hear Zeus weep. Break it and nothing else comes out of it.");
   }
   lastLife = stats.life;
   // The core has already raised the level: the essence wraps the player
@@ -1565,6 +1602,7 @@ function snapshotWorld(): SavedWorld {
     seed,
     clockMs: game.clockMs(),
     bossesDefeated: game.bossesDefeated(),
+    bonfiresOut: game.bonfiresOut(),
     rocks: { broken: rockField.brokenIds, loose: LOOSE_VERSION },
     felledTrees: treeViews.felledIds,
     structures: structures.map((s) => ({ id: s.item.id, x: s.x, y: s.y })),
@@ -1615,7 +1653,8 @@ function kickUpDust(dtMs: number): void {
   for (const e of game.enemies()) {
     const key = `enemy${e.slot}`;
     seen.add(key);
-    dust.track(key, e.x, e.y, STATE[e.state] !== "MUERTO" && e.pinned === null && e.bush < 0, dtMs);
+    const walks = e.kind === "spartan" || e.kind === "skeleton";
+    dust.track(key, e.x, e.y, walks && STATE[e.state] !== "MUERTO" && e.pinned === null && e.bush < 0, dtMs);
   }
   dust.keep(seen);
   dust.update(dtMs);
@@ -1638,7 +1677,9 @@ function draw(): void {
   const enemies = game.enemies();
   maze.show(view, playerBody(), game.maze.gateLeaves(), hiddenThings(enemies, cover));
   treeViews.show(playerBody());
-  enemyViews.show(enemies, enemyAnimMs, cover.bush);
+  enemyViews.show(enemies.filter((e) => e.kind === "spartan"), enemyAnimMs, cover.bush);
+  spectreViews.show(enemies.filter((e) => e.kind !== "spartan" && e.kind !== "bonfire"), game.shots(), enemyAnimMs);
+  bonfireViews.update(enemyAnimMs, game.bonfires(), view, worldToScreen, game.clock().daylight);
   showFocusRing(enemies, cover);
   enemyAnimMs = 0;
   targetMarker.show(target, performance.now());
@@ -1907,7 +1948,7 @@ function showPlayerGlow(): void {
 function hiddenThings(enemies: EnemyState[], cover: PlayerCover): Box[] {
   const things: Box[] = [];
   for (const e of enemies) {
-    if (e.bush >= 0 && e.bush !== cover.bush) continue;
+    if (e.kind === "bonfire" || (e.bush >= 0 && e.bush !== cover.bush)) continue;
     const half = ENEMY_BODY_WIDTH / 2;
     things.push({ left: e.x - half, top: e.y - ENEMY_BODY_HEIGHT, right: e.x + half, bottom: e.y });
   }

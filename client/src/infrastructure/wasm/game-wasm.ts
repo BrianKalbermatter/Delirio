@@ -84,9 +84,30 @@ export interface PlayerStats {
 // Same order as `enum animo` in src/mecanicas/enemigos.h.
 export const MOOD = ["DEAMBULA", "ACECHA", "ATACA", "HUYE", "CHARLA"] as const;
 
-// A level 1 enemy (src/mecanicas/enemigos.c), by its slot in C's list.
+// What it is, same order as `enum tipo_enemigo` in src/mecanicas/enemigos.h.
+export const ENEMY_KIND = ["spartan", "ghost", "spirit", "skeleton", "bonfire"] as const;
+
+// A spawner (src/mecanicas/enemigos.c), by the circle that dances around it.
+export interface Bonfire {
+  x: number;
+  y: number;
+  out: boolean; // broken: nothing else comes from it
+  life: number;
+  lifeMax: number;
+  hitMs: number; // > 0 right after being hit
+}
+
+// What a spirit threw, in the air.
+export interface Shot {
+  x: number; // over this point of the floor
+  y: number;
+}
+
+// An enemy (src/mecanicas/enemigos.c), by its slot in C's list.
 export interface EnemyState {
   slot: number;
+  kind: (typeof ENEMY_KIND)[number];
+  birthMs: number; // > 0 while it appears or gets up: it does nothing yet
   x: number; // feet
   y: number;
   lookX: number; // where it looks (at the player while stalking)
@@ -99,9 +120,9 @@ export interface EnemyState {
   life: number;
   lifeMax: number;
   hitMs: number; // > 0 right after being hit
-  // Who it goes around with: its chatting circle (0..7), 8 + its pack, or -1.
+  // Who it goes around with: its bonfire's circle, RONDAS_MAX + its pack, or -1.
   group: number;
-  talking: boolean; // the one speaking in its chatting circle right now
+  talking: boolean; // the one screaming in its circle right now
   bush: number; // the bush it stands in, -1 if none
   loot: (typeof LOOT)[number]; // what it carries, dropped when it dies
   coins: number; // coins it drops when it dies
@@ -263,6 +284,10 @@ export interface GameWasm {
   // The bushes, fixed since start().
   bushes(): Bush[];
   sheep(): Sheep[];
+  bonfires(): Bonfire[];
+  shots(): Shot[];
+  bonfiresOut(): number; // bits, for the save
+  loadBonfiresOut(bits: number): void; // after loadGame()
   cover(): PlayerCover;
   // Gives the player life back (a potion), up to the maximum.
   heal(life: number): void;
@@ -270,7 +295,7 @@ export interface GameWasm {
   bossesDefeated(): number; // bits 1 << zone, for the save
   loadBossesDefeated(bits: number): void; // after start()
   burns(): number; // goes up by one every time the lava burns the player
-  // The truce (first day): enemies stay out of the square. After it they
+  // The truce (first day): enemies stay out of the square, but for a stray one. After it they
   // walk in while the gates are open.
   truce(): boolean;
   medusaLife(): number;
@@ -295,6 +320,14 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const lairDoor = num("web_lab_puerta_minotauro", 2);
   const mazeLava = num("web_lab_lava", 2);
   const sheepCount = num("web_ovejas_cant", 0);
+  const bonfireCount = num("web_hogueras_cant", 0);
+  const bonfire = Object.fromEntries(
+    ["x", "y", "apagada", "vida", "vida_max", "golpeada"].map((field) => [field, num(`web_hoguera_${field}`, 1)]),
+  );
+  const shotMax = num("web_tiros_max", 0)();
+  const shotActive = num("web_tiro_activo", 1);
+  const shotX = num("web_tiro_x", 1);
+  const shotY = num("web_tiro_y", 1);
   const sheepX = num("web_oveja_x", 1);
   const sheepY = num("web_oveja_y", 1);
   const sheepDirX = num("web_oveja_dir_x", 1);
@@ -404,6 +437,8 @@ export async function loadGameWasm(): Promise<GameWasm> {
       "monedas",
       "arma",
       "suelta_arma",
+      "tipo",
+      "naciendo",
     ].map((field) => [field, num(`web_enemigo_${field}`, 1)]),
   );
   const bushCount = num("web_arbustos_cant", 0);
@@ -478,6 +513,8 @@ export async function loadGameWasm(): Promise<GameWasm> {
         if (!enemy.activo(i)) continue;
         list.push({
           slot: i,
+          kind: ENEMY_KIND[enemy.tipo(i)] ?? "spartan",
+          birthMs: enemy.naciendo(i),
           x: enemy.x(i),
           y: enemy.y(i),
           lookX: enemy.mira_x(i),
@@ -506,6 +543,22 @@ export async function loadGameWasm(): Promise<GameWasm> {
     },
     sheep: () =>
       Array.from({ length: sheepCount() }, (_, i) => ({ x: sheepX(i), y: sheepY(i), dirX: sheepDirX(i), state: sheepState(i) })),
+    bonfires: () =>
+      Array.from({ length: bonfireCount() }, (_, k) => ({
+        x: bonfire.x(k),
+        y: bonfire.y(k),
+        out: bonfire.apagada(k) === 1,
+        life: bonfire.vida(k),
+        lifeMax: bonfire.vida_max(k),
+        hitMs: bonfire.golpeada(k),
+      })),
+    shots: () => {
+      const list: Shot[] = [];
+      for (let i = 0; i < shotMax; i++) if (shotActive(i)) list.push({ x: shotX(i), y: shotY(i) });
+      return list;
+    },
+    bonfiresOut: num("web_hogueras_apagadas", 0),
+    loadBonfiresOut: call("web_cargar_hogueras", 1),
     bushes: () => Array.from({ length: bushCount() }, (_, i) => ({ x: bushX(i), y: bushY(i), radius: bushRadius(i) })),
     cover: () => ({
       bush: playerBush(),

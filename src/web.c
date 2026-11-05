@@ -103,6 +103,27 @@ EMSCRIPTEN_KEEPALIVE void web_cargar_jefes_vencidos(int v) { juego_cargar_jefes_
 EMSCRIPTEN_KEEPALIVE int web_jugador_quemaduras(void) { return juego_quemaduras(); }
 // 1 mientras los enemigos todavia no entran a la plaza (el primer dia)
 EMSCRIPTEN_KEEPALIVE int web_tregua(void) { return juego_tregua(); }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_tipo(int i) { return enemigo(i)->tipo; }
+EMSCRIPTEN_KEEPALIVE float web_enemigo_naciendo(int i) { return enemigo(i)->naciendo_ms; }
+
+// Hogueras: una por ronda. La vida esta en su hueco de la lista de enemigos
+static const Ronda *ronda(int k) { return &juego_enemigos()->rondas[k]; }
+EMSCRIPTEN_KEEPALIVE int web_hogueras_cant(void) { return juego_enemigos()->cant_rondas; }
+EMSCRIPTEN_KEEPALIVE float web_hoguera_x(int k) { return ronda(k)->centro.x; }
+EMSCRIPTEN_KEEPALIVE float web_hoguera_y(int k) { return ronda(k)->centro.y; }
+EMSCRIPTEN_KEEPALIVE int web_hoguera_apagada(int k) { return ronda(k)->apagada; }
+EMSCRIPTEN_KEEPALIVE int web_hoguera_vida(int k) { return enemigo(ronda(k)->hoguera)->entidad.vida; }
+EMSCRIPTEN_KEEPALIVE int web_hoguera_vida_max(int k) { return enemigo(ronda(k)->hoguera)->entidad.vidaMAX; }
+EMSCRIPTEN_KEEPALIVE float web_hoguera_golpeada(int k) { return enemigo(ronda(k)->hoguera)->golpeado_ms; }
+EMSCRIPTEN_KEEPALIVE int web_hogueras_apagadas(void) { return juego_hogueras_apagadas(); }
+EMSCRIPTEN_KEEPALIVE void web_cargar_hogueras(int apagadas) { juego_cargar_hogueras(apagadas); }
+
+// Sombras de los espiritus: el navegador recorre los TIROS_MAX huecos
+EMSCRIPTEN_KEEPALIVE int web_tiros_max(void) { return TIROS_MAX; }
+EMSCRIPTEN_KEEPALIVE int web_tiro_activo(int i) { return juego_enemigos()->tiros[i].activo; }
+EMSCRIPTEN_KEEPALIVE float web_tiro_x(int i) { return juego_enemigos()->tiros[i].posicion.x; }
+EMSCRIPTEN_KEEPALIVE float web_tiro_y(int i) { return juego_enemigos()->tiros[i].posicion.y; }
+
 EMSCRIPTEN_KEEPALIVE int web_enemigo_arbusto(int i) {
   return arbustos_en(&juego_enemigos()->arbustos, enemigo(i)->entidad.posicion);
 }

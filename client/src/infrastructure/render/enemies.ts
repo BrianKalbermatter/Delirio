@@ -4,8 +4,8 @@
 // one faces where it looks (at the player while it stalks), flashes red when
 // hit and shows a small life bar once hurt. One a spear pinned to a wall is
 // carried there on the spear (it slides from where it was hit), plays the hit
-// against it once and then hangs there bleeding. In a chatting circle the one
-// speaking shows a speech bubble; the dancer's steps play the walk. One
+// against it once and then hangs there bleeding. Around a bonfire they hop as
+// they go, and the one screaming shows it in a burst over its head. One
 // inside a bush the player is not in cannot be seen (League of Legends' rule).
 // The weapon it carries (a spear, a torch or an axe) is drawn in its hand like
 // the player's,
@@ -23,18 +23,27 @@ import { placeFrame, type SpriteSheet } from "./sprite-sheet";
 const FEET_PADDING = 13; // like the player: the bottom row of the floor line
 const BAR_WIDTH = 20;
 const BAR_ABOVE_FEET = 56; // px from the feet to the life bar, over the crest
-const HIT_TINT = 0xff7070;
+export const HIT_TINT = 0xff7070;
 // Bosses are bigger spartans for now, each in its own colour, until their
 // sprites come (ZONE in game-wasm.ts). Winding up a blow they flash.
 const BOSS_TINT: Record<number, number> = { 1: 0xa8e6a0, 2: 0x8fc4ff, 3: 0xff8a6a };
 const CHARGE_TINT = 0xfff0a0;
 const CHARGE_FLASHES = 6; // flashes over the whole wind-up, faster towards the blow
-// Speech bubble: a small white box with three dots that light up in turn.
-const BUBBLE_ABOVE_FEET = 60; // px from the feet to the bubble's bottom
-const BUBBLE_W = 15;
-const BUBBLE_H = 9;
-const DOT_MS = 260; // each dot lights up this long
-const BUBBLE_INK = 0x2e222f;
+// Dancing around the fire they hop, each on its own beat.
+const HOP_HEIGHT = 6; // px
+const HOP_MS = 150; // the hop's speed
+// The scream: a white burst with the word in it, trembling.
+const SCREAM_ABOVE_FEET = 62; // px from the feet to the burst's bottom
+const SCREAM_H = 9;
+const SCREAM_INK = 0xa02030;
+const SCREAM_EDGE = 0x2e222f;
+const SCREAMS = ["AAH!", "AAA!", "HAA!", "AHH!"];
+// Its letters, 3 px wide and 5 tall (a row is three bits).
+const LETTERS: Record<string, number[]> = {
+  A: [0b010, 0b101, 0b111, 0b101, 0b101],
+  H: [0b101, 0b101, 0b111, 0b101, 0b101],
+  "!": [0b010, 0b010, 0b010, 0b000, 0b010],
+};
 // pinned_hit_*: 10 frames of 70 ms, then the pinned_* loop.
 const PIN_HIT_MS = 700;
 const TILE = 32; // LAB_TILE in src/mecanicas/laberinto.h
@@ -143,6 +152,7 @@ export class EnemyViews {
     const motion = MOTION_BY_STATE[STATE[enemy.state] ?? "QUIETO"];
     const dead = motion === "death";
     let { x, y } = enemy;
+    const hop = enemy.mood === "CHARLA" && !dead ? Math.abs(Math.sin(this.clockMs / HOP_MS + enemy.slot)) * HOP_HEIGHT : 0;
     if (enemy.pinned && view.pinnedMs === 0 && !view.slide) {
       // Just pinned: C already put it at the wall. Carry it there from where
       // it was, at the spear's speed.
@@ -172,9 +182,9 @@ export class EnemyViews {
     view.y = y;
     const frame = view.animator.currentFrame();
     if (!frame) return;
-    placeFrame(view.sprite, frame, x, y + FEET_PADDING * enemy.scale, enemy.scale);
+    placeFrame(view.sprite, frame, x, y - hop + FEET_PADDING * enemy.scale, enemy.scale);
     view.sprite.tint = this.tintOf(enemy);
-    this.placeWeapon(view, enemy, `${motion}_${facing}`, x, y, dead || enemy.pinned !== null);
+    this.placeWeapon(view, enemy, `${motion}_${facing}`, x, y - hop, dead || enemy.pinned !== null);
     // Pinned to a side face it stands in the wall's own row: drawn after the
     // wall, so the cracks and the spearhead show on it.
     const side = (enemy.pinned === "left" || enemy.pinned === "right") && !view.slide;
@@ -184,20 +194,11 @@ export class EnemyViews {
     // A boss shows its life in the HUD, not over its head
     const hurt = !dead && enemy.life < enemy.lifeMax && !enemy.boss;
     view.bar.visible = hurt;
-    if (hurt) {
-      const x = Math.round(enemy.x - BAR_WIDTH / 2);
-      const y = Math.round(enemy.y - BAR_ABOVE_FEET);
-      view.bar
-        .clear()
-        .rect(x - 1, y - 1, BAR_WIDTH + 2, 4)
-        .fill(0x1a1622)
-        .rect(x, y, Math.max(1, Math.round((BAR_WIDTH * enemy.life) / enemy.lifeMax)), 2)
-        .fill(0xd95763);
-    }
+    if (hurt) drawLifeBar(view.bar, enemy.x, enemy.y - BAR_ABOVE_FEET, BAR_WIDTH, enemy.life, enemy.lifeMax);
 
-    const talking = !dead && enemy.talking;
-    view.bubble.visible = talking;
-    if (talking) this.drawBubble(view.bubble, enemy.x, enemy.y - BUBBLE_ABOVE_FEET);
+    const screaming = !dead && enemy.talking;
+    view.bubble.visible = screaming;
+    if (screaming) this.drawScream(view.bubble, enemy.x, enemy.y - hop - SCREAM_ABOVE_FEET, enemy.slot);
   }
 
   // The weapon in its hand: the player's overlay frame for this animation, at
@@ -223,21 +224,37 @@ export class EnemyViews {
     return BOSS_TINT[enemy.boss] ?? 0xffffff;
   }
 
-  // The bubble with its tail at (x, y), its dots lit in turn.
-  private drawBubble(g: Graphics, x: number, y: number): void {
-    const left = Math.round(x - BUBBLE_W / 2);
-    const top = Math.round(y - BUBBLE_H);
-    const lit = Math.floor(this.clockMs / DOT_MS) % 4; // 0..2 one dot, 3 all
-    g.clear()
-      .roundRect(left - 1, top - 1, BUBBLE_W + 2, BUBBLE_H + 2, 3)
-      .fill(BUBBLE_INK)
-      .roundRect(left, top, BUBBLE_W, BUBBLE_H, 2)
-      .fill(0xffffff)
-      .poly([x - 2, top + BUBBLE_H, x + 2, top + BUBBLE_H, x - 3, top + BUBBLE_H + 4])
-      .fill(0xffffff);
-    for (let d = 0; d < 3; d++) {
-      const on = lit === 3 || lit === d;
-      g.rect(left + 3 + d * 4, top + 4, 2, 2).fill(on ? BUBBLE_INK : 0xb0a8b9);
-    }
+  // The burst over (x, y), a word to each one, trembling.
+  private drawScream(g: Graphics, x: number, y: number, slot: number): void {
+    const word = SCREAMS[slot % SCREAMS.length];
+    const w = word.length * 4 + 3;
+    const shake = Math.round(Math.sin(this.clockMs / 23));
+    const left = Math.round(x - w / 2) + shake;
+    const top = Math.round(y - SCREAM_H);
+    const right = left + w;
+    const bottom = top + SCREAM_H;
+    const burst = [
+      left, top, left + w / 3, top - 2, left + w / 2, top, right - 3, top - 2, right, top, right + 2, top + 4, right, bottom,
+      left + w * 0.6, bottom, x - 2, bottom + 5, left + w * 0.3, bottom, left, bottom, left - 2, top + 4,
+    ];
+    g.clear().poly(burst).fill(0xffffff).stroke({ color: SCREAM_EDGE, width: 1 });
+    [...word].forEach((letter, i) => {
+      LETTERS[letter].forEach((row, dy) => {
+        for (let dx = 0; dx < 3; dx++) {
+          if (row & (0b100 >> dx)) g.rect(left + 2 + i * 4 + dx, top + 2 + dy, 1, 1).fill(SCREAM_INK);
+        }
+      });
+    });
   }
+}
+
+// A small life bar, centered on x with its top at y.
+export function drawLifeBar(g: Graphics, x: number, y: number, width: number, life: number, lifeMax: number): void {
+  const left = Math.round(x - width / 2);
+  const top = Math.round(y);
+  g.clear()
+    .rect(left - 1, top - 1, width + 2, 4)
+    .fill(0x1a1622)
+    .rect(left, top, Math.max(1, Math.round((width * life) / lifeMax)), 2)
+    .fill(0xd95763);
 }

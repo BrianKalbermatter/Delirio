@@ -115,5 +115,8 @@ int juego_quemaduras(void);
 // (despues de juego_iniciar).
 int juego_jefes_vencidos(void);
 void juego_cargar_jefes_vencidos(int vencidos);
+// Hogueras rotas (bit k: la ronda k), para guardar la partida y cargarla.
+int juego_hogueras_apagadas(void);
+void juego_cargar_hogueras(int apagadas);
 
 #endif

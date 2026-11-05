@@ -58,6 +58,7 @@ static int auto_objetivo = -1;    // el enemigo al que le pega solo (-1: ninguno
 static float auto_espera_ms;      // hasta que puede pegar solo de nuevo
 static int muertos_cobrados;      // enemigos muertos ya pasados a experiencia
 static int jefes_cobrados;        // jefes muertos ya pasados a experiencia
+static int hogueras_cobradas;     // hogueras rotas ya pasadas a experiencia
 static Ovejas ovejas;
 static Direccion pie_seguro;      // donde piso por ultima vez sin lava (vuelve ahi si se quema)
 static int quemaduras;            // sube cada vez que la lava lo quema (el navegador lo mira)
@@ -77,9 +78,11 @@ void juego_iniciar(unsigned int semilla){
   jugador_iniciar(&jugador, "Personaje_2", HABILIDADES_BASE, base);
   medusa = (Entity){.vidaMAX = 40, .vida = 40, .danio = 8};
   enemigos_iniciar(&enemigos, &laberinto, base.posicion, semilla);
+  enemigos_hogueras_solidas(&enemigos, &laberinto);
   ovejas_iniciar(&ovejas, &laberinto, semilla);
   muertos_cobrados = 0;
   jefes_cobrados = 0;
+  hogueras_cobradas = 0;
   pie_seguro = base.posicion;
   reloj_iniciar(&reloj);
 }
@@ -161,8 +164,10 @@ void juego_actualizar(float dt_ms){
   if (eventos & EVENTO_ANOCHECER)   printf("Cae la noche del dia %d\n", reloj.dia);
   if (eventos & EVENTO_CAMBIO_FASE) printf("Ahora es %s\n", reloj_nombre_fase(reloj.fase));
   if (eventos & EVENTO_EXPANSION){
-    if (laberinto_expandir(&laberinto)) printf("El laberinto crece (expansion %d)\n", reloj.expansiones);
-    else printf("El laberinto ya no puede crecer mas\n");
+    if (laberinto_expandir(&laberinto)){
+      printf("El laberinto crece (expansion %d)\n", reloj.expansiones);
+      enemigos_nueva_hoguera(&enemigos, &laberinto);
+    } else printf("El laberinto ya no puede crecer mas\n");
   }
 
   // 2. Las puertas de la plaza: abiertas de dia, cerradas de noche, y se
@@ -199,13 +204,15 @@ void juego_actualizar(float dt_ms){
   }
 
   // 4. Los enemigos: rodean al jugador y, cuando se animan, le pegan. El
-  //    primer dia (la tregua) no entran a la plaza; despues entran mientras
-  //    las puertas estan abiertas.
+  //    primer dia (la tregua) casi no entran a la plaza; despues entran
+  //    mientras las puertas estan abiertas.
   enemigos_plaza_permitida(&enemigos, !juego_tregua());
+  enemigos_noche(&enemigos, reloj_noche(&reloj));
   if (enemigos_actualizar(&enemigos, &laberinto, &jugador, dt_ms) > 0 && jugador.entidad.vida <= 0){
     printf("Te mataron los enemigos\n");
     jugador_morir(&jugador, laberinto_aparicion(&laberinto));
   }
+  enemigos_hogueras_solidas(&enemigos, &laberinto);
 
   ovejas_actualizar(&ovejas, &laberinto, jugador.entidad.posicion, dt_ms);
 
@@ -217,6 +224,9 @@ void juego_actualizar(float dt_ms){
   int jefes = enemigos.jefes_muertos - jefes_cobrados;
   jefes_cobrados = enemigos.jefes_muertos;
   if (jefes > 0) jugador_ganar_experiencia(&jugador, jefes * EXPERIENCIA_JEFE);
+  int hogueras = enemigos.hogueras_rotas - hogueras_cobradas;
+  hogueras_cobradas = enemigos.hogueras_rotas;
+  if (hogueras > 0) jugador_ganar_experiencia(&jugador, hogueras * EXPERIENCIA_HOGUERA);
 }
 
 int juego_quemaduras(void){ return quemaduras; }
@@ -225,6 +235,12 @@ int juego_tregua(void){ return reloj.dia == 1 && reloj.fase == FASE_DIA; }
 
 int juego_jefes_vencidos(void){ return enemigos.vencidos; }
 void juego_cargar_jefes_vencidos(int vencidos){ enemigos_cargar_vencidos(&enemigos, vencidos); }
+
+int juego_hogueras_apagadas(void){ return enemigos_hogueras_apagadas(&enemigos); }
+void juego_cargar_hogueras(int apagadas){
+  enemigos_cargar_hogueras(&enemigos, apagadas);
+  enemigos_hogueras_solidas(&enemigos, &laberinto);
+}
 
 const Entity *juego_jugador(void){ return &jugador.entidad; }
 const Jugador *juego_jugador_completo(void){ return &jugador; }
@@ -301,10 +317,13 @@ void juego_cargar_partida(float reloj_ms, float x, float y){
   float falta = reloj_ms;
   while (falta > 0){ // de a un segundo: cada expansion en su momento
     float paso = falta < SEGUNDO_MS ? falta : SEGUNDO_MS;
-    if (reloj_avanzar(&reloj, paso) & EVENTO_EXPANSION) laberinto_expandir(&laberinto);
+    if ((reloj_avanzar(&reloj, paso) & EVENTO_EXPANSION) && laberinto_expandir(&laberinto)){
+      enemigos_nueva_hoguera(&enemigos, &laberinto);
+    }
     falta -= paso;
   }
   laberinto_apertura(&laberinto, reloj_apertura_puertas(&reloj));
+  enemigos_hogueras_solidas(&enemigos, &laberinto);
   // Si el laberinto cambio desde que se guardo (otra version del juego) y
   // quedo adentro de un muro o sobre lava, vuelve a la base
   Direccion donde = {x, y};

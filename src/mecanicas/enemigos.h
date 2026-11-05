@@ -5,24 +5,41 @@
 // miran (mas rapido si el jugador esta distraido o de espaldas) y cuando
 // alcanza, se le tiran encima, pegan una vez y vuelven a escapar.
 //
-// Hay tres clases de enemigo, segun con quien andan:
-//   - Sueltos: deambulan solos. Tiran para la plaza y, adentro, dan vueltas.
-//     Los que quedan muy lejos reaparecen cerca del jugador (fuera de su
-//     vista), asi que mientras camina se van renovando.
-//   - Manadas: 3 o 4 que andan juntos. El primero manda (caza: tira para
-//     donde esta el jugador) y los otros lo siguen. Si uno ve al jugador,
-//     acecha toda la manada.
-//   - Rondas: grupos quietos en un lugar fijo, parados en circulo, charlando
-//     (uno habla y los demas lo miran) y alguno baila en el medio. Estan
-//     distraidos: ven poco. Si uno ve al jugador o lo lastiman, se alerta la
-//     ronda entera. Cuando se calman vuelven a su lugar a seguir charlando.
+// LAS HOGUERAS: de ahi sale todo. Cada ronda baila alrededor de una hoguera,
+// gritando para no escuchar el llanto de Zeus. Se la puede romper a golpes
+// (y tiene vida de sobra): rota, en esa zona no aparece nadie mas. Cada
+// expansion del laberinto enciende otra, mas afuera.
+//
+// Hay cuatro clases de enemigo (TipoEnemigo):
+//   - Espartanos: los de nivel 1, los que bailan en las rondas.
+//   - Fantasmas: flotan y no tienen miedo. Bailan en las hogueras embrujadas
+//     y salen de cualquier hoguera a deambular.
+//   - Espiritus: como los fantasmas, pero se quedan lejos y tiran sombras
+//     (Enemigos.tiros).
+//   - Esqueletos: se levantan de algunos espartanos muertos y caminan derecho
+//     al jugador, despacio, sin asustarse.
+//
+// Y segun con quien andan:
+//   - Sueltos: los fantasmas y espiritus que salen de la hoguera mas cercana
+//     al jugador (y lejos de su vista). Tiran para la plaza y, adentro, dan
+//     vueltas. De dia son pocos; a medida que se hace de noche salen mas y
+//     mas seguido, y al amanecer los que sobran vuelven al fuego. Sin
+//     hogueras, ninguno.
+//   - Manadas: unos que andan juntos. El primero manda (caza: tira para donde
+//     esta el jugador) y los otros lo siguen. Si uno ve al jugador, acecha
+//     toda la manada.
+//   - Rondas: pocos, dando vueltas alrededor de su hoguera, gritando de a uno.
+//     Estan distraidos: ven poco. Si uno ve al jugador o lo lastiman (a el o a
+//     la hoguera), se alerta la ronda entera. Cuando se calman vuelven a
+//     bailar. Sin hoguera quedan sueltos, y el que muere no vuelve.
 //
 // Y arbustos (arbustos.h): el jugador escondido en uno no se ve.
 //
 // LA PLAZA: ningun enemigo nace ni reaparece adentro. Al principio (la
-// tregua, ver enemigos_plaza_permitida) tampoco entran: se frenan en las
-// puertas, asi el jugador junta recursos y se prepara tranquilo. Despues,
-// mientras las puertas estan abiertas, los que deambulan van entrando.
+// tregua, ver enemigos_plaza_permitida) casi no entran: se frenan en las
+// puertas y solo se cuelan unos pocos, asi el jugador junta recursos y se
+// prepara con algun susto. Despues, mientras las puertas estan abiertas, los
+// que deambulan van entrando.
 //
 // JEFES: uno por sala de jefe (laberinto.h), en los ultimos huecos de la
 // lista. Por ahora son espartanos mas grandes (hasta que lleguen sus
@@ -40,12 +57,14 @@
 #include "laberinto.h"
 
 #define ENEMIGOS_MAX 96
-#define RONDAS_MAX 8   // rondas (grupos charlando)
-#define RONDA_MAX 6    // enemigos por ronda, como mucho
+#define RONDAS_MAX 14  // rondas (una por hoguera: entran en los bits de hogueras_apagadas)
+#define RONDA_MAX 4    // enemigos por ronda, como mucho
 #define MANADAS_MAX 6
 #define MANADA_MAX 4   // enemigos por manada, como mucho
 #define JEFES (ZONA_CANTIDAD - 1) // uno por sala (Medusas, Poseidon, Minotauro)
 #define EXPERIENCIA_JEFE 250
+#define EXPERIENCIA_HOGUERA 100
+#define TIROS_MAX 16   // sombras en el aire a la vez
 
 // Contra que cara de un muro lo clavo una lanza (solo las que el juego
 // muestra: la de adelante y los costados). El enemigo mira hacia el tiro.
@@ -62,8 +81,14 @@ typedef enum animo {
   ANIMO_ACECHA,   // lo ve: lo rodea a distancia, juntando coraje
   ANIMO_ATACA,    // se le tira encima
   ANIMO_HUYE,     // se asusto (le pegaron, pego, o el jugador se acerco)
-  ANIMO_CHARLA    // en su ronda, charlando y distraido
+  ANIMO_CHARLA    // en su ronda, bailando y gritando: distraido
 } Animo;
+
+// Que es. Una hoguera tambien va en la lista: asi le llegan los golpes, la
+// lanza y el pegar solo como a cualquiera (no se mueve ni piensa).
+typedef enum tipo_enemigo {
+  ENEMIGO_ESPARTANO, ENEMIGO_FANTASMA, ENEMIGO_ESPIRITU, ENEMIGO_ESQUELETO, ENEMIGO_HOGUERA
+} TipoEnemigo;
 
 // Lo que lleva encima y suelta al morir, ademas de sus monedas. Pocas veces
 // lleva algo (ver BOTIN_*_POR_100 en enemigos.c).
@@ -78,6 +103,7 @@ typedef enum arma_enemigo {
 } ArmaEnemigo;
 
 typedef struct enemigo {
+  TipoEnemigo tipo;
   Entity entidad;      // posicion = los pies; dir = hacia donde se mueve
   Direccion mira;      // hacia donde mira (al jugador mientras acecha)
   Animo animo;
@@ -95,10 +121,9 @@ typedef struct enemigo {
   int ronda;           // indice en Enemigos.rondas
   int asiento;         // su lugar en el circulo de la ronda
   int manada;          // indice en Enemigos.manadas
-  // En la ronda
-  float baile_ms;      // > 0 mientras baila en el medio
-  Direccion ajuste;    // se acomoda un poco en su lugar (se balancea)
-  float ajuste_ms;     // hasta que se vuelve a acomodar
+  float naciendo_ms;   // > 0 mientras aparece o se levanta: todavia no hace nada
+  float tiro_ms;       // espiritu: hasta su proxima sombra; esqueleto: hasta su proximo golpe
+  float lanzando_ms;   // > 0 mientras el espiritu prepara la sombra
   // Lo que suelta al morir (se elige al nacer)
   Botin botin;
   int monedas;         // 1 a 3
@@ -112,15 +137,28 @@ typedef struct enemigo {
   float afuera_ms;     // cuanto hace que el jugador salio de su sala
 } Enemigo;
 
-// Un grupo charlando en circulo alrededor de `centro`.
+// Un grupo bailando en circulo alrededor de la hoguera de `centro`.
 typedef struct ronda {
   Direccion centro;
   int miembros[RONDA_MAX]; // huecos de la lista
   int cant;
-  int habla;      // hueco del que habla ahora (-1: silencio)
-  float turno_ms; // cuanto le queda al turno (o al silencio)
-  float baile_ms; // hasta que alguno se ponga a bailar
+  int hoguera;    // su hueco en la lista
+  int embrujada;  // 1: la bailan fantasmas y espiritus; 0: espartanos
+  int apagada;    // 1: rota. No vuelve nadie
+  int obstaculo;  // la caja solida de la hoguera (-1: sin poner)
+  int habla;      // hueco del que grita ahora (-1: toman aire)
+  float turno_ms; // cuanto le queda al grito (o al silencio)
+  float giro;     // angulo del circulo, en radianes
+  float sentido;  // +1, -1 o 0: para donde gira ahora
+  float paso_ms;  // hasta que cambie de sentido
 } Ronda;
+
+// Una sombra tirada por un espiritu.
+typedef struct tiro {
+  int activo;
+  Direccion posicion, dir;
+  float vuelo_ms; // cuanto le queda antes de deshacerse
+} Tiro;
 
 // Una manada: el primero vivo de `miembros` es el que manda.
 typedef struct manada {
@@ -131,25 +169,38 @@ typedef struct manada {
 typedef struct enemigos {
   Enemigo lista[ENEMIGOS_MAX];
   unsigned int azar;
+  unsigned int azar_hogueras; // aparte: al cargar se encienden las mismas en los mismos lugares
   Direccion plaza; // centro de la plaza, hacia donde tiran al deambular
   int atacando;    // cuantos se estan tirando encima del jugador ahora
   Ronda rondas[RONDAS_MAX];
   int cant_rondas;
   Manada manadas[MANADAS_MAX];
   int cant_manadas;
+  Tiro tiros[TIROS_MAX];
   Arbustos arbustos;
   int arbusto_jugador; // en que arbusto esta el jugador (-1: en ninguno)
   float delatado_ms;   // > 0: pego desde un arbusto y se lo ve igual
   int muertos;         // cuantos mato el jugador en total (para su experiencia)
   int jefes_muertos;   // cuantos jefes mato (dan EXPERIENCIA_JEFE cada uno)
+  int hogueras_rotas;  // cuantas rompio (dan EXPERIENCIA_HOGUERA cada una)
   int vencidos;        // bit (1 << zona) por cada jefe ya vencido: no vuelve
   int combate;         // hueco del jefe peleando con el jugador (-1: ninguno)
-  int plaza_permitida; // 0 durante la tregua: no entran a la plaza
+  int plaza_permitida; // 0 durante la tregua: casi no entran a la plaza
+  int colados;         // cuantos se colaron a la plaza durante la tregua
+  float noche;         // cuan cerrada esta la noche (0..1, ver reloj_noche)
+  float salida_ms;     // hasta que salga otro suelto de una hoguera
+  int sueltos;         // cuantos andan ahora
 } Enemigos;
 
-// Pone las rondas y los arbustos, y reparte a los sueltos alrededor de
-// `jugador`, a una distancia en la que no los ve.
+// Pone las hogueras con sus rondas y los arbustos. Los sueltos van saliendo de
+// las hogueras de a poco.
 void enemigos_iniciar(Enemigos *e, const Laberinto *lab, Direccion jugador, unsigned int semilla);
+
+// El laberinto acaba de crecer: enciende una hoguera en lo nuevo (si entra).
+void enemigos_nueva_hoguera(Enemigos *e, const Laberinto *lab);
+
+// Las hogueras encendidas son solidas y las rotas no: pone o quita sus cajas.
+void enemigos_hogueras_solidas(Enemigos *e, Laberinto *lab);
 
 // Un paso: cada uno decide que hacer y se mueve. Los que alcanzan al jugador
 // le pegan (si no esta bloqueando ni en el aire). Devuelve el danio total que
@@ -200,7 +251,7 @@ int enemigos_jugador_escondido(const Enemigos *e);
 // RONDAS_MAX + el de su manada, o -1 si anda solo.
 int enemigos_grupo(const Enemigos *e, int i);
 
-// 1 si el enemigo `i` esta hablando en su ronda.
+// 1 si el enemigo `i` esta gritando en su ronda.
 int enemigos_habla(const Enemigos *e, int i);
 
 // De `pies` al borde del cuerpo del enemigo `i` (un jefe es grande).
@@ -212,10 +263,18 @@ float enemigos_escala(const Enemigos *e, int i);
 // Que parte del golpe cargo el jefe `i` (0..1; 0 si no esta cargando).
 float enemigos_carga(const Enemigos *e, int i);
 
-// Si los enemigos pueden entrar a la plaza (0: tregua, se frenan en las puertas).
+// Si los enemigos pueden entrar a la plaza (0: tregua, se frenan en las puertas
+// salvo unos pocos que se cuelan).
 void enemigos_plaza_permitida(Enemigos *e, int si);
+
+// Cuan cerrada esta la noche (0..1): cuanto mas, mas enemigos salen de las hogueras.
+void enemigos_noche(Enemigos *e, float noche);
 
 // Jefes ya vencidos (bits 1 << Zona), para guardar la partida y cargarla.
 void enemigos_cargar_vencidos(Enemigos *e, int vencidos);
+
+// Hogueras rotas (bit k: la ronda k), para guardar la partida y cargarla.
+int enemigos_hogueras_apagadas(const Enemigos *e);
+void enemigos_cargar_hogueras(Enemigos *e, int apagadas);
 
 #endif

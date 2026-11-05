@@ -88,6 +88,8 @@ float reloj_restante_fase(const Reloj *r){
   return duracion_fase(r->fase) - r->ms_en_fase;
 }
 
+#define NOCHE_AL_ANOCHECER 0.3f // lo que vale reloj_noche al terminar la tarde
+
 float reloj_luz(const Reloj *r){
   switch (r->fase){
     case FASE_DIA: // aclara durante el amanecer, despues pleno dia
@@ -98,6 +100,20 @@ float reloj_luz(const Reloj *r){
       return 0.0f;
   }
   return 1.0f;
+}
+
+float reloj_noche(const Reloj *r){
+  switch (r->fase){
+    case FASE_DIA: // se va con el amanecer
+      return 1.0f - reloj_luz(r);
+    case FASE_TARDE:
+      return NOCHE_AL_ANOCHECER * r->ms_en_fase / DURACION_TARDE_MS;
+    case FASE_NOCHE: {
+      float t = r->ms_en_fase / (DURACION_NOCHE_MS / 2);
+      return t >= 1.0f ? 1.0f : NOCHE_AL_ANOCHECER + (1.0f - NOCHE_AL_ANOCHECER) * t;
+    }
+  }
+  return 0.0f;
 }
 
 float reloj_sol(const Reloj *r){

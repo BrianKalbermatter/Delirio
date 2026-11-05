@@ -78,7 +78,7 @@ function center(ctx: CanvasRenderingContext2D, frame: Frame, colors: Rgb[]) {
 }
 
 // A disc of `color` fading out smoothly from the center to `radius`.
-function radial(radius: number, color: Rgb): Texture {
+export function radial(radius: number, color: Rgb): Texture {
   const size = radius * 2;
   return paintTexture(size, size, (ctx) => {
     const pixels = ctx.createImageData(size, size);
