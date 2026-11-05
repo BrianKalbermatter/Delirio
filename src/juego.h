@@ -97,6 +97,13 @@ void juego_cargar_partida(float reloj_ms, float x, float y);
 // el equipo): cubierto puede caminar despacio.
 void juego_escudo(int si);
 
+// Si el jugador tiene puesta una armadura (lo dice el navegador, que lleva el
+// equipo): sin ella un golpe lo mata.
+void juego_armadura(int si);
+
+// Lleva al jugador a (x, y): un santuario despierto.
+void juego_teletransportar(float x, float y);
+
 // Gasta un punto de nivel en una mejora (MejoraId). Devuelve 1 si la compro.
 int juego_mejorar(int mejora);
 

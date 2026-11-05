@@ -202,16 +202,35 @@ heap, a potion, coins and 100 experience, and stays broken in your save. Every
 time the maze grows, a new one lights up further out.
 
 Fires also let strays out, from the living one closest to you and out of your
-sight. By day there are 3 at most, one a minute. **The darker it gets, the more
-come out and the faster**, up to 14, one every 9 seconds at the dead of night,
-and the fallen of the circles come back sooner too. At dawn the ones left over
-that nobody sees go back to the fire. With no fires left, none come.
+sight, and they go looking for you through the corridors. They come out
+together, **5 at a time and sometimes 9**. By day there are 14 at most, a group
+every 40 seconds. **As the night goes on, more come out and faster**, up to 22
+at its end, a group every 25 seconds, and every day that passes brings a few
+more. The fallen of the circles come back sooner at night too. At dawn the ones
+left over that nobody sees go back to the fire. **The longer you stay in the
+maze, the more close in on you**: up to 14 more after three minutes, coming out
+faster. Back in the square that wears off. With no fires left, none come.
+
+Sixteen spirits and sixteen spartans also stroll around the maze at any hour,
+each out of a fire of its own. They look for nobody until they see you.
+
+**One hit kills you.** With armor on you take three. Covering with the shield
+in hand sends a spirit's clot back to the nearest enemy, hurting it.
+
+The maze is full of heaps of bones, of those who came before. Most are just
+that; some get up when you walk past.
 
 - **Ghosts** float and have no fear: they stalk you and throw themselves at you.
 - **Spirits** keep their distance and throw clots of darkness. A clot stops at
   walls; blocking or jumping saves you from it.
 - **Skeletons** get up from some dead spartans and walk straight at you, slowly,
   without ever running away.
+
+**Shrines.** You start next to the book's shrine, in the middle of the square:
+press E on it and it lights up and lets the map book go. Nine more stand around the
+maze. Press E on one to wake it up, and from then on E on any shrine awake lists
+all the ones awake: pick one (click or 1-9) and you are there. The game waits
+while the list is open.
 
 **The square is your base.** No enemy is ever born or comes back to life
 inside it. On the first day (the truce, until dusk) they mostly stop at the
@@ -349,5 +368,6 @@ read from its Aseprite file and recoloured to the square's greens.
 | Old enemy (Enemigo1, not used now) | `art/enemigo1.py` | Same as Espartano1, with `body=Enemigo` |
 | Bonfire, the spawner (tags `arde`, `herida`, `agoniza`, `apagada`) | `art/hoguera_original.png` + `art/hoguera.py` (needs scipy) → `client/public/sprites/hoguera.{png,json}` | `python3 art/hoguera.py` |
 | Ghost, spirit and skeleton (one drawing each looking left, moved by the script) and the spirit's shot | `art/fantasma_original.png`, `art/espiritu_original.png`, `art/esqueleto_original.png` + `art/espectros.py` (needs scipy) → `client/public/sprites/{fantasma,espiritu,esqueleto,espiritu_tiro}.{png,json}` | `python3 art/espectros.py` |
+| Shrines (10, awake and asleep) | `art/santuarios_original.png` + `art/santuarios.py` (needs scipy) → `client/public/sprites/santuarios.{png,json}` | `python3 art/santuarios.py` |
 | Torch fire | `art/antorcha_fuego.py` | `python3 art/antorcha_fuego.py` |
 | Aseprite sprites to sheets | `client/scripts/export-sprites.sh` | `bash client/scripts/export-sprites.sh` |

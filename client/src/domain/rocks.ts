@@ -164,7 +164,7 @@ export function rockBase(rock: BigRock, width: number): { x: number; y: number; 
 }
 
 // Small seeded generator (mulberry32) for one cell.
-function random(seed: number, cx: number, cy: number): () => number {
+export function random(seed: number, cx: number, cy: number): () => number {
   let a = (seed ^ Math.imul(cx + 1, 0x9e3779b1) ^ Math.imul(cy + 1, 0x85ebca6b)) >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;

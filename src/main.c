@@ -207,7 +207,7 @@ void juego_actualizar(float dt_ms){
   //    primer dia (la tregua) casi no entran a la plaza; despues entran
   //    mientras las puertas estan abiertas.
   enemigos_plaza_permitida(&enemigos, !juego_tregua());
-  enemigos_noche(&enemigos, reloj_noche(&reloj));
+  enemigos_noche(&enemigos, reloj_noche(&reloj), reloj.dia);
   if (enemigos_actualizar(&enemigos, &laberinto, &jugador, dt_ms) > 0 && jugador.entidad.vida <= 0){
     printf("Te mataron los enemigos\n");
     jugador_morir(&jugador, laberinto_aparicion(&laberinto));
@@ -334,6 +334,12 @@ void juego_cargar_partida(float reloj_ms, float x, float y){
 }
 
 void juego_escudo(int si){ jugador.escudo = si; }
+void juego_armadura(int si){ jugador.armadura = si; }
+
+void juego_teletransportar(float x, float y){
+  jugador.entidad.posicion = pie_seguro = (Direccion){x, y};
+  jugador.hay_destino = 0;
+}
 
 int juego_mejorar(int mejora){ return jugador_mejorar(&jugador, mejora); }
 

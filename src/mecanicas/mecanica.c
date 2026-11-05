@@ -109,8 +109,7 @@ float reloj_noche(const Reloj *r){
     case FASE_TARDE:
       return NOCHE_AL_ANOCHECER * r->ms_en_fase / DURACION_TARDE_MS;
     case FASE_NOCHE: {
-      float t = r->ms_en_fase / (DURACION_NOCHE_MS / 2);
-      return t >= 1.0f ? 1.0f : NOCHE_AL_ANOCHECER + (1.0f - NOCHE_AL_ANOCHECER) * t;
+      return NOCHE_AL_ANOCHECER + (1.0f - NOCHE_AL_ANOCHECER) * r->ms_en_fase / DURACION_NOCHE_MS;
     }
   }
   return 0.0f;

@@ -6,7 +6,7 @@ import type { EnemyState, Shot } from "../wasm/game-wasm";
 import { STATE } from "../wasm/game-wasm";
 import { Animator } from "./animator";
 import { DEPTH, depthOf } from "./depth";
-import { drawLifeBar, HIT_TINT } from "./enemies";
+import { drawLifeBar, HIT_TINT, STEADY_MS } from "./enemies";
 import { placeFrame, type SpriteSheet } from "./sprite-sheet";
 
 const FLOOR_MARGIN = 3; // px of the frames under the feet (art/espectros.py)
@@ -37,6 +37,8 @@ interface SpectreView {
   animator: Animator;
   seen: number;
   right: boolean;
+  turnMs: number;
+  stillMs: number;
 }
 
 export class SpectreViews {
@@ -68,7 +70,7 @@ export class SpectreViews {
   private create(slot: number, kind: Kind): SpectreView {
     const animator = new Animator(this.sheets[kind]);
     animator.play(TAGS[kind].born, false);
-    const view: SpectreView = { kind, sprite: new Sprite(), bar: new Graphics(), animator, seen: 0, right: false };
+    const view: SpectreView = { kind, sprite: new Sprite(), bar: new Graphics(), animator, seen: 0, right: false, turnMs: 0, stillMs: 0 };
     this.depth.addChild(view.sprite, view.bar);
     view.bar.zIndex = Number.MAX_SAFE_INTEGER;
     this.views.set(slot, view);
@@ -87,14 +89,22 @@ export class SpectreViews {
     const tags = TAGS[view.kind];
     const state = STATE[enemy.state];
     const dead = state === "MUERTO";
-    if (dead) view.animator.play("muere", false);
+    if (enemy.lying) {
+      view.animator.play("muere", false);
+      view.animator.seek(Number.MAX_SAFE_INTEGER);
+    } else if (dead) view.animator.play("muere", false);
     else if (enemy.birthMs > 0) view.animator.play(tags.born, false);
     else if (state === "ATACANDO" || enemy.mood === "ATACA") view.animator.play(tags.strike);
-    else view.animator.play(state === "QUIETO" ? tags.idle : tags.move);
+    else {
+      view.stillMs = state === "QUIETO" ? view.stillMs + dtMs : 0;
+      view.animator.play(view.stillMs >= STEADY_MS ? tags.idle : tags.move);
+    }
     view.animator.update(dtMs);
     const frame = view.animator.currentFrame();
     if (!frame) return;
-    if (Math.abs(enemy.lookX) > TURN_AT) view.right = enemy.lookX > 0;
+    const turning = Math.abs(enemy.lookX) > TURN_AT && enemy.lookX > 0 !== view.right;
+    view.turnMs = turning ? view.turnMs + dtMs : 0;
+    if (view.turnMs >= STEADY_MS) view.right = !view.right;
     const { sprite } = view;
     placeFrame(sprite, frame, enemy.x, enemy.y + FLOOR_MARGIN);
     if (view.right) {

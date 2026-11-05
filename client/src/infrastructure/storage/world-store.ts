@@ -31,6 +31,7 @@ export interface SavedWorld {
   felledTrees?: number[];
   // What the player set up (a workbench): item id and foot position.
   structures?: { id: string; x: number; y: number }[];
+  shrines?: number[]; // the ones awake (ids from domain/shrines.ts)
   x: number;
   y: number;
   inventory: (SavedItem | null)[];
@@ -61,6 +62,7 @@ export function loadWorld(characterId: string): SavedWorld | null {
         ? { broken: saved.rocks.broken.filter(Number.isInteger), loose: Number(saved.rocks.loose) || 1 }
         : undefined,
       felledTrees: Array.isArray(saved.felledTrees) ? saved.felledTrees.filter(Number.isInteger) : [],
+      shrines: Array.isArray(saved.shrines) ? saved.shrines.filter(Number.isInteger) : [],
       structures: Array.isArray(saved.structures)
         ? saved.structures.filter((s) => typeof s?.id === "string" && Number.isFinite(s.x) && Number.isFinite(s.y))
         : [],

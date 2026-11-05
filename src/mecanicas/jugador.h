@@ -86,6 +86,7 @@ typedef struct jugador {
   int saltos;        // sube con cada salto, tambien el del aire (para animarlo)
   int salto_aire;    // 1 si ya uso el salto doble en este salto
   int escudo;        // 1 con un escudo en la mano: cubierto puede caminar (despacio)
+  int armadura;      // 1 con armadura puesta: aguanta GOLPES_CON_ARMADURA golpes
   float muerto_ms;   // > 0 mientras esta muerto: cuenta hasta reaparecer
   Direccion reaparicion; // donde reaparece al terminar de morir
 } Jugador;

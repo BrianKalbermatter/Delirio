@@ -25,6 +25,41 @@
         overflow: hidden;
         background: #000;
       }
+      .shrine-menu {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 1; /* over the map book, under the pause menu */
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        width: min(320px, 90%);
+        max-height: 90%;
+        padding: 14px;
+        background: rgba(9, 7, 16, 0.92);
+        border: 1px solid var(--line);
+        border-radius: 4px;
+      }
+      .shrine-menu[hidden] { display: none; }
+      .shrine-menu-title { margin: 0; text-align: center; letter-spacing: 0.2em; color: #d8cfb8; }
+      .shrine-menu-help { margin: 0; text-align: center; font-size: 12px; color: var(--muted); }
+      .shrine-menu > div { display: flex; flex-direction: column; gap: 4px; overflow-y: auto; }
+      .shrine-menu-row {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        padding: 3px 10px;
+        font: inherit;
+        color: var(--text);
+        text-align: left;
+        background: none;
+        border: 1px solid var(--line);
+        border-radius: 4px;
+      }
+      .shrine-menu-row canvas { image-rendering: pixelated; }
+      .shrine-menu-row:hover:not(:disabled), .shrine-menu-row.hover:not(:disabled) { border-color: #d8cfb8; }
+      .shrine-menu-row:disabled { color: var(--muted); }
       .pause {
         position: absolute;
         inset: 0;

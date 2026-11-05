@@ -24,6 +24,7 @@ import {
   stuckFrame,
   throwDirIndex,
 } from "./domain/items";
+import { planShrines, type Shrine, SHRINE_NAMES } from "./domain/shrines";
 import { ITEM_SPRITES, placeItems, type Prop, WEAPON_ITEMS } from "./domain/level-items";
 import { Square } from "./domain/square";
 import { placeSampleTree } from "./domain/sample-tree";
@@ -48,6 +49,7 @@ import { Camera } from "./infrastructure/render/camera";
 import { CursorOverlay, TargetMarker } from "./infrastructure/render/cursor";
 import { DEPTH, depthOf } from "./infrastructure/render/depth";
 import { BonfireViews } from "./infrastructure/render/bonfires";
+import { BoneField } from "./infrastructure/render/bones";
 import { EnemyViews } from "./infrastructure/render/enemies";
 import { FlameGlow } from "./infrastructure/render/flame-glow";
 import { Glow } from "./infrastructure/render/glow";
@@ -61,6 +63,7 @@ import { LevelAura } from "./infrastructure/render/level-aura";
 import { LevelWave } from "./infrastructure/render/level-wave";
 import { ForestGloom } from "./infrastructure/render/forest-gloom";
 import { Lighting } from "./infrastructure/render/lighting";
+import { ShrineViews } from "./infrastructure/render/shrines";
 import { SpectreViews } from "./infrastructure/render/spectres";
 import { type Box, loadMazeTiles, MazeRenderer, type View } from "./infrastructure/render/maze-renderer";
 import {
@@ -80,6 +83,7 @@ import { DOLL_HEIGHT, DOLL_SCALE, DOLL_WIDTH, InventoryPanel } from "./infrastru
 import { GameLog } from "./infrastructure/ui/game-log";
 import { SideTabs } from "./infrastructure/ui/side-tabs";
 import { MapBook } from "./infrastructure/ui/map-book";
+import { ShrineMenu } from "./infrastructure/ui/shrine-menu";
 import { PauseMenu } from "./infrastructure/ui/pause-menu";
 import {
   ABILITY,
@@ -267,6 +271,7 @@ const [
   spiritSheet,
   skeletonSheet,
   spiritShotSheet,
+  shrineSheet,
   treeImage,
   treeShadowImage,
   orangeTreeImage,
@@ -320,6 +325,8 @@ const [
   loadSpriteSheet(`${BASE}sprites/espiritu`),
   loadSpriteSheet(`${BASE}sprites/esqueleto`),
   loadSpriteSheet(`${BASE}sprites/espiritu_tiro`),
+  // The shrines (art/santuarios.py).
+  loadSpriteSheet(`${BASE}sprites/santuarios`),
   // The trees of the square with their shadows, and the stones and tufts at
   // their foot (art/arbol2_build.sh, art/arbol3_build.sh).
   loadImage(`${BASE}sprites/arbol_2.png`),
@@ -449,7 +456,8 @@ const spawn = baseSpawn;
 // are placed as always), plus any start item added to the game after that
 // save was made and found nowhere in it (the shield).
 const NEWER_START_ITEMS = new Set(["shield"]);
-const items = placeItems(map, spawn).filter(
+const shrines = planShrines(seed, map, baseSpawn, game.bonfires());
+const items = placeItems(map, spawn, shrines[0]).filter(
   (prop) => !savedWorld || !prop.pickup || (NEWER_START_ITEMS.has(prop.pickup.id) && !inSave(savedWorld, prop.pickup.id)),
 );
 let propViews: PropView[] = items.map((prop) => addProp(prop, prop.frame === undefined));
@@ -496,7 +504,10 @@ if (!savedWorld) propViews.push(
 // pick up with E, placed cell by cell as the maze is carved. Going on, the
 // pebbles lying around are among the saved floor items, and the broken rocks
 // stay broken (a save from before the rocks gets its pebbles now).
-const rockField = new RockField(seed, standing, sheets.get("rocas")!, map, game.maze, savedWorld?.rocks?.broken ?? [], game.bonfires);
+const rockField = new RockField(seed, standing, sheets.get("rocas")!, map, game.maze, savedWorld?.rocks?.broken ?? [], () => [
+  ...game.bonfires(),
+  ...shrines,
+]);
 // What lies loose changed with LOOSE_VERSION: an older save gets what is new
 // added on load (the pebbles and branches at 2, the saplings at 3).
 const LOOSE_VERSION = 3;
@@ -629,6 +640,9 @@ const spectreViews = new SpectreViews(standing, {
   shot: spiritShotSheet,
 });
 const bonfireViews = new BonfireViews(bonfireSheet, standing);
+const shrineViews = new ShrineViews(shrines, shrineSheet, standing, game.maze, savedWorld?.shrines ?? []);
+const boneField = new BoneField(seed, skeletonSheet, map, baseSpawn);
+boneField.update();
 const targetMarker = new TargetMarker();
 const sunShadow = new Sprite({ tint: 0x000000 });
 // The white ring under the enemy the player swings at on its own.
@@ -642,7 +656,7 @@ const dust = new Dust();
 const pit = new Sprite(Texture.from(pitImage));
 pit.position.set(pitBox.x, pitBox.y);
 pit.setSize(pitBox.w, pitBox.h);
-ground.addChild(maze.floor, pit, meadowGround, treeViews.ground, stumpViews.ground, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
+ground.addChild(maze.floor, pit, meadowGround, treeViews.ground, stumpViews.ground, boneField.view, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
 standing.addChild(blood.air, airPuff);
 const forestGloom = new ForestGloom(square.forest, canvas.width, canvas.height);
 const lighting = new Lighting(canvas.width, canvas.height);
@@ -656,7 +670,7 @@ const hud = new Hud();
 const levelWave = new LevelWave(scene, canvas.width, canvas.height);
 const levelAura = new LevelAura(levelAuraBehindSheet, levelAuraFrontSheet);
 standing.addChild(levelAura.behind);
-scene.addChild(forestGloom.view, lighting.view, bonfireViews.light, torchGlows.rightHand.view, torchGlows.leftHand.view, playerGlow.view, levelAura.front);
+scene.addChild(forestGloom.view, lighting.view, bonfireViews.light, shrineViews.light, torchGlows.rightHand.view, torchGlows.leftHand.view, playerGlow.view, levelAura.front);
 app.stage.addChild(
   playerBar.view,
   keyPrompt,
@@ -799,6 +813,7 @@ cursor.setScale(screenScale);
 const book = new MapBook(gameEl);
 book.setScale(screenScale);
 mouse.addPressSurface(book.element);
+const shrineMenu = new ShrineMenu(gameEl, shrineSheet, travelTo);
 
 // Abilities go straight to C. Held ones (run with Shift, block with the right
 // button) are sent on press and release.
@@ -820,6 +835,7 @@ function useAbility(ability: number): void {
 }
 let blocking = false;
 let shieldHeld = false; // last told to C
+let armorWorn = false;
 let medusaWasAlive = true;
 
 // Last point sent to C, only to draw the marker on the floor.
@@ -879,8 +895,14 @@ function update(dtMs: number): void {
     shieldHeld = shield;
     game.setShield(shield);
   }
+  const armor = equipment.slots.body !== null;
+  if (armor !== armorWorn) {
+    armorWorn = armor;
+    game.setArmor(armor);
+  }
   game.update(dtMs); // the C core moves the game one step
   if (syncMaze()) {
+    boneField.update();
     maze.invalidate();
     addLoose(rockField.sync(true)); // the cells the growth carved get their rocks
   }
@@ -1536,6 +1558,7 @@ function showKeyPrompt(): void {
     keyPickupInReach() !== undefined ||
     fruitInReach() !== null ||
     structureInReach() !== undefined ||
+    shrineInReach() !== undefined ||
     (holdsPickaxe() && rockInReach() !== null);
   if (!keyPrompt.visible) return;
   const [sx, sy] = worldToScreen(
@@ -1605,6 +1628,7 @@ function snapshotWorld(): SavedWorld {
     bonfiresOut: game.bonfiresOut(),
     rocks: { broken: rockField.brokenIds, loose: LOOSE_VERSION },
     felledTrees: treeViews.felledIds,
+    shrines: shrineViews.awakeIds,
     structures: structures.map((s) => ({ id: s.item.id, x: s.x, y: s.y })),
     x: p.x,
     y: p.y,
@@ -1653,7 +1677,7 @@ function kickUpDust(dtMs: number): void {
   for (const e of game.enemies()) {
     const key = `enemy${e.slot}`;
     seen.add(key);
-    const walks = e.kind === "spartan" || e.kind === "skeleton";
+    const walks = (e.kind === "spartan" || e.kind === "skeleton") && !e.lying;
     dust.track(key, e.x, e.y, walks && STATE[e.state] !== "MUERTO" && e.pinned === null && e.bush < 0, dtMs);
   }
   dust.keep(seen);
@@ -1680,6 +1704,7 @@ function draw(): void {
   enemyViews.show(enemies.filter((e) => e.kind === "spartan"), enemyAnimMs, cover.bush);
   spectreViews.show(enemies.filter((e) => e.kind !== "spartan" && e.kind !== "bonfire"), game.shots(), enemyAnimMs);
   bonfireViews.update(enemyAnimMs, game.bonfires(), view, worldToScreen, game.clock().daylight);
+  shrineViews.update(enemyAnimMs, worldToScreen);
   showFocusRing(enemies, cover);
   enemyAnimMs = 0;
   targetMarker.show(target, performance.now());
@@ -1740,7 +1765,7 @@ function showControlsHint(root: HTMLElement): void {
   const hint = document.createElement("p");
   hint.className = "hint";
   hint.textContent =
-    "W A S D: move · Right button: cover (with a shield you walk slowly) · Spear in the right hand: hold the left button to aim (the bar under the feet charges: the fuller, the further), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Next to an enemy: swings at it on its own, one at a time (white ring) · C: support · V: parry · Space: jump (twice in the air with the double jump, Skills tab) · R: punch the ground · F: clock speed · G: test gates · Esc: menu";
+    "W A S D: move · Right button: cover (with a shield you walk slowly) · Spear in the right hand: hold the left button to aim (the bar under the feet charges: the fuller, the further), release to throw · `: map book (left draws, right erases) · 1-9 or click a slot: select · X or right click a slot: drop · E on a branch, a weapon or the torch: pick it up · E on a shrine: wake it up, or pick one awake to travel to · Inventory tab: double click an item to use or hold it, or drag it onto a body square (right click on the square: take off) · Next to an enemy: swings at it on its own, one at a time (white ring) · C: support · V: parry · Space: jump (twice in the air with the double jump, Skills tab) · R: punch the ground · F: clock speed · G: test gates · Esc: menu";
   root.appendChild(hint);
 }
 
@@ -1948,7 +1973,7 @@ function showPlayerGlow(): void {
 function hiddenThings(enemies: EnemyState[], cover: PlayerCover): Box[] {
   const things: Box[] = [];
   for (const e of enemies) {
-    if (e.kind === "bonfire" || (e.bush >= 0 && e.bush !== cover.bush)) continue;
+    if (e.kind === "bonfire" || e.lying || (e.bush >= 0 && e.bush !== cover.bush)) continue;
     const half = ENEMY_BODY_WIDTH / 2;
     things.push({ left: e.x - half, top: e.y - ENEMY_BODY_HEIGHT, right: e.x + half, bottom: e.y });
   }
@@ -2034,6 +2059,49 @@ function structureInReach(): Structure | undefined {
 }
 
 // E next to a workbench: the crafting grid, in the Inventory tab.
+// ---------------------------------------------------------------- shrines
+
+const SHRINE_REACH = 52; // px from the feet to a shrine's
+const SHRINE_ARRIVAL = 26; // px below its feet, where one arrives
+
+function shrineInReach(): Shrine | undefined {
+  return shrines.find((s) => Math.hypot(s.x - player.x, s.y - player.y) <= SHRINE_REACH);
+}
+
+// The book's shrine, just awake, lets the book go.
+function giveBook(shrine: Shrine): void {
+  const book = ITEMS.map_book;
+  if (inventory.has(book.id) || propViews.some((v) => v.prop.pickup?.id === book.id)) return;
+  const fall = { fromX: shrine.x, fromY: shrine.y - 40, ms: DROP_FALL_MS };
+  propViews.push(itemOnFloor(book, shrine.x + 34, shrine.y + 22, { fall }));
+}
+
+// E on a shrine: wakes it up, or lists the ones awake to go to.
+function useShrine(): boolean {
+  const here = shrineInReach();
+  if (!here) return false;
+  if (!shrineViews.isAwake(here.id)) {
+    shrineViews.wake(here.id);
+    if (here.id === 0) {
+      giveBook(here);
+      gameLog.log("The shrine wakes up and lets the book go. Wake up the others with E: from any of them you can travel to the rest.");
+    } else gameLog.log("The shrine wakes up. You can come back here.");
+    saveGame();
+    return true;
+  }
+  const awake = shrines.filter((s) => shrineViews.isAwake(s.id));
+  if (awake.length > 1) shrineMenu.open(awake, here);
+  else gameLog.log("No other shrine is awake yet.");
+  return true;
+}
+
+function travelTo(shrine: Shrine): void {
+  game.teleport(shrine.x, shrine.y + SHRINE_ARRIVAL);
+  camera.x = shrine.x;
+  camera.y = shrine.y;
+  gameLog.log(`The shrine takes you to the ${SHRINE_NAMES[shrine.id]}.`);
+}
+
 function useStructure(): boolean {
   const s = structureInReach();
   if (!s) return false;
@@ -2240,13 +2308,17 @@ function worldToScreen(x: number, y: number): [number, number] {
 }
 
 window.addEventListener("keydown", (e) => {
+  if (shrineMenu.isOpen) {
+    if (!e.repeat) shrineMenu.press(e.code);
+    return;
+  }
   if (e.code in WASD && mouse.locked) wasdHeld.add(e.code);
-  if (e.code === "KeyE" && mouse.locked && !e.repeat && !pickUpWithKey() && !pickFruit() && !useStructure()) mineWithKey();
+  if (e.code === "KeyE" && mouse.locked && !e.repeat && !pickUpWithKey() && !pickFruit() && !useStructure() && !useShrine()) mineWithKey();
   if (e.code === "KeyT") game.reset();
   if (isMapKey(e) && mouse.locked) {
     e.preventDefault();
     if (inventory.has("map_book")) book.toggle();
-    else gameLog.log("You have no map. Look for the book in the square.");
+    else gameLog.log("You have no map. Press E on the shrine in the middle of the square.");
   }
   if (e.code === "KeyG") {
     game.testGates();
@@ -2292,7 +2364,7 @@ function frame(now: number): void {
     fpsFrames = 0;
     fpsSince = now;
   }
-  if (mouse.locked) update(dtMs); // paused while the menu is open
+  if (mouse.locked && !shrineMenu.isOpen) update(dtMs); // paused while a menu is open
   draw();
   requestAnimationFrame(frame);
 }

@@ -47,6 +47,9 @@ const LETTERS: Record<string, number[]> = {
 // pinned_hit_*: 10 frames of 70 ms, then the pinned_* loop.
 const PIN_HIT_MS = 700;
 const TILE = 32; // LAB_TILE in src/mecanicas/laberinto.h
+// C decides anew every step, and a stop or a turn of one step must not restart
+// an animation: it counts only if it lasts this long.
+export const STEADY_MS = 140;
 
 // The weapon it holds is drawn with the player's own overlays for it (the
 // <weapon>_fx sheets of art/armas.py: same size, pose and swing with the
@@ -88,6 +91,10 @@ interface EnemyView {
   animator: Animator;
   seen: number;
   pinnedMs: number; // time since it reached the wall it is pinned to
+  motion: string; // the motion and the way it faces on screen, held for STEADY_MS
+  stillMs: number;
+  facing: Direction;
+  turnMs: number;
   x: number; // where it was drawn last
   y: number;
   // Carried on the spear from where it was hit to the wall it is pinned to.
@@ -139,6 +146,10 @@ export class EnemyViews {
       animator: new Animator(this.sheet),
       seen: 0,
       pinnedMs: 0,
+      motion: "idle",
+      stillMs: 0,
+      facing: "front",
+      turnMs: 0,
       x: enemy.x,
       y: enemy.y,
       slide: null,
@@ -149,7 +160,10 @@ export class EnemyViews {
   }
 
   private place(view: EnemyView, enemy: EnemyState, dtMs: number): void {
-    const motion = MOTION_BY_STATE[STATE[enemy.state] ?? "QUIETO"];
+    const wanted = MOTION_BY_STATE[STATE[enemy.state] ?? "QUIETO"];
+    view.stillMs = wanted === "idle" ? view.stillMs + dtMs : 0;
+    if (wanted !== "idle" || view.stillMs >= STEADY_MS) view.motion = wanted;
+    const motion = view.motion;
     const dead = motion === "death";
     let { x, y } = enemy;
     const hop = enemy.mood === "CHARLA" && !dead ? Math.abs(Math.sin(this.clockMs / HOP_MS + enemy.slot)) * HOP_HEIGHT : 0;
@@ -172,7 +186,10 @@ export class EnemyViews {
       else view.pinnedMs += dtMs;
     }
     const looking = Math.hypot(enemy.lookX, enemy.lookY) > 0.01;
-    const facing = looking ? directionFromVector(enemy.lookX, enemy.lookY) : "front";
+    const looks = looking ? directionFromVector(enemy.lookX, enemy.lookY) : "front";
+    view.turnMs = looks === view.facing ? 0 : view.turnMs + dtMs;
+    if (view.turnMs >= STEADY_MS || dead) view.facing = looks;
+    const facing = view.facing;
     if (!enemy.pinned) {
       if (dead) view.animator.play(DEATH_BY_FACING[facing], false);
       else view.animator.play(`${motion}_${facing}`);

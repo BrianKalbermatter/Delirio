@@ -19,15 +19,15 @@ const BAR_WIDTH = 44;
 const SHAKE = 2; // px, while hit
 const FIRE_ABOVE = 22; // px from its center to the middle of the flames
 const FIRE_RIGHT = 12; // the fire is not in the middle of the drawing
-const GLOW_RADIUS = 190;
-const CORE_RADIUS = 60;
+const GLOW_RADIUS = 130;
+const CORE_RADIUS = 40;
 const GLOW_COLOR: [number, number, number] = [214, 200, 60];
 const CORE_COLOR: [number, number, number] = [255, 246, 150];
 // How strong the light is with the sun down and up.
-const NIGHT_LIGHT = 0.8;
-const DAY_LIGHT = 0.12;
+const NIGHT_LIGHT = 0.32;
+const DAY_LIGHT = 0;
 // The drawing's fire again, added over the darkness: at night it still burns.
-const NIGHT_FIRE = 0.65;
+const NIGHT_FIRE = 0.3;
 
 interface BonfireView {
   sprite: Sprite;
@@ -98,7 +98,7 @@ export class BonfireViews {
     glow.alpha = strength;
     glow.scale.set(0.55 + 0.45 * share);
     core.position.set(Math.round(x), Math.round(y));
-    core.alpha = strength * 0.7;
+    core.alpha = strength * 0.5;
     const [left, top] = toScreen(sprite.x, sprite.y);
     fire.texture = frame.texture;
     fire.position.set(Math.round(left), Math.round(top));

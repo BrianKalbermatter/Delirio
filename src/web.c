@@ -54,6 +54,8 @@ EMSCRIPTEN_KEEPALIVE int web_mejorar(int m) { return juego_mejorar(m); }
 // Nivel de construccion (1..5): que se puede fabricar
 EMSCRIPTEN_KEEPALIVE int web_jugador_construccion(void) { return jugador_nivel_construccion(juego_jugador_completo()); }
 EMSCRIPTEN_KEEPALIVE void web_escudo(int si) { juego_escudo(si); }
+EMSCRIPTEN_KEEPALIVE void web_armadura(int si) { juego_armadura(si); }
+EMSCRIPTEN_KEEPALIVE void web_teletransportar(float x, float y) { juego_teletransportar(x, y); }
 EMSCRIPTEN_KEEPALIVE int web_mejora(int m) { return juego_jugador_completo()->mejoras[m]; }
 EMSCRIPTEN_KEEPALIVE int web_mejora_tope(int m) { return MEJORA_TOPE[m]; }
 EMSCRIPTEN_KEEPALIVE int web_jugador_puntos(void) { return jugador_puntos(juego_jugador_completo()); }
@@ -105,6 +107,7 @@ EMSCRIPTEN_KEEPALIVE int web_jugador_quemaduras(void) { return juego_quemaduras(
 EMSCRIPTEN_KEEPALIVE int web_tregua(void) { return juego_tregua(); }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_tipo(int i) { return enemigo(i)->tipo; }
 EMSCRIPTEN_KEEPALIVE float web_enemigo_naciendo(int i) { return enemigo(i)->naciendo_ms; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_tirado(int i) { return enemigo(i)->tirado; }
 
 // Hogueras: una por ronda. La vida esta en su hueco de la lista de enemigos
 static const Ronda *ronda(int k) { return &juego_enemigos()->rondas[k]; }

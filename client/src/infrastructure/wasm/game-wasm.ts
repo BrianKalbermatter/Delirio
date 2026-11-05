@@ -108,6 +108,7 @@ export interface EnemyState {
   slot: number;
   kind: (typeof ENEMY_KIND)[number];
   birthMs: number; // > 0 while it appears or gets up: it does nothing yet
+  lying: boolean; // a skeleton lying as a heap of bones, waiting for the player
   x: number; // feet
   y: number;
   lookX: number; // where it looks (at the player while stalking)
@@ -274,6 +275,8 @@ export interface GameWasm {
   clockMs(): number;
   // Whether the player holds a shield: covering, it can walk (slowly).
   setShield(held: boolean): void;
+  setArmor(worn: boolean): void; // without it one hit kills
+  teleport(x: number, y: number): void;
   // Spends a level point on an UPGRADE. False if none left or it is maxed.
   upgrade(id: number): boolean;
   // The target as C stored it (null if none yet), to check it arrived.
@@ -414,6 +417,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const loadProgress = call("web_cargar_progreso", 2 + UPGRADE_COUNT);
   const jumps = num("web_jugador_saltos", 0);
   const shield = call("web_escudo", 1);
+  const armor = call("web_armadura", 1);
   const enemyMax = num("web_enemigos_max", 0)();
   const enemy = Object.fromEntries(
     [
@@ -439,6 +443,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
       "suelta_arma",
       "tipo",
       "naciendo",
+      "tirado",
     ].map((field) => [field, num(`web_enemigo_${field}`, 1)]),
   );
   const bushCount = num("web_arbustos_cant", 0);
@@ -515,6 +520,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
           slot: i,
           kind: ENEMY_KIND[enemy.tipo(i)] ?? "spartan",
           birthMs: enemy.naciendo(i),
+          lying: enemy.tirado(i) === 1,
           x: enemy.x(i),
           y: enemy.y(i),
           lookX: enemy.mira_x(i),
@@ -610,6 +616,8 @@ export async function loadGameWasm(): Promise<GameWasm> {
       loadProgress(level, xpSaved, ...Array.from({ length: UPGRADE_COUNT }, (_, m) => upgrades[m] ?? 0)),
     upgrade: (id) => upgrade(id) === 1,
     setShield: (held) => shield(held ? 1 : 0),
+    setArmor: (worn) => armor(worn ? 1 : 0),
+    teleport: call("web_teletransportar", 2),
     loadGame: call("web_cargar_partida", 3),
     clockMs: num("web_reloj_ms_total", 0),
   };

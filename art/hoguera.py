@@ -32,7 +32,8 @@ LAST_ROW = 97  # past this, the frame of the picture
 FIRE_BOX = (42, 44, 82, 84)  # left, top, right, bottom
 SKULL_BOX = (17, 7, 37, 50)
 # Yellow of the fire, dark to hot.
-FIRE = [(150, 138, 30), (205, 190, 40), (238, 226, 66), (250, 244, 120), (255, 252, 190)]
+FIRE = [(120, 108, 26), (160, 148, 34), (186, 176, 52), (196, 190, 92), (200, 196, 150)]
+FLAME_DIM = 0.78  # the drawing's flames, toned down to sit in the maze
 EMBER = [(70, 58, 20), (126, 100, 28), (196, 150, 40)]
 COLD = 0.6  # what is left of the light on the bones once it goes out
 
@@ -96,7 +97,7 @@ def burning(rgba, fire, step, height=1.0):
             continue
         sway = round(up * 2.6 * math.sin(phase + y * 0.35))
         heat = 1 + 0.16 * math.sin(phase * 2 + y * 0.55)
-        colour = np.minimum(255, rgba[y, x, :3] * heat).astype(np.uint8)
+        colour = np.minimum(255, rgba[y, x, :3] * heat * FLAME_DIM).astype(np.uint8)
         nx = x + sway
         if 0 <= nx < out.shape[1]:
             out[y, nx] = (*colour, 255)

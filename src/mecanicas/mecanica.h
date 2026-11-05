@@ -80,8 +80,8 @@ float reloj_restante_fase(const Reloj *r);
 
 // Cuanta luz de dia hay: 0 = noche cerrada, 1 = pleno dia.
 float reloj_luz(const Reloj *r);
-// Cuan cerrada esta la noche (0..1): 0 de dia, sube con la tarde y sigue
-// subiendo hasta la mitad de la noche; el amanecer la baja.
+// Cuan vieja esta la noche (0..1): 0 de dia, sube con la tarde y sigue subiendo
+// toda la noche; el amanecer la baja.
 float reloj_noche(const Reloj *r);
 // Por donde va el sol: 0 al amanecer, 0.5 al mediodia, 1 al anochecer (fin de
 // la tarde). De noche no hay sol: -1.
