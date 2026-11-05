@@ -5,6 +5,7 @@
 
 #include "entidad.h"
 #include "mecanicas/enemigos.h"
+#include "mecanicas/ovejas.h"
 #include "mecanicas/jugador.h"
 #include "mecanicas/laberinto.h"
 #include "mecanicas/mecanica.h"
@@ -74,6 +75,7 @@ const Entity *juego_medusa(void);
 
 // Enemigos de nivel 1 (mecanicas/enemigos.h)
 const Enemigos *juego_enemigos(void);
+const Ovejas *juego_ovejas(void);
 
 // Cuantas veces pego solo el jugador (un enemigo se le acerco mucho). Sube
 // en uno con cada golpe; la direccion de ese golpe queda en su dir.

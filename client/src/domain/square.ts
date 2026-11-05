@@ -4,7 +4,8 @@
 // game, so everything placed here by position (grass, trees) is always the
 // same too.
 //
-// Its top-right corner is a dark forest.
+// Its top-right corner is a forest with little light and a lot of fog. The pit by the spawn is no part of
+// it: nothing placed on the square lands there.
 import type { TileMap } from "./tile-map";
 
 // Share of the square's width the forest reaches from its top-right corner.
@@ -31,7 +32,7 @@ export class Square {
       const [c, r] = queue.pop()!;
       for (const [nc, nr] of [[c + 1, r], [c - 1, r], [c, r + 1], [c, r - 1]]) {
         const k = this.key(nc, nr);
-        if (this.tiles.has(k) || map.isWall(nc, nr) || map.isDoor(nc, nr)) continue;
+        if (this.tiles.has(k) || map.isWall(nc, nr) || map.isDoor(nc, nr) || map.isPit(nc, nr)) continue;
         this.tiles.add(k);
         queue.push([nc, nr]);
         maxCol = Math.max(maxCol, nc);
@@ -42,6 +43,11 @@ export class Square {
     this.forestCornerX = (maxCol + 1) * t;
     this.forestCornerY = minRow * t;
     this.forestRadius = (maxCol + 1 - minCol) * t * FOREST_REACH;
+  }
+
+  // The forest's circle: its corner of the square and its radius, world px.
+  get forest(): { x: number; y: number; radius: number } {
+    return { x: this.forestCornerX, y: this.forestCornerY, radius: this.forestRadius };
   }
 
   has(col: number, row: number): boolean {

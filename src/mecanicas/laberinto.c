@@ -461,6 +461,46 @@ int laberinto_pisa_lava(const Laberinto *lab, Direccion pies){
          punto_lava(lab, izq, abajo) && punto_lava(lab, der, abajo);
 }
 
+// El hueco: lo que no se puede pisar sale del dibujo (art/hueco.py), que se
+// ve a LAB_HUECO_ESCALA. Cada fila va de un costado al otro, en pixeles del
+// dibujo, y mide HUECO_ALTO_FILA.
+#define LAB_HUECO_ESCALA 2
+#define HUECO_ANCHO 95        // el dibujo
+#define HUECO_ALTO 107
+#define HUECO_ARRIBA 4        // donde empieza la primera fila
+#define HUECO_ALTO_FILA 4
+#define HUECO_DESDE_X -320.0f // su centro, desde la aparicion (el arbol esta a la derecha)
+#define HUECO_DESDE_Y -20.0f
+
+static const short HUECO_FILAS[][2] = {
+  {41, 61}, {32, 64}, {27, 68}, {22, 73}, {17, 77}, {14, 81}, {13, 82}, {13, 83}, {12, 84},
+  {11, 84}, {10, 85}, {9, 86},  {9, 86},  {10, 86}, {12, 85}, {13, 84}, {13, 85}, {11, 86},
+  {11, 86}, {16, 81}, {19, 78}, {23, 75}, {26, 72}, {28, 69}, {31, 67}, {40, 56},
+};
+#define HUECO_CANT_FILAS ((int)(sizeof HUECO_FILAS / sizeof HUECO_FILAS[0]))
+
+RectPx laberinto_hueco_px(const Laberinto *lab){
+  Direccion base = laberinto_aparicion(lab);
+  float ancho = HUECO_ANCHO * LAB_HUECO_ESCALA, alto = HUECO_ALTO * LAB_HUECO_ESCALA;
+  return (RectPx){base.x + HUECO_DESDE_X - ancho / 2, base.y + HUECO_DESDE_Y - alto / 2, ancho, alto};
+}
+
+static RectPx hueco_fila(const Laberinto *lab, int i){
+  RectPx dibujo = laberinto_hueco_px(lab);
+  return (RectPx){dibujo.x + HUECO_FILAS[i][0] * LAB_HUECO_ESCALA,
+                  dibujo.y + (HUECO_ARRIBA + i * HUECO_ALTO_FILA) * LAB_HUECO_ESCALA,
+                  (HUECO_FILAS[i][1] - HUECO_FILAS[i][0]) * LAB_HUECO_ESCALA,
+                  HUECO_ALTO_FILA * LAB_HUECO_ESCALA};
+}
+
+int laberinto_toca_hueco(const Laberinto *lab, RectPx caja){
+  for (int i = 0; i < HUECO_CANT_FILAS; i++){
+    RectPx o = hueco_fila(lab, i);
+    if (caja.x < o.x + o.ancho && caja.x + caja.ancho > o.x && caja.y < o.y + o.alto && caja.y + caja.alto > o.y) return 1;
+  }
+  return 0;
+}
+
 void laberinto_iniciar(Laberinto *lab, unsigned int semilla){
   memset(lab->muro, 1, sizeof lab->muro);
   memset(lab->abierta, 0, sizeof lab->abierta);
@@ -483,6 +523,7 @@ void laberinto_iniciar(Laberinto *lab, unsigned int semilla){
       if (!lab->abierta[f][c]) tallar_desde(lab, c, f);
   tallar_sueltas(lab);
   tallar_salas(lab); // la arena de las medusas ya esta en el laberinto inicial
+  for (int i = 0; i < HUECO_CANT_FILAS; i++) laberinto_agregar_obstaculo(lab, hueco_fila(lab, i));
   lab->version++;
 }
 

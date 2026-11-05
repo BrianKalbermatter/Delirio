@@ -13,6 +13,7 @@
 //   enemigos.c           -> enemigos nivel 1 en el laberinto: miedo y coraje,
 //                           rondas que charlan y manadas que cazan
 //   arbustos.c           -> arbustos donde el jugador se esconde
+//   ovejas.c             -> ovejas salvajes en la plaza: pastan y huyen del jugador
 //
 // Los tipos compartidos (Entity, Direccion, Estado...) estan en entidad.h.
 // E => Enemigo
@@ -28,6 +29,7 @@
 #include "mecanicas/enemigos.h"
 #include "mecanicas/ia_enemigos.h"
 #include "mecanicas/jugador.h"
+#include "mecanicas/ovejas.h"
 #include "mecanicas/laberinto.h"
 #include "mecanicas/mecanica.h"
 
@@ -56,6 +58,7 @@ static int auto_objetivo = -1;    // el enemigo al que le pega solo (-1: ninguno
 static float auto_espera_ms;      // hasta que puede pegar solo de nuevo
 static int muertos_cobrados;      // enemigos muertos ya pasados a experiencia
 static int jefes_cobrados;        // jefes muertos ya pasados a experiencia
+static Ovejas ovejas;
 static Direccion pie_seguro;      // donde piso por ultima vez sin lava (vuelve ahi si se quema)
 static int quemaduras;            // sube cada vez que la lava lo quema (el navegador lo mira)
 
@@ -74,6 +77,7 @@ void juego_iniciar(unsigned int semilla){
   jugador_iniciar(&jugador, "Personaje_2", HABILIDADES_BASE, base);
   medusa = (Entity){.vidaMAX = 40, .vida = 40, .danio = 8};
   enemigos_iniciar(&enemigos, &laberinto, base.posicion, semilla);
+  ovejas_iniciar(&ovejas, &laberinto, semilla);
   muertos_cobrados = 0;
   jefes_cobrados = 0;
   pie_seguro = base.posicion;
@@ -203,6 +207,8 @@ void juego_actualizar(float dt_ms){
     jugador_morir(&jugador, laberinto_aparicion(&laberinto));
   }
 
+  ovejas_actualizar(&ovejas, &laberinto, jugador.entidad.posicion, dt_ms);
+
   // 5. Experiencia: por cada enemigo que mato desde el paso anterior (a
   //    golpes, con la lanza o con el golpe al suelo)
   int nuevos = enemigos.muertos - muertos_cobrados;
@@ -283,6 +289,7 @@ void juego_desclavar(int i){
 
 const Entity *juego_medusa(void){ return &medusa; }
 const Enemigos *juego_enemigos(void){ return &enemigos; }
+const Ovejas *juego_ovejas(void){ return &ovejas; }
 int juego_auto_ataques(void){ return auto_ataques; }
 
 void juego_cargar_progreso(int nivel, int experiencia, const int mejoras[MEJORA_CANTIDAD]){
@@ -315,6 +322,11 @@ void juego_curar(int vida){
   if (jugador_muerto(&jugador)) return;
   jugador.entidad.vida += vida;
   if (jugador.entidad.vida > jugador.entidad.vidaMAX) jugador.entidad.vida = jugador.entidad.vidaMAX;
+  // Con `vida` negativa (una fruta venenosa) puede matar
+  if (jugador.entidad.vida <= 0){
+    printf("Te mato el veneno\n");
+    jugador_morir(&jugador, laberinto_aparicion(&laberinto));
+  }
 }
 
 void juego_reiniciar(void){

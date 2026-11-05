@@ -46,7 +46,7 @@ const FOREST_FILL = 0.9; // the same in the forest corner
 const MIN_GAP = 100; // px between two trees: their crowns may just touch
 const WALL_CLEAR = 88; // px of floor all around: off the walls and the gates
 const START_CLEAR = 260; // px around the spawn with nothing (the start items)
-const KEEP_OFF = 64; // px from rocks and bushes
+const KEEP_OFF = 96; // px from rocks and bushes: a bush is about that wide to each side
 const FOOT_CHANCE = 0.35; // trees with stones and grass at the foot
 const STONES = [1, 3]; // how many (min, max)
 const TUFTS = [2, 4];
@@ -122,7 +122,7 @@ export function placeSaplings(trees: Tree[]): Sapling[] {
 }
 
 // A few stones and tufts around the foot, flattened like the ground.
-function placeFoot(tree: Tree, rng: () => number): FootPiece[] {
+export function placeFoot(tree: { x: number; y: number; scale: number }, rng: () => number): FootPiece[] {
   const between = ([a, b]: number[]) => a + Math.floor(rng() * (b - a + 1));
   const piece = (kind: number): FootPiece => {
     const angle = rng() * Math.PI * 2;

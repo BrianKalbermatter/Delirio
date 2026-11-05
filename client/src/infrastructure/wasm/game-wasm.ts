@@ -119,6 +119,16 @@ export const ENEMY_WEAPON = [null, "spear", "torch", "axe"] as const;
 export const LOOT = [null, "potion", "sword", "branch"] as const;
 
 // A bush the player hides in (src/mecanicas/arbustos.c): a circle on the floor.
+// What a sheep is doing (EstadoOveja in src/mecanicas/ovejas.h).
+export const SHEEP_STATE = { grazing: 0, walking: 1, fleeing: 2 } as const;
+
+export interface Sheep {
+  x: number;
+  y: number;
+  dirX: number; // where it faces, sideways
+  state: number; // SHEEP_STATE
+}
+
 export interface Bush {
   x: number;
   y: number;
@@ -174,6 +184,8 @@ export interface MazeInfo {
   zone(col: number, row: number): Zone;
   zoneWeight(col: number, row: number): number;
   isLava(col: number, row: number): boolean; // burns whoever steps on it without jumping
+  isPit(col: number, row: number): boolean; // on the solid part of the pit by the spawn
+  pit(): Rect; // the pit's drawing, world px
   isLairDoor(col: number, row: number): boolean; // the exit: the Minotaur's door, once carved
   lair(): { x: number; y: number; open: boolean }; // middle of the Minotaur's lair, world px
   gateOpening(): number; // 1 = fully open, 0 = closed
@@ -250,6 +262,7 @@ export interface GameWasm {
   enemies(): EnemyState[];
   // The bushes, fixed since start().
   bushes(): Bush[];
+  sheep(): Sheep[];
   cover(): PlayerCover;
   // Gives the player life back (a potion), up to the maximum.
   heal(life: number): void;
@@ -281,6 +294,13 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const mazeZoneWeight = num("web_lab_influencia", 2);
   const lairDoor = num("web_lab_puerta_minotauro", 2);
   const mazeLava = num("web_lab_lava", 2);
+  const sheepCount = num("web_ovejas_cant", 0);
+  const sheepX = num("web_oveja_x", 1);
+  const sheepY = num("web_oveja_y", 1);
+  const sheepDirX = num("web_oveja_dir_x", 1);
+  const sheepState = num("web_oveja_estado", 1);
+  const mazePit = num("web_lab_hueco", 2);
+  const mazePitBox = num("web_lab_hueco_dibujo", 1);
   const enemyScale = num("web_enemigo_escala", 1);
   const enemyBoss = num("web_enemigo_jefe", 1);
   const enemyCharge = num("web_enemigo_carga", 1);
@@ -419,6 +439,11 @@ export async function loadGameWasm(): Promise<GameWasm> {
         }
         return leaves;
       },
+      isPit: (col, row) => mazePit(col, row) === 1,
+      pit: () => {
+        const [x, y, w, h] = [0, 1, 2, 3].map((k) => mazePitBox(k));
+        return { x, y, w, h };
+      },
       addObstacle: ({ x, y, w, h }) => obstacle(x, y, w, h),
       removeObstacle: call("web_lab_quitar_obstaculo", 1),
     },
@@ -479,6 +504,8 @@ export async function loadGameWasm(): Promise<GameWasm> {
       }
       return list;
     },
+    sheep: () =>
+      Array.from({ length: sheepCount() }, (_, i) => ({ x: sheepX(i), y: sheepY(i), dirX: sheepDirX(i), state: sheepState(i) })),
     bushes: () => Array.from({ length: bushCount() }, (_, i) => ({ x: bushX(i), y: bushY(i), radius: bushRadius(i) })),
     cover: () => ({
       bush: playerBush(),

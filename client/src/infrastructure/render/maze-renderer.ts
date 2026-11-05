@@ -543,12 +543,13 @@ export class MazeRenderer {
     });
   }
 
-  // The square is grass, with a dark mossy floor under its forest. Out in the
+  // The square is grass, with earth, moss and stones under its forest. Out in the
   // maze: dirt, with irregular patches of old stone paving. An open gate
   // leaves a paved threshold.
   private floorTile(col: number, row: number): string {
     if (this.map.isDoor(col, row)) return `paving_${hash(col, row) % 4}`;
-    if (this.square.has(col, row)) return this.squareTile(col, row);
+    // Grass around the pit too: its drawing does not cover its whole tiles
+    if (this.square.has(col, row) || this.map.isPit(col, row)) return this.squareTile(col, row);
     const paving = valueNoise(col / 6, row / 6) > 0.62;
     if (paving && hash(col, row) % 100 < 85) return `paving_${hash(col, row) % 4}`;
     return this.pick(this.floorVariants, col, row);

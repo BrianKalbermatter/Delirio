@@ -36,6 +36,10 @@
 // Por ahora las zonas solo cambian el suelo (laberinto_influencia): cuanto
 // mas cerca del jefe, mas se nota. Los muros, las estructuras y los jefes
 // vienen despues.
+//
+// EL HUECO: un pozo en la plaza, al lado de donde aparece el jugador. Hay uno
+// solo y esta siempre en el mismo lugar. No se puede cruzar, ni saltando: su
+// forma son filas de obstaculos, asi que choca como cualquier otro.
 #ifndef LABERINTO_H
 #define LABERINTO_H
 
@@ -188,6 +192,12 @@ Zona laberinto_sala(const Laberinto *lab, int col, int fila);
 // charcos en los pasillos cerca. No frena: quema al que la pisa sin saltar.
 int laberinto_es_lava(const Laberinto *lab, int col, int fila);
 int laberinto_pisa_lava(const Laberinto *lab, Direccion pies);
+
+// El dibujo del hueco, en pixeles del mundo.
+RectPx laberinto_hueco_px(const Laberinto *lab);
+
+// 1 si la caja (en pixeles) toca la parte solida del hueco.
+int laberinto_toca_hueco(const Laberinto *lab, RectPx caja);
 
 // 1 si los pies en `pies` no chocan con nada (muro, puerta, obstaculo).
 int laberinto_libre(const Laberinto *lab, Direccion pies);

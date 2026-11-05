@@ -16,6 +16,7 @@ export class TileMap {
   // lair is carved late), but only on the tiles of his zone.
   private readonly lava: Uint8Array;
   private hadesTiles: number[] = [];
+  private readonly pit: Uint8Array; // tiles the pit by the spawn takes up
 
   constructor(
     readonly cols: number,
@@ -27,6 +28,7 @@ export class TileMap {
     this.zones = new Uint8Array(cols * rows);
     this.weights = new Uint8Array(cols * rows);
     this.lava = new Uint8Array(cols * rows);
+    this.pit = new Uint8Array(cols * rows);
   }
 
   get width(): number {
@@ -69,6 +71,20 @@ export class TileMap {
   // Rereads the lava (call after fillZones, whenever the maze changed).
   refillLava(isLava: (col: number, row: number) => boolean): void {
     for (const i of this.hadesTiles) this.lava[i] = isLava(i % this.cols, Math.floor(i / this.cols)) ? 1 : 0;
+  }
+
+  // Reads the pit once (it never moves): only the tiles under its drawing.
+  fillPit(box: { x: number; y: number; w: number; h: number }, isPit: (col: number, row: number) => boolean): void {
+    const t = this.tileSize;
+    for (let r = Math.floor(box.y / t); r <= Math.floor((box.y + box.h) / t); r++) {
+      for (let c = Math.floor(box.x / t); c <= Math.floor((box.x + box.w) / t); c++) {
+        this.pit[r * this.cols + c] = isPit(c, r) ? 1 : 0;
+      }
+    }
+  }
+
+  isPit(col: number, row: number): boolean {
+    return this.inside(col, row) && this.pit[row * this.cols + col] === 1;
   }
 
   isLava(col: number, row: number): boolean {

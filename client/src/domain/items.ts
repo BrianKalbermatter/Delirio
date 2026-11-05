@@ -20,6 +20,8 @@ export interface ItemKind {
   floorAnimation?: string;
   // Set up in the world when used (a workbench): its solid base, px.
   structure?: { width: number; depth: number };
+  // Eaten with a double click: life it gives, or takes when it is poisonous.
+  food?: number;
   // Gives light while held: the radii (px) of the lit area at night.
   light?: { inner: number; outer: number };
 }
@@ -58,6 +60,11 @@ export const ITEMS: Record<string, ItemKind> = {
       },
     ]),
   ),
+  // Picked from the fruit bushes (render/bushes.ts, art/arbustos_frutos.py).
+  // Only the red ones are good: nothing says so but eating them.
+  berries: { id: "berries", name: "Berries", sprite: "frutas", frame: 0, food: -12 },
+  grapes: { id: "grapes", name: "Grapes", sprite: "frutas", frame: 1, food: -18 },
+  pomegranate: { id: "pomegranate", name: "Pomegranate", sprite: "frutas", frame: 2, food: 20 },
   // Dropped by every enemy that dies (art/moneda.py), spinning on the floor.
   coin: { id: "coin", name: "Coin", sprite: "moneda", frame: 0, floorAnimation: "spin" },
   enemy_sword: {

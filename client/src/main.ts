@@ -29,13 +29,16 @@ import { Square } from "./domain/square";
 import { placeSampleTree } from "./domain/sample-tree";
 import { placeSaplings, placeTrees, SPECIES } from "./domain/trees";
 import { placeMeadow } from "./domain/meadow";
+import { placeStumps } from "./domain/stumps";
 import { TileMap } from "./domain/tile-map";
 import { AbilityKeys } from "./infrastructure/input/ability-keys";
 import { LockedMouse, VIRTUAL_MOUSEUP } from "./infrastructure/input/locked-mouse";
 import { AbilityEffects } from "./infrastructure/render/ability-effects";
 import { Animator } from "./infrastructure/render/animator";
 import { PlazaDeco } from "./infrastructure/render/plaza-deco";
-import { BushViews } from "./infrastructure/render/bushes";
+import { BushViews, FRUIT_ITEMS } from "./infrastructure/render/bushes";
+import { SheepViews } from "./infrastructure/render/sheep";
+import { StumpViews } from "./infrastructure/render/stumps";
 import { RockField } from "./infrastructure/render/rocks";
 import { TreeViews } from "./infrastructure/render/tree";
 import { type BigRock, type Pebble, planRocks } from "./domain/rocks";
@@ -53,6 +56,7 @@ import { clearProgress, loadProgress, saveProgress } from "./infrastructure/stor
 import { clearWorld, loadWorld, type SavedWorld, saveWorld } from "./infrastructure/storage/world-store";
 import { LevelAura } from "./infrastructure/render/level-aura";
 import { LevelWave } from "./infrastructure/render/level-wave";
+import { ForestGloom } from "./infrastructure/render/forest-gloom";
 import { Lighting } from "./infrastructure/render/lighting";
 import { type Box, loadMazeTiles, MazeRenderer, type View } from "./infrastructure/render/maze-renderer";
 import {
@@ -109,6 +113,7 @@ const MAGNET_SPEED_MAX = 260; // px/s, at the feet
 // Items picked up with E (branches): reach from the feet, and the key prompt
 // shown above the head while one is in reach.
 const KEY_PICKUP_RADIUS = 26;
+const FRUIT_REACH = 48; // px from a fruit bush's middle: E picks it
 const PROMPT_ABOVE_HEAD = 6;
 // A dropped item lands this far ahead of the feet (past PICKUP_RADIUS), after
 // a short hop out of the hand.
@@ -247,11 +252,15 @@ const [
   grassImage,
   smallGrassImage,
   bushSheet,
+  fruitBushSheet,
+  stumpSheet,
+  sheepSheet,
   treeImage,
   treeShadowImage,
   orangeTreeImage,
   orangeTreeShadowImage,
   treePiecesImage,
+  pitImage,
   levelAuraBehindSheet,
   levelAuraFrontSheet,
   ...assetSheets
@@ -281,8 +290,14 @@ const [
   loadSpriteSheet(`${BASE}sprites/florcitas`),
   loadImage(`${BASE}sprites/gramilla.png`),
   loadImage(`${BASE}sprites/gramilla_chica.png`),
-  // Bushes to hide in (art/arbusto.py).
+  // Bushes to hide in (art/arbustos_build.sh).
   loadSpriteSheet(`${BASE}sprites/arbusto`),
+  // And with fruit, at several sizes (art/arbustos_frutos.py).
+  loadSpriteSheet(`${BASE}sprites/arbusto_frutos`),
+  // The stumps scattered around the map (art/tocones.py).
+  loadSpriteSheet(`${BASE}sprites/tocones`),
+  // The wild sheep of the square (art/ovejas.py).
+  loadSpriteSheet(`${BASE}sprites/oveja`),
   // The trees of the square with their shadows, and the stones and tufts at
   // their foot (art/arbol2_build.sh, art/arbol3_build.sh).
   loadImage(`${BASE}sprites/arbol_2.png`),
@@ -290,6 +305,8 @@ const [
   loadImage(`${BASE}sprites/arbol_3.png`),
   loadImage(`${BASE}sprites/arbol_3_sombra.png`),
   loadImage(`${BASE}sprites/arbol_3_pie.png`),
+  // The pit by the spawn (art/hueco.py).
+  loadImage(`${BASE}sprites/hueco.png`),
   // The level up around the body (art/nivel_aura_build.sh).
   loadSpriteSheet(`${BASE}sprites/nivel_aura_atras`),
   loadSpriteSheet(`${BASE}sprites/nivel_aura_frente`),
@@ -373,6 +390,8 @@ let seenAutoAttacks = 0; // swings C made on its own (an enemy got too close)
 let deathBannerMs = 0;
 let timeSpeed = 1;
 syncMaze();
+const pitBox = game.maze.pit();
+map.fillPit(pitBox, game.maze.isPit);
 
 // The stage, back to front. The world moves with the camera: the ground lies
 // flat under everything, and whatever stands sorts by depth (see depth.ts).
@@ -422,7 +441,8 @@ for (const saved of savedWorld?.floor ?? []) {
 const square = new Square(map, spawn);
 // The first tree of the square, with fallen branches around it.
 const tree = placeSampleTree(spawn);
-const bushViews = new BushViews(game.bushes(), bushSheet, standing);
+const sheepViews = new SheepViews(sheepSheet, standing);
+const bushViews = new BushViews(game.bushes(), bushSheet, fruitBushSheet, standing);
 // Fallen branches lie around the tree, each drawn with its own variant (in a
 // saved game they are among the saved floor items).
 if (!savedWorld) propViews.push(
@@ -449,11 +469,29 @@ const rockField = new RockField(seed, standing, sheets.get("rocas")!, map, game.
 const LOOSE_VERSION = 3;
 const looseSaved = savedWorld?.rocks?.loose ?? 0;
 addLoose(rockField.sync(looseSaved < 2));
+// The old stumps of the square (domain/stumps.ts): before the trees, which grow
+// around them.
+const stumps = placeStumps(seed, square, map.tileSize, spawn, [
+  ...planRocks(seed).flatMap((cell) => cell.rocks),
+  ...game.bushes(),
+  tree,
+  ...propViews.map((v) => ({ x: v.prop.x, y: v.prop.y })),
+]);
+const stumpViews = new StumpViews(
+  stumps,
+  stumpSheet,
+  bushSheet,
+  [Texture.from(grassImage), Texture.from(smallGrassImage)],
+  Texture.from(treePiecesImage),
+  standing,
+  game.maze,
+);
 // The trees all over the square (domain/trees.ts), solid at the foot. They keep
 // off every rock of the plan, broken or not, so they stay put across reloads.
 const trees = placeTrees(square, map.tileSize, spawn, tree, [
   ...planRocks(seed).flatMap((cell) => cell.rocks),
   ...game.bushes(),
+  ...stumps,
 ]);
 const treeViews = new TreeViews(
   trees,
@@ -481,6 +519,7 @@ const plazaDeco = new PlazaDeco(
     ...trees,
     ...tree.branches,
     ...rockField.positions(),
+    ...stumps,
   ]),
   [flowerSheet, tallFlowerSheet],
   [Texture.from(grassImage), Texture.from(smallGrassImage)],
@@ -558,8 +597,14 @@ const focusRing = new Graphics();
 const blood = new Blood();
 // The dust kicked up walking, the player's and the enemies'.
 const dust = new Dust();
-ground.addChild(maze.floor, meadowGround, treeViews.ground, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
+// The pit lies flat on the floor: nothing can stand on it, so it never hides
+// anyone.
+const pit = new Sprite(Texture.from(pitImage));
+pit.position.set(pitBox.x, pitBox.y);
+pit.setSize(pitBox.w, pitBox.h);
+ground.addChild(maze.floor, pit, meadowGround, treeViews.ground, stumpViews.ground, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
 standing.addChild(blood.air, airPuff);
+const forestGloom = new ForestGloom(square.forest, canvas.width, canvas.height);
 const lighting = new Lighting(canvas.width, canvas.height);
 const keyPrompt = createKeyPrompt();
 const spearBar = new Graphics();
@@ -571,7 +616,7 @@ const hud = new Hud();
 const levelWave = new LevelWave(scene, canvas.width, canvas.height);
 const levelAura = new LevelAura(levelAuraBehindSheet, levelAuraFrontSheet);
 standing.addChild(levelAura.behind);
-scene.addChild(lighting.view, torchGlows.rightHand.view, torchGlows.leftHand.view, playerGlow.view, levelAura.front);
+scene.addChild(forestGloom.view, lighting.view, torchGlows.rightHand.view, torchGlows.leftHand.view, playerGlow.view, levelAura.front);
 app.stage.addChild(
   playerBar.view,
   keyPrompt,
@@ -583,6 +628,7 @@ window.addEventListener("resize", () => {
   fitCanvas();
   camera.viewWidth = canvas.width;
   camera.viewHeight = canvas.height;
+  forestGloom.resize(canvas.width, canvas.height);
   lighting.resize(canvas.width, canvas.height);
   levelWave.resize(canvas.width, canvas.height);
   cursor.setScale(screenScale);
@@ -969,12 +1015,14 @@ function update(dtMs: number): void {
       if (view.fall.ms <= 0) view.fall = undefined;
     }
   }
-  plazaDeco.update(dtMs, {
+  const inView = {
     left: camera.x - canvas.width / 2,
     top: camera.y - canvas.height / 2,
     width: canvas.width,
     height: canvas.height,
-  });
+  };
+  plazaDeco.update(dtMs, inView);
+  sheepViews.update(dtMs, game.sheep(), inView);
   treeViews.update(dtMs);
   rockField.update(dtMs, {
     left: camera.x - canvas.width / 2,
@@ -1049,6 +1097,24 @@ function keyPickupInReach(): PropView | undefined {
     }
   }
   return nearest;
+}
+
+function fruitInReach(): number | null {
+  return bushViews.fruitInReach(player.x, player.y, FRUIT_REACH);
+}
+
+// E: picks the fruit of the bush in reach. False when there is none.
+function pickFruit(): boolean {
+  const bush = fruitInReach();
+  if (bush === null) return false;
+  const item = ITEMS[FRUIT_ITEMS[bushViews.fruitKind(bush)]];
+  if (!inventory.add(item)) {
+    gameLog.log("The inventory is full.");
+    return true;
+  }
+  bushViews.pick(bush);
+  gameLog.log(`Picked: ${item.name}`);
+  return true;
 }
 
 // E: picks up the item in reach. False when there is none.
@@ -1283,7 +1349,7 @@ function equippedWeapon(): ItemKind | null {
   return equipment.slots.rightHand;
 }
 
-// Double click on an inventory slot: a potion is drunk, the map book opens,
+// Double click on an inventory slot: a potion is drunk, food is eaten, the map book opens,
 // and what can be held or worn is put on (a weapon in a free hand, or in the
 // right one).
 function useItem(index: number): void {
@@ -1293,6 +1359,13 @@ function useItem(index: number): void {
     inventory.removeOne(index);
     game.heal(POTION_HEAL);
     gameLog.log(`You drink the ${item.name.toLowerCase()}: +${POTION_HEAL} life.`);
+    return;
+  }
+  if (item.food !== undefined) {
+    inventory.removeOne(index);
+    game.heal(item.food);
+    const name = item.name.toLowerCase();
+    gameLog.log(item.food > 0 ? `You eat the ${name}: +${item.food} life.` : `The ${name} were poisonous: ${item.food} life.`);
     return;
   }
   if (item.id === "map_book") {
@@ -1408,7 +1481,10 @@ function showPlayerBar(): void {
 // with E is in reach. Screen space, after the darkness, so it shows at night.
 function showKeyPrompt(): void {
   keyPrompt.visible =
-    keyPickupInReach() !== undefined || structureInReach() !== undefined || (holdsPickaxe() && rockInReach() !== null);
+    keyPickupInReach() !== undefined ||
+    fruitInReach() !== null ||
+    structureInReach() !== undefined ||
+    (holdsPickaxe() && rockInReach() !== null);
   if (!keyPrompt.visible) return;
   const [sx, sy] = worldToScreen(
     player.x,
@@ -1425,7 +1501,7 @@ function dropAtFeet(item: ItemKind): void {
 }
 
 // Takes one item out of an inventory slot and throws it on the floor ahead of
-// the player. Where that is a wall, it falls at the feet.
+// the player. Where that is a wall or the pit, it falls at the feet.
 // With `at` (an item dragged onto the map) it lands there, or as far that
 // way as DROP_REACH; without it, just ahead of the player.
 function dropItem(index: number, at?: { x: number; y: number }): void {
@@ -1444,7 +1520,7 @@ function dropItem(index: number, at?: { x: number; y: number }): void {
     y = Math.round(player.y + (at.y - player.y) * k);
   }
   const t = map.tileSize;
-  if (map.isWall(Math.floor(x / t), Math.floor(y / t))) {
+  if (map.isWall(Math.floor(x / t), Math.floor(y / t)) || map.isPit(Math.floor(x / t), Math.floor(y / t))) {
     x = Math.round(player.x);
     y = Math.round(player.y);
   }
@@ -1570,6 +1646,7 @@ function draw(): void {
   // Screen space.
   const [dirX, dirY] = vectorOf(player.facing);
   const [lightX, lightY] = worldToScreen(player.x, playerCenterY());
+  forestGloom.update(-world.x, -world.y, performance.now());
   lighting.setDaylight(game.clock().daylight);
   // A torch in either hand widens the light, flickering.
   const torchLight = equipment.items.find((i) => i.light)?.light;
@@ -1881,7 +1958,7 @@ function setUpStructure(index: number, item: ItemKind): void {
   ].some(([px, py]) => {
     const col = Math.floor(px / t);
     const row = Math.floor(py / t);
-    return map.isWall(col, row) || map.isDoor(col, row) || map.isLava(col, row);
+    return map.isWall(col, row) || map.isDoor(col, row) || map.isLava(col, row) || map.isPit(col, row);
   });
   // Not on top of the player either
   const overPlayer = Math.abs(player.x - x) < half + 12 && player.y > y - item.structure!.depth - 12 && player.y - 12 < y;
@@ -2108,7 +2185,7 @@ function worldToScreen(x: number, y: number): [number, number] {
 
 window.addEventListener("keydown", (e) => {
   if (e.code in WASD && mouse.locked) wasdHeld.add(e.code);
-  if (e.code === "KeyE" && mouse.locked && !e.repeat && !pickUpWithKey() && !useStructure()) mineWithKey();
+  if (e.code === "KeyE" && mouse.locked && !e.repeat && !pickUpWithKey() && !pickFruit() && !useStructure()) mineWithKey();
   if (e.code === "KeyT") game.reset();
   if (isMapKey(e) && mouse.locked) {
     e.preventDefault();

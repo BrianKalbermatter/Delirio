@@ -1,7 +1,8 @@
 // Arbustos, como los de League of Legends: el jugador que se mete adentro
 // queda escondido. Los enemigos no lo ven salvo que esten pegados a el o
 // metidos en el mismo arbusto. Pegar desde adentro lo delata un ratito.
-// No chocan: se camina a traves de ellos.
+// No chocan: se camina a traves de ellos. El radio es hasta donde esconden:
+// los de frutas, con radio 0, se ven pero no esconden.
 //
 // Aca solo vive la lista y la pregunta "en que arbusto esta este punto".
 // Donde se ponen lo decide enemigos.c (al lado de cada ronda, y algunos
@@ -11,7 +12,7 @@
 
 #include "../entidad.h"
 
-#define ARBUSTOS_MAX 48
+#define ARBUSTOS_MAX 96
 
 typedef struct arbusto {
   Direccion centro; // en pixeles del mundo

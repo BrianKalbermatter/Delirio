@@ -56,13 +56,19 @@
 #define REAPARECE_RONDA_MS 45000.0f // un muerto de la ronda vuelve tanto despues
 
 // Arbustos
-// Sin arbustos por ahora: vuelven con sus sprites nuevos (poner HAY_ARBUSTOS
-// en 1). Sin ninguno, nadie se esconde y la mecanica queda quieta.
-#define HAY_ARBUSTOS 0
-#define ARBUSTO_RADIO 76.0f
+// Con HAY_ARBUSTOS en 0 no hay ninguno: nadie se esconde y la mecanica queda
+// quieta.
+#define HAY_ARBUSTOS 1
+// Los grandes, los que esconden: sacados hasta que haya dibujos nuevos (poner
+// en 1). Sin ellos solo hay de frutas y nadie se esconde.
+#define HAY_ARBUSTOS_GRANDES 0
+// Lo que tapa el dibujo (art/arbustos.py): de los pies para arriba, con este
+// radio el cuerpo queda adentro de la mata.
+#define ARBUSTO_RADIO 34.0f
+#define ARBUSTO_RADIO_FRUTAS 0.0f // los de frutas son chicos: no esconden (render/bushes.ts)
 #define ARBUSTOS_POR_RONDA 2
-#define ARBUSTOS_PLAZA 6
-#define ARBUSTOS_LABERINTO 10
+#define ARBUSTOS_PLAZA 24
+#define ARBUSTOS_LABERINTO 20
 #define VE_DE_CERCA 45.0f       // tan cerca, lo ve aunque este en un arbusto
 #define DELATADO_MS 1000.0f     // pegar desde un arbusto lo deja a la vista
 #define LEJOS_DE_LA_BASE 650.0f // nada de rondas ni arbustos tan cerca del inicio
@@ -523,9 +529,15 @@ static int arbusto_valido(const Enemigos *e, const Laberinto *lab, Direccion cen
   return 1;
 }
 
+// Uno de cada tres sueltos es de los grandes; el resto, de frutas.
+static float radio_de_arbusto(Enemigos *e){
+  return HAY_ARBUSTOS_GRANDES && siguiente(e) % 3 == 0 ? ARBUSTO_RADIO : ARBUSTO_RADIO_FRUTAS;
+}
+
 static void poner_arbustos(Enemigos *e, const Laberinto *lab, Direccion base){
-  // Al lado de cada ronda, a una distancia desde la que se los espia
-  for (int k = 0; k < e->cant_rondas; k++){
+  // Al lado de cada ronda, a una distancia desde la que se los espia: grandes,
+  // para poder esconderse
+  for (int k = 0; HAY_ARBUSTOS_GRANDES && k < e->cant_rondas; k++){
     int puestos = 0;
     for (int intento = 0; intento < 80 && puestos < ARBUSTOS_POR_RONDA; intento++){
       Direccion d = girar((Direccion){1, 0}, entre(e, 0, 360));
@@ -543,7 +555,7 @@ static void poner_arbustos(Enemigos *e, const Laberinto *lab, Direccion base){
     for (int intento = 0; intento < 2000 && puestos < quiere; intento++){
       Direccion c;
       if (!lugar_al_azar(e, lab, en_la_plaza, 2, &c) || !arbusto_valido(e, lab, c, base)) continue;
-      if (!arbustos_agregar(&e->arbustos, c, ARBUSTO_RADIO)) return;
+      if (!arbustos_agregar(&e->arbustos, c, radio_de_arbusto(e))) return;
       puestos++;
     }
   }
@@ -634,7 +646,8 @@ int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion
                    int probar, Direccion *impacto, Direccion *cae){
   Direccion tiro = unitario(hacia);
   // Vuela derecho hasta el alcance o el primer muro (o puerta). Del tile en
-  // el que estaba al del muro sale que cara del muro alcanzo.
+  // el que estaba al del muro sale que cara del muro alcanzo. Al hueco no
+  // entra: cae en el borde, donde se la puede levantar.
   float vuelo = 0;
   int col = 0, fila = 0, antes_col = 0, antes_fila = 0, pared = 0;
   while (vuelo < alcance){
@@ -647,6 +660,7 @@ int enemigos_lanza(Enemigos *e, const Laberinto *lab, Direccion desde, Direccion
       antes_fila = (int)((desde.y + tiro.y * vuelo) / LAB_TILE);
       break;
     }
+    if (laberinto_toca_hueco(lab, (RectPx){x, y, 1, 1})) break;
     vuelo += 2.0f;
   }
   Direccion fin = {desde.x + tiro.x * vuelo, desde.y + tiro.y * vuelo};

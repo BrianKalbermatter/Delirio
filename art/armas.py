@@ -594,16 +594,34 @@ def in_flight(weapon, k):
     return img.crop((c - half, c - half, c + half, c + half))
 
 
+LYING_ANGLE = -66  # a thrown weapon on the floor: degrees clockwise from up
+LYING_SHADOW = 70  # alpha of its shadow
+
+
+def lying_on_floor(weapon):
+    """The weapon on the floor. A long thin one (the spear) flat on its side is
+    a mere line, so it lies on a slant, with a shadow under it."""
+    size = 96
+    lying = Image.new("RGBA", (size, size))
+    if not weapon.stuck:
+        weapon.paste(lying, (size // 2 + 12, size // 2), -90)
+        return lying.crop(lying.getchannel("A").getbbox())
+    weapon.paste(lying, (size // 2, size // 2), LYING_ANGLE)
+    shadow = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    shadow.putalpha(lying.getchannel("A").point(lambda a: LYING_SHADOW if a else 0))
+    out = Image.new("RGBA", (size, size))
+    out.alpha_composite(shadow, (0, 2))
+    out.alpha_composite(lying)
+    return out.crop(out.getchannel("A").getbbox())
+
+
 def item_sheet(weapon, path, spec_angle):
     """Frame 0: lying on the floor. Frame 1: as drawn, to carry. Frame 2: the
     inventory icon, big and on a diagonal. A weapon that is thrown also has,
     per throw direction k (THROW_DIRS of them): frame 3 + k, stuck in the
     ground (the point where it goes in at the bottom centre), and frame
     3 + THROW_DIRS + k, flying (its middle at the centre)."""
-    size = 96
-    lying = Image.new("RGBA", (size, size))
-    weapon.paste(lying, (size // 2 + 12, size // 2), -90)
-    lying = lying.crop(lying.getchannel("A").getbbox())
+    lying = lying_on_floor(weapon)
     held = weapon.img
     diagonal = inventory_icon(weapon, ICON_ANGLE, spec_angle)
     dirs = range(THROW_DIRS) if weapon.stuck else []

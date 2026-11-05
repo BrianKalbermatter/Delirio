@@ -90,7 +90,7 @@ export function openSpots(map: TileMap, spawn: { x: number; y: number }): Spot[]
 function allFloor(map: TileMap, col: number, row: number): boolean {
   for (let r = row - 1; r <= row + 1; r++) {
     for (let c = col - 1; c <= col + 1; c++) {
-      if (map.isWall(c, r)) return false;
+      if (map.isWall(c, r) || map.isPit(c, r)) return false;
     }
   }
   return true;

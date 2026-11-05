@@ -107,6 +107,14 @@ EMSCRIPTEN_KEEPALIVE int web_enemigo_arbusto(int i) {
   return arbustos_en(&juego_enemigos()->arbustos, enemigo(i)->entidad.posicion);
 }
 
+// Ovejas: las lee el navegador en cada cuadro
+static const Oveja *oveja(int i) { return &juego_ovejas()->lista[i]; }
+EMSCRIPTEN_KEEPALIVE int web_ovejas_cant(void) { return juego_ovejas()->cant; }
+EMSCRIPTEN_KEEPALIVE float web_oveja_x(int i) { return oveja(i)->posicion.x; }
+EMSCRIPTEN_KEEPALIVE float web_oveja_y(int i) { return oveja(i)->posicion.y; }
+EMSCRIPTEN_KEEPALIVE float web_oveja_dir_x(int i) { return oveja(i)->dir.x; }
+EMSCRIPTEN_KEEPALIVE int web_oveja_estado(int i) { return oveja(i)->estado; }
+
 // Arbustos: fijos desde web_iniciar
 static const Arbusto *arbusto(int i) { return &juego_enemigos()->arbustos.lista[i]; }
 EMSCRIPTEN_KEEPALIVE int web_arbustos_cant(void) { return juego_enemigos()->arbustos.cant; }
@@ -142,6 +150,15 @@ EMSCRIPTEN_KEEPALIVE float web_lab_influencia(int col, int fila) {
   return peso;
 }
 EMSCRIPTEN_KEEPALIVE int web_lab_lava(int col, int fila) { return laberinto_es_lava(juego_laberinto(), col, fila); }
+// El hueco de la plaza: 1 si el tile toca su parte solida, y su dibujo en
+// pixeles (parte: 0 x, 1 y, 2 ancho, 3 alto)
+EMSCRIPTEN_KEEPALIVE int web_lab_hueco(int col, int fila) {
+  return laberinto_toca_hueco(juego_laberinto(), (RectPx){col * (float)LAB_TILE, fila * (float)LAB_TILE, LAB_TILE, LAB_TILE});
+}
+EMSCRIPTEN_KEEPALIVE float web_lab_hueco_dibujo(int parte) {
+  RectPx r = laberinto_hueco_px(juego_laberinto());
+  return parte == 0 ? r.x : parte == 1 ? r.y : parte == 2 ? r.ancho : r.alto;
+}
 EMSCRIPTEN_KEEPALIVE int web_lab_puerta_minotauro(int col, int fila) {
   return laberinto_es_puerta_minotauro(juego_laberinto(), col, fila);
 }

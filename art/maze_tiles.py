@@ -85,8 +85,15 @@ def floor_dirt(rng, grass):
     return img
 
 
-# The square is a grassy meadow; its forest corner has a dark mossy floor.
-FOREST_FLOOR = [(20, 24, 40), (25, 48, 56), (32, 70, 64), (44, 96, 72)]
+# The square is a grassy meadow; its forest corner has a floor of earth and
+# moss with stones on it. These are its real colours: what makes the forest
+# dark is the little light and the fog over it (render/forest-gloom.ts).
+FOREST_FLOOR = [(70, 74, 46), (88, 100, 54), (106, 122, 62), (128, 142, 74)]
+FOREST_MOSS = (92, 134, 62)
+# Stones on it: outline, shaded side, body, lit top.
+FOREST_STONE = [(52, 48, 46), (104, 100, 92), (140, 134, 120), (178, 172, 154)]
+FOREST_VARIANTS = 8
+FOREST_STONES = [0, 0, 1, 1, 2]  # how many a tile gets: picked from these
 DEAD_LEAVES = [(62, 39, 49), (115, 62, 57), (184, 111, 80)]
 
 
@@ -220,8 +227,24 @@ def forest_floor(rng):
     for _ in range(rng.randint(2, 5)):
         x, y = rng.randrange(T), rng.randrange(T)
         put(img, x, y, FOREST_FLOOR[3])
-        put(img, x, y - 1, (62, 137, 72))
+        put(img, x, y - 1, FOREST_MOSS)
+    for _ in range(rng.choice(FOREST_STONES)):
+        forest_stone(img, rng.randrange(5, T - 5), rng.randrange(4, T - 4), rng.randint(2, 4), rng.randint(2, 3))
     return img
+
+
+def forest_stone(img, x, y, rx, ry):
+    """A stone half sunk in the moss: outlined, lit from the top left."""
+    def inside(dx, dy, grow):
+        return (dx / (rx + grow)) ** 2 + (dy / (ry + grow)) ** 2 <= 1
+
+    for dy in range(-ry - 1, ry + 2):
+        for dx in range(-rx - 1, rx + 2):
+            if not inside(dx, dy, 0.6):
+                continue
+            light = -dx / rx - 1.6 * dy / ry
+            tone = 0 if not inside(dx, dy, 0) else 3 if light > 1 else 2 if light > -0.7 else 1
+            put(img, x + dx, y + dy, FOREST_STONE[tone])
 
 
 def pebble(img, x, y, size):
@@ -639,13 +662,13 @@ def build(out_dir):
     tiles["gate_top_0"] = gate_top(rng)
     # Own generator, so adding square tiles never changes the maze tiles.
     square_rng = random.Random(11)
-    for i in range(4):
+    for i in range(FOREST_VARIANTS):
         tiles[f"forest_{i}"] = forest_floor(square_rng)
     # Own generator too, so the forest floor stays as it was.
     grass_rng = random.Random(23)
     _, _, patterns = grass_patterns()
     # Brian's strokes over a lighter green than his drawing's: he wants the
-    # meadow bright, far from the dark forest floor.
+    # meadow bright, far from the forest floor.
     ground, stroke = GRASS_GROUND, GRASS_STROKE
     for i in range(GRASS_VARIANTS):
         tiles[f"grass_{i}"] = grass(grass_rng, ground, stroke, patterns)

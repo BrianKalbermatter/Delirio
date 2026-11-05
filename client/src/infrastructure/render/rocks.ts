@@ -175,7 +175,7 @@ export class RockField {
     placeFrame(view.sprite, frame, view.rock.x + dx, view.rock.y);
   }
 
-  // Floor around (x, y): not a wall, not lava.
+  // Floor around (x, y): not a wall, not lava, not the pit.
   private fits(x: number, y: number): boolean {
     const t = this.map.tileSize;
     for (const [px, py] of [
@@ -186,7 +186,7 @@ export class RockField {
     ]) {
       const col = Math.floor(px / t);
       const row = Math.floor(py / t);
-      if (this.map.isWall(col, row) || this.map.isLava(col, row) || this.map.isDoor(col, row)) return false;
+      if (this.map.isWall(col, row) || this.map.isLava(col, row) || this.map.isDoor(col, row) || this.map.isPit(col, row)) return false;
     }
     // Not in a boss's room (its floor is all of its zone)
     return this.map.zoneWeight(Math.floor(x / t), Math.floor(y / t)) < 0.99;
