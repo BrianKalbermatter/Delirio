@@ -187,18 +187,36 @@ hit spills some of your blood on the floor. They die one of
 three bloody ways, by where they face: knocked back, slumped over on their
 side or face down, with a pool of blood growing under the body.
 
-Fewer of them roam now, but not alone: some **hunt in packs** of 3 or 4
-that follow a leader towards you, and some stand in **chatting circles**
-out in the maze, talking in turns (a speech bubble over the one
-speaking) while one dances in the middle. Chatting, they barely look around,
-so you can sneak up on them; but if one spots you or gets hit, the whole
-circle comes for you. Once they calm down they walk back and pick up the
-chat again. A pack goes after you together too.
+**Bonfires are where they all come from.** Out in the maze, a skeleton
+bends over a yellow fire on a heap of its own bones. A few spartans dance
+around it, hopping and screaming in turns so as not to hear Zeus weep, and
+every third fire is danced by ghosts and spirits instead. Dancing, they barely
+look around, so you can get close; but if one spots you, or you hit one of them
+or the fire, the whole circle comes for you. Once they calm down they go back
+to the dance.
+
+Hit a bonfire like an enemy (a spear takes a good part of its life and bounces
+off) and its fire shrinks. **Broken, nothing else comes out of it**: the dead
+of its circle stay dead and no one new appears in that zone. It leaves a cold
+heap, a potion, coins and 100 experience, and stays broken in your save. Every
+time the maze grows, a new one lights up further out.
+
+Fires also let strays out, from the living one closest to you and out of your
+sight. By day there are 3 at most, one a minute. **The darker it gets, the more
+come out and the faster**, up to 14, one every 9 seconds at the dead of night,
+and the fallen of the circles come back sooner too. At dawn the ones left over
+that nobody sees go back to the fire. With no fires left, none come.
+
+- **Ghosts** float and have no fear: they stalk you and throw themselves at you.
+- **Spirits** keep their distance and throw clots of darkness. A clot stops at
+  walls; blocking or jumping saves you from it.
+- **Skeletons** get up from some dead spartans and walk straight at you, slowly,
+  without ever running away.
 
 **The square is your base.** No enemy is ever born or comes back to life
-inside it. On the first day (the truce, until dusk) none of them walks in
-either: they stop at the gates, so you can gather your first resources and
-get ready. From dusk on they wander in while the gates are open, and
+inside it. On the first day (the truce, until dusk) they mostly stop at the
+gates, so you can gather your first resources and get ready; only one or two
+may slip in through an open gate. From dusk on they wander in while the gates are open, and
 whoever is inside when the gates close spends the night in there with you.
 
 Some carry a weapon in hand, drawn like yours: a **spear**, an **axe** or a
@@ -329,5 +347,7 @@ read from its Aseprite file and recoloured to the square's greens.
 | Player (Personaje_3, every animation in 8 directions, the spear throw), its weapons in either hand, slam dirt; the weapons as items (lying, held, icon; the spear also flying and stuck in the ground, in 16 directions) | `art/personaje_3.py` + `art/personaje_3_build.py` + `art/armas.py` (weapons: `WEAPONS`) | `bash art/armas_build.sh` (also writes `Personaje_3_Anim.aseprite`). Its sheets are packed (`armas.write_packed_sheet`: each frame cut to its pixels, repeats stored once) to keep them small on the GPU |
 | Enemy (Espartano1: idle/walk/run in 8 directions, roll, three deaths, pinned to a wall) | `Espartano1.aseprite` + `art/espartano.py` (built on `personaje_3.py`, blood from `art/enemigo1.py`) | `python3 art/espartano.py <dir>`, then `Aseprite -b --script-param dir=<dir> --script-param out=Espartano1_Anim.aseprite --script-param body=Espartano --script art/bicho_aseprite.lua`; sheet with `bash client/scripts/export-sprites.sh` |
 | Old enemy (Enemigo1, not used now) | `art/enemigo1.py` | Same as Espartano1, with `body=Enemigo` |
+| Bonfire, the spawner (tags `arde`, `herida`, `agoniza`, `apagada`) | `art/hoguera_original.png` + `art/hoguera.py` (needs scipy) → `client/public/sprites/hoguera.{png,json}` | `python3 art/hoguera.py` |
+| Ghost, spirit and skeleton (one drawing each looking left, moved by the script) and the spirit's shot | `art/fantasma_original.png`, `art/espiritu_original.png`, `art/esqueleto_original.png` + `art/espectros.py` (needs scipy) → `client/public/sprites/{fantasma,espiritu,esqueleto,espiritu_tiro}.{png,json}` | `python3 art/espectros.py` |
 | Torch fire | `art/antorcha_fuego.py` | `python3 art/antorcha_fuego.py` |
 | Aseprite sprites to sheets | `client/scripts/export-sprites.sh` | `bash client/scripts/export-sprites.sh` |
