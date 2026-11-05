@@ -27,6 +27,7 @@ import {
 import { ITEM_SPRITES, placeItems, type Prop, WEAPON_ITEMS } from "./domain/level-items";
 import { Square } from "./domain/square";
 import { placeSampleTree } from "./domain/sample-tree";
+import { placeSaplings, placeTrees, SPECIES } from "./domain/trees";
 import { placeMeadow } from "./domain/meadow";
 import { TileMap } from "./domain/tile-map";
 import { AbilityKeys } from "./infrastructure/input/ability-keys";
@@ -36,7 +37,8 @@ import { Animator } from "./infrastructure/render/animator";
 import { PlazaDeco } from "./infrastructure/render/plaza-deco";
 import { BushViews } from "./infrastructure/render/bushes";
 import { RockField } from "./infrastructure/render/rocks";
-import type { BigRock, Pebble } from "./domain/rocks";
+import { TreeViews } from "./infrastructure/render/tree";
+import { type BigRock, type Pebble, planRocks } from "./domain/rocks";
 import { Camera } from "./infrastructure/render/camera";
 import { CursorOverlay, TargetMarker } from "./infrastructure/render/cursor";
 import { DEPTH, depthOf } from "./infrastructure/render/depth";
@@ -49,6 +51,8 @@ import { Blood } from "./infrastructure/render/blood";
 import { Dust } from "./infrastructure/render/dust";
 import { clearProgress, loadProgress, saveProgress } from "./infrastructure/storage/progress-store";
 import { clearWorld, loadWorld, type SavedWorld, saveWorld } from "./infrastructure/storage/world-store";
+import { LevelAura } from "./infrastructure/render/level-aura";
+import { LevelWave } from "./infrastructure/render/level-wave";
 import { Lighting } from "./infrastructure/render/lighting";
 import { type Box, loadMazeTiles, MazeRenderer, type View } from "./infrastructure/render/maze-renderer";
 import {
@@ -186,6 +190,9 @@ const POTION_HEAL = 30;
 // An enemy's hit shakes the view, softer than the slam.
 const HURT_SHAKE_MS = 180;
 const HURT_SHAKE_PX = 2;
+// Levelling up shakes it harder than anything else, as the wave bursts out.
+const LEVEL_SHAKE_MS = 1000;
+const LEVEL_SHAKE_PX = 5;
 // Hidden in a bush, the player is drawn see-through (League of Legends style).
 const HIDDEN_ALPHA = 0.5;
 type Hand = "rightHand" | "leftHand";
@@ -240,6 +247,13 @@ const [
   grassImage,
   smallGrassImage,
   bushSheet,
+  treeImage,
+  treeShadowImage,
+  orangeTreeImage,
+  orangeTreeShadowImage,
+  treePiecesImage,
+  levelAuraBehindSheet,
+  levelAuraFrontSheet,
   ...assetSheets
 ] = await Promise.all([
   loadGameWasm(),
@@ -269,6 +283,16 @@ const [
   loadImage(`${BASE}sprites/gramilla_chica.png`),
   // Bushes to hide in (art/arbusto.py).
   loadSpriteSheet(`${BASE}sprites/arbusto`),
+  // The trees of the square with their shadows, and the stones and tufts at
+  // their foot (art/arbol2_build.sh, art/arbol3_build.sh).
+  loadImage(`${BASE}sprites/arbol_2.png`),
+  loadImage(`${BASE}sprites/arbol_2_sombra.png`),
+  loadImage(`${BASE}sprites/arbol_3.png`),
+  loadImage(`${BASE}sprites/arbol_3_sombra.png`),
+  loadImage(`${BASE}sprites/arbol_3_pie.png`),
+  // The level up around the body (art/nivel_aura_build.sh).
+  loadSpriteSheet(`${BASE}sprites/nivel_aura_atras`),
+  loadSpriteSheet(`${BASE}sprites/nivel_aura_frente`),
   ...assetNames.map((name) => loadSpriteSheet(`${BASE}assets/${name}`)),
 ]);
 // Each weapon's overlays (in front of the body and behind it), by item id and
@@ -325,6 +349,7 @@ let bossInFight = -1;
 let seenDefeated = game.bossesDefeated();
 let lastLife = -1;
 let seenLevel = game.playerStats().level;
+let levelBeforeAura = seenLevel; // what the bar shows until the aura bursts
 let savedXp = game.playerStats().xp;
 
 // Set by New game: from then on nothing is saved (the page reloads clean).
@@ -356,7 +381,10 @@ const world = new Container();
 const ground = new Container();
 const standing = new Container({ sortableChildren: true });
 world.addChild(ground, standing);
-app.stage.addChild(world);
+// The world and its light: what the level up wave bends. The HUD stays out.
+const scene = new Container();
+scene.addChild(world);
+app.stage.addChild(scene);
 
 // A prop is drawn either as a looping animation or as one fixed frame.
 interface PropView {
@@ -392,8 +420,7 @@ for (const saved of savedWorld?.floor ?? []) {
   propViews.push(addProp(prop, saved.frame === undefined));
 }
 const square = new Square(map, spawn);
-// Where the big tree stood: for now there is no tree (its new sprites are
-// coming), but its fallen branches stay where they were.
+// The first tree of the square, with fallen branches around it.
 const tree = placeSampleTree(spawn);
 const bushViews = new BushViews(game.bushes(), bushSheet, standing);
 // Fallen branches lie around the tree, each drawn with its own variant (in a
@@ -417,16 +444,41 @@ if (!savedWorld) propViews.push(
 // pebbles lying around are among the saved floor items, and the broken rocks
 // stay broken (a save from before the rocks gets its pebbles now).
 const rockField = new RockField(seed, standing, sheets.get("rocas")!, map, game.maze, savedWorld?.rocks?.broken ?? []);
-// The loose pebbles and branches changed with LOOSE_VERSION: an older save
-// gets the new layout added on load.
-const LOOSE_VERSION = 2;
-addLoose(rockField.sync((savedWorld?.rocks?.loose ?? 0) < LOOSE_VERSION));
+// What lies loose changed with LOOSE_VERSION: an older save gets what is new
+// added on load (the pebbles and branches at 2, the saplings at 3).
+const LOOSE_VERSION = 3;
+const looseSaved = savedWorld?.rocks?.loose ?? 0;
+addLoose(rockField.sync(looseSaved < 2));
+// The trees all over the square (domain/trees.ts), solid at the foot. They keep
+// off every rock of the plan, broken or not, so they stay put across reloads.
+const trees = placeTrees(square, map.tileSize, spawn, tree, [
+  ...planRocks(seed).flatMap((cell) => cell.rocks),
+  ...game.bushes(),
+]);
+const treeViews = new TreeViews(
+  trees,
+  [
+    { tree: Texture.from(treeImage), shadow: Texture.from(treeShadowImage) },
+    { tree: Texture.from(orangeTreeImage), shadow: Texture.from(orangeTreeShadowImage) },
+  ],
+  Texture.from(treePiecesImage),
+  standing,
+  game.maze,
+  savedWorld?.felledTrees ?? [],
+);
+if (looseSaved < 3) {
+  for (const { x, y, species } of placeSaplings(trees)) {
+    const item = species === SPECIES.orange ? ITEMS.sapling_orange : ITEMS.sapling_green;
+    propViews.push(addProp({ sprite: item.sprite, frame: item.frame, x, y, pickup: item }, false));
+  }
+}
 // The meadow all over the square (domain/meadow.ts): flowers, small flowers
-// and tall grass, off the items and rocks lying there.
+// and tall grass, off the items, trees and rocks lying there.
 const meadowGround = new Container();
 const plazaDeco = new PlazaDeco(
   placeMeadow(square, map.tileSize, spawn, [
     ...propViews.map((v) => ({ x: v.prop.x, y: v.prop.y })),
+    ...trees,
     ...tree.branches,
     ...rockField.positions(),
   ]),
@@ -506,7 +558,7 @@ const focusRing = new Graphics();
 const blood = new Blood();
 // The dust kicked up walking, the player's and the enemies'.
 const dust = new Dust();
-ground.addChild(maze.floor, meadowGround, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
+ground.addChild(maze.floor, meadowGround, treeViews.ground, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
 standing.addChild(blood.air, airPuff);
 const lighting = new Lighting(canvas.width, canvas.height);
 const keyPrompt = createKeyPrompt();
@@ -516,11 +568,11 @@ const spearSprite = new Sprite();
 standing.addChild(spearSprite);
 const abilityEffects = new AbilityEffects();
 const hud = new Hud();
+const levelWave = new LevelWave(scene, canvas.width, canvas.height);
+const levelAura = new LevelAura(levelAuraBehindSheet, levelAuraFrontSheet);
+standing.addChild(levelAura.behind);
+scene.addChild(lighting.view, torchGlows.rightHand.view, torchGlows.leftHand.view, playerGlow.view, levelAura.front);
 app.stage.addChild(
-  lighting.view,
-  torchGlows.rightHand.view,
-  torchGlows.leftHand.view,
-  playerGlow.view,
   playerBar.view,
   keyPrompt,
   spearBar,
@@ -532,6 +584,7 @@ window.addEventListener("resize", () => {
   camera.viewWidth = canvas.width;
   camera.viewHeight = canvas.height;
   lighting.resize(canvas.width, canvas.height);
+  levelWave.resize(canvas.width, canvas.height);
   cursor.setScale(screenScale);
   book.setScale(screenScale);
 });
@@ -746,6 +799,7 @@ function update(dtMs: number): void {
     addLoose(rockField.sync(true)); // the cells the growth carved get their rocks
   }
   updateMining(dtMs);
+  updateChopping(dtMs);
   enemyAnimMs += dtMs; // drawn in draw(), also while paused
   blood.update(dtMs);
   kickUpDust(dtMs);
@@ -823,9 +877,18 @@ function update(dtMs: number): void {
     saveGame();
   }
   lastLife = stats.life;
-  if (stats.level > seenLevel) {
-    gameLog.log(`Level up! You are level ${stats.level}, fully healed: a point to spend in Skills (+).`);
+  // The core has already raised the level: the essence wraps the player
+  // first, and the level up shows when it bursts.
+  if (stats.level > seenLevel && !levelAura.wrapping) {
+    levelBeforeAura = seenLevel;
+    levelAura.start();
   }
+  if (levelAura.update(dtMs)) {
+    gameLog.log(`Level up! You are level ${stats.level}, fully healed: a point to spend in Skills (+).`);
+    levelWave.start(player.x, playerCenterY());
+    camera.shake(LEVEL_SHAKE_MS, LEVEL_SHAKE_PX);
+  }
+  levelWave.update(dtMs);
   if (stats.level !== seenLevel || stats.xp !== savedXp) saveCurrentProgress();
   seenLevel = stats.level;
 
@@ -867,6 +930,7 @@ function update(dtMs: number): void {
     const id = abilities.indexOf(started);
     if (id <= ABILITY.ATAQUE_CRITICO && !player.isDead) {
       mineAhead(); // with the pickaxe in hand, a rock in front takes the blow
+      chopAhead(); // and with the axe, a tree
       // In the air it slashes with the legs tucked; the jump goes on after.
       const name = player.isJumping ? "jump_attack" : "attack";
       const ms = Math.max(MIN_SWING_MS, ATTACK_ACTIVE_MS[id] ?? MIN_SWING_MS);
@@ -911,6 +975,7 @@ function update(dtMs: number): void {
     width: canvas.width,
     height: canvas.height,
   });
+  treeViews.update(dtMs);
   rockField.update(dtMs, {
     left: camera.x - canvas.width / 2,
     top: camera.y - canvas.height / 2,
@@ -1335,7 +1400,8 @@ function bodySheet(right: boolean, left: boolean): SpriteSheet {
 // Life, level and experience above the player's head, following it.
 function showPlayerBar(): void {
   const [sx, sy] = worldToScreen(player.x, player.y - PLAYER_BODY_HEIGHT - PROMPT_ABOVE_HEAD);
-  playerBar.show(game.playerStats(), sx, sy);
+  const stats = game.playerStats();
+  playerBar.show(levelAura.wrapping ? { ...stats, level: levelBeforeAura } : stats, sx, sy);
 }
 
 // A key cap with an "E" above the player's bar while an item to pick up
@@ -1409,6 +1475,7 @@ function snapshotWorld(): SavedWorld {
     clockMs: game.clockMs(),
     bossesDefeated: game.bossesDefeated(),
     rocks: { broken: rockField.brokenIds, loose: LOOSE_VERSION },
+    felledTrees: treeViews.felledIds,
     structures: structures.map((s) => ({ id: s.item.id, x: s.x, y: s.y })),
     x: p.x,
     y: p.y,
@@ -1479,6 +1546,7 @@ function draw(): void {
   const cover = game.cover();
   const enemies = game.enemies();
   maze.show(view, playerBody(), game.maze.gateLeaves(), hiddenThings(enemies, cover));
+  treeViews.show(playerBody());
   enemyViews.show(enemies, enemyAnimMs, cover.bush);
   showFocusRing(enemies, cover);
   enemyAnimMs = 0;
@@ -1497,6 +1565,7 @@ function draw(): void {
   }
   showFlyingSpear();
   showPlayer(cover.hidden ? HIDDEN_ALPHA : 1);
+  levelAura.show(player.x, playerCenterY() - player.lift, world.x, world.y, depthOf(player.y, DEPTH.player) - 1e-3);
 
   // Screen space.
   const [dirX, dirY] = vectorOf(player.facing);
@@ -1518,8 +1587,10 @@ function draw(): void {
   showKeyPrompt();
   showSpearBar();
   showAbilityEffects();
+  levelWave.show(worldToScreen);
   hud.showHurtFlash();
   hud.showClock(game.clock(), gateOpening, timeSpeed, canvas.width, performance.now());
+  hud.showMoonClock(game.calendar().frame);
   hud.showBanners(growthBannerMs, deathBannerMs, DEATH_BANNER_MS, canvas.width, canvas.height);
   const boss = bossInFight >= 0 ? enemies.find((e) => e.slot === bossInFight && e.life > 0) : undefined;
   hud.showBoss(
@@ -1551,6 +1622,7 @@ function cursorInWorld(): { x: number; y: number } {
 
 function showCoreDebug(core: ReturnType<typeof coreState>): void {
   const clock = game.clock();
+  const moon = game.calendar();
   const sent = target ? `${target.x.toFixed(1)}, ${target.y.toFixed(1)}` : "-";
   const inC = game.targetInC();
   coreDebug.show([
@@ -1563,6 +1635,9 @@ function showCoreDebug(core: ReturnType<typeof coreState>): void {
     ["estado", core.state],
     ["reloj", `dia ${clock.day} · ${clock.phase} · faltan ${formatMs(clock.phaseLeftMs)}`],
     ["luz", clock.daylight.toFixed(2)],
+    ["luna", `t ${moon.t} · ${moon.hudText} · ${moon.dayName}`],
+    ["luminosidad", `${moon.luminosity.toFixed(2)} · ${moon.waxing ? "creciente" : "menguante"} · frame ${moon.frame}`],
+    ["barco", moon.daysUntilShip === 0 ? "llega hoy" : `faltan ${moon.daysUntilShip} dias`],
     ["puertas", `${Math.round(gateOpening * 100)}% abiertas`],
     ["muertes", `${game.playerStats().deaths} · delirio ${game.playerStats().delirium}`],
     ["compuertas", clock.gatesOpen ? "ABIERTAS" : "cerradas"],
@@ -1901,6 +1976,43 @@ function updateMining(dtMs: number): void {
   if (!pebbles) return;
   addPebbles(pebbles, { fromX: rock.x, fromY: rock.y - 10 });
   gameLog.log(`The rock breaks into ${pebbles.length} pebbles.`);
+}
+
+// ---------------------------------------------------------------- trees
+
+const CHOP_REACH = 44; // px from the feet to a trunk's foot
+let pendingChop: { id: number; ms: number } | null = null;
+
+function holdsAxe(): boolean {
+  return [equipment.slots.rightHand, equipment.slots.leftHand].some((item) => item?.id === ITEMS.axe.id);
+}
+
+function treeInReach(): number | null {
+  return player.isDead ? null : treeViews.nearest(player.x, player.y, CHOP_REACH);
+}
+
+// An attack just started: with the axe, the tree in reach (if any) takes the
+// blow halfway through the swing.
+function chopAhead(): void {
+  if (!holdsAxe() || pendingChop) return;
+  const id = treeInReach();
+  if (id !== null) pendingChop = { id, ms: MINE_HIT_DELAY_MS };
+}
+
+// Left click with the axe next to a tree: a swing at it, which comes back
+// through the abilities (see chopAhead). Held down, it swings as often as the
+// attack lets it.
+function updateChopping(dtMs: number): void {
+  if (mouse.held && mouse.overGame() && !book.isOpen && holdsAxe() && treeInReach() !== null) {
+    game.useAbility(ABILITY.ATAQUE_LIGERO);
+  }
+  if (!pendingChop) return;
+  pendingChop.ms -= dtMs;
+  if (pendingChop.ms > 0) return;
+  const felled = treeViews.hit(pendingChop.id);
+  pendingChop = null;
+  camera.shake(felled ? 220 : 90, felled ? 2 : 1);
+  if (felled) gameLog.log("The tree comes down.");
 }
 
 function itemOnFloor(

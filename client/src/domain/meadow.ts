@@ -72,7 +72,7 @@ export function placeMeadow(
 }
 
 // Smooth value noise in 0..1.
-function noise(x: number, y: number): number {
+export function noise(x: number, y: number): number {
   const x0 = Math.floor(x);
   const y0 = Math.floor(y);
   const sx = smooth(x - x0);
@@ -92,7 +92,7 @@ function hash(x: number, y: number): number {
   return ((h ^ (h >>> 16)) >>> 0) / 4294967296;
 }
 
-function random(seed: number): () => number {
+export function random(seed: number): () => number {
   let a = seed >>> 0;
   return () => {
     a = (a + 0x6d2b79f5) >>> 0;

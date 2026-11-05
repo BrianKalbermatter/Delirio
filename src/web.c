@@ -185,6 +185,22 @@ EMSCRIPTEN_KEEPALIVE void web_lanzando(int si) { juego_lanzando(si); }
 EMSCRIPTEN_KEEPALIVE int web_reloj_compuertas(void) { return reloj_compuertas_abiertas(juego_reloj()); }
 EMSCRIPTEN_KEEPALIVE float web_reloj_cambio_compuertas_ms(void) { return reloj_proximo_cambio_compuertas(juego_reloj()); }
 
+// Calendario lunar (mecanicas/calendario.h)
+EMSCRIPTEN_KEEPALIVE int web_calendario_t(void) { return juego_fecha()->t; }
+EMSCRIPTEN_KEEPALIVE int web_calendario_mes(void) { return juego_fecha()->mes; }
+EMSCRIPTEN_KEEPALIVE const char *web_calendario_nombre_mes(void) { return juego_fecha()->nombre_mes; }
+EMSCRIPTEN_KEEPALIVE int web_calendario_dia_del_mes(void) { return juego_fecha()->dia_del_mes; }
+EMSCRIPTEN_KEEPALIVE int web_calendario_tramo(void) { return juego_fecha()->tramo; }
+EMSCRIPTEN_KEEPALIVE const char *web_calendario_nombre_dia(void) { return juego_fecha()->nombre_dia; }
+EMSCRIPTEN_KEEPALIVE const char *web_calendario_texto_hud(void) { return juego_fecha()->texto_hud; }
+EMSCRIPTEN_KEEPALIVE float web_calendario_fase(void) { return juego_fecha()->fase; }
+EMSCRIPTEN_KEEPALIVE float web_calendario_luminosidad(void) { return juego_fecha()->luminosidad; }
+EMSCRIPTEN_KEEPALIVE int web_calendario_creciente(void) { return juego_fecha()->creciente; }
+EMSCRIPTEN_KEEPALIVE int web_calendario_frame(void) { return juego_fecha()->frame; }
+EMSCRIPTEN_KEEPALIVE int web_calendario_dias_hasta_barco(void) { return juego_fecha()->dias_hasta_barco; }
+EMSCRIPTEN_KEEPALIVE void web_calendario_avanzar_dia(void) { juego_calendario_avanzar_dia(); }
+EMSCRIPTEN_KEEPALIVE void web_calendario_fijar(int t) { juego_calendario_fijar(t); }
+
 // Medusa de prueba (barra de vida arriba a la izquierda)
 EMSCRIPTEN_KEEPALIVE int web_medusa_vida(void) { return juego_medusa()->vida; }
 EMSCRIPTEN_KEEPALIVE int web_medusa_vida_max(void) { return juego_medusa()->vidaMAX; }

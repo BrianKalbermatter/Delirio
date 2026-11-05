@@ -76,6 +76,10 @@ export const ITEMS: Record<string, ItemKind> = {
     frame: 0,
     pickupWithKey: true,
   },
+  // Saplings (art/retonos.py), the square's trees in miniature, growing near
+  // them. Picked up with E; planting them comes later. `frame` is their SPECIES.
+  sapling_green: { id: "sapling_green", name: "Green sapling", sprite: "retonos", frame: 0, pickupWithKey: true },
+  sapling_orange: { id: "sapling_orange", name: "Orange sapling", sprite: "retonos", frame: 1, pickupWithKey: true },
   // Pebbles (art/rocas.py, in the colours of Brian's Roca1): lying around the
   // big rocks and left by breaking one. Picked up with E; several shapes
   // (frames), all the same item.

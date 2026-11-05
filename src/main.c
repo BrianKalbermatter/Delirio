@@ -3,6 +3,7 @@
 // No implementa mecanicas: guarda el estado del juego y, en cada paso,
 // llama a cada mecanica en orden. Las mecanicas viven en mecanicas/:
 //   mecanica.c           -> el reloj: dia, tarde, noche, cuando se expande el laberinto
+//   calendario.c         -> el calendario lunar: meses, nombres de los dias, la luna, el barco
 //   laberinto.c          -> el laberinto: generacion aleatoria, expansion y choques
 //   jugador.c            -> jugadores principales: habilidades y movimiento
 //   movimiento_mouse.c   -> caminar hacia donde se hizo click
@@ -224,6 +225,13 @@ const Jugador *juego_jugador_completo(void){ return &jugador; }
 int juego_hay_destino(void){ return jugador.hay_destino; }
 Direccion juego_destino(void){ return jugador.destino; }
 const Reloj *juego_reloj(void){ return &reloj; }
+
+const FechaLunar *juego_fecha(void){
+  static FechaLunar fecha;
+  fecha = calendario_fecha(reloj.calendario.t);
+  return &fecha;
+}
+
 const Laberinto *juego_laberinto(void){ return &laberinto; }
 
 int juego_agregar_obstaculo(float x, float y, float ancho, float alto){
@@ -235,6 +243,9 @@ void juego_quitar_obstaculo(int i){
 }
 
 void juego_velocidad_tiempo(float factor){ velocidad_tiempo = factor; }
+
+void juego_calendario_avanzar_dia(void){ calendario_avanzar_dia(&reloj.calendario); }
+void juego_calendario_fijar(int t){ calendario_fijar(&reloj.calendario, t); }
 
 void juego_prueba_puertas(void){
   // Hasta 15 s antes del cierre, o lo que entre en la tarde (con tiempos de prueba es menos)

@@ -24,6 +24,7 @@ declare -A ARGS=(
 )
 # Items (pickups) load from public/assets, like the potions and the chest.
 declare -A ASSET_SPRITES=(
+  [retonos]="Arboles/Retonos.aseprite"
   [ramas]="Plaza/Ramas.aseprite"
   [mesa_trabajo]="Objetos/MesaDeTrabajo.aseprite"
 )

@@ -17,6 +17,7 @@ void reloj_iniciar(Reloj *r){
   r->ms_en_fase = DURACION_AMANECER_MS;
   r->expansiones = 0;
   r->primera_expansion_hecha = 0;
+  calendario_iniciar(&r->calendario);
 }
 
 // El laberinto crece al anochecer de los primeros DIAS_DE_CRECIMIENTO dias.
@@ -55,6 +56,9 @@ int reloj_avanzar(Reloj *r, float dt_ms){
       case FASE_NOCHE:
         r->fase = FASE_DIA;
         r->dia++;
+        // Aca y no con EVENTO_NUEVO_DIA: un paso largo puede cruzar mas de un
+        // amanecer, y cargar una partida (que repite el reloj) lo recupera solo.
+        calendario_avanzar_dia(&r->calendario);
         eventos |= EVENTO_NUEVO_DIA;
         break;
     }

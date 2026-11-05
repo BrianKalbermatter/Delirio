@@ -26,6 +26,8 @@ export interface SavedWorld {
   // before the rocks: then the pebbles are placed on load.
   // `loose`: the version of the loose pebbles and branches already placed.
   rocks?: { broken: number[]; loose?: number };
+  // The trees cut down (ids from render/tree.ts). Missing in an older save.
+  felledTrees?: number[];
   // What the player set up (a workbench): item id and foot position.
   structures?: { id: string; x: number; y: number }[];
   x: number;
@@ -56,6 +58,7 @@ export function loadWorld(characterId: string): SavedWorld | null {
       rocks: Array.isArray(saved.rocks?.broken)
         ? { broken: saved.rocks.broken.filter(Number.isInteger), loose: Number(saved.rocks.loose) || 1 }
         : undefined,
+      felledTrees: Array.isArray(saved.felledTrees) ? saved.felledTrees.filter(Number.isInteger) : [],
       structures: Array.isArray(saved.structures)
         ? saved.structures.filter((s) => typeof s?.id === "string" && Number.isFinite(s.x) && Number.isFinite(s.y))
         : [],

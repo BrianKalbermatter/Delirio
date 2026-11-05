@@ -127,6 +127,12 @@ export class Hud {
     this.hurtAt = performance.now();
   }
 
+  // The moon clock. `frame` (CalendarState.frame, 0 to 29) is the cell of the
+  // 30-phase spritesheet for today.
+  showMoonClock(_frame: number): void {
+    // TODO: draw the clock sprite here, with that frame, once the sheet exists.
+  }
+
   // `gateOpening`: 1 open, 0 closed. A warning when the maze is about to grow
   // or the gates are closing.
   showClock(clock: ClockState, gateOpening: number, timeSpeed: number, width: number, nowMs: number): void {

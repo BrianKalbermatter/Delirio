@@ -14,6 +14,9 @@ export const PINNED = [null, "front", "left", "right"] as const;
 // Same order as `enum fase` in src/mecanicas/mecanica.h.
 export const PHASE = ["DIA", "TARDE", "NOCHE"] as const;
 
+// Same order as `enum tramo` in src/mecanicas/calendario.h.
+export const MOON_STRETCH = ["CRECIENTE", "LLENA", "MENGUANTE"] as const;
+
 // Same order as `enum habilidad_id` in src/mecanicas/jugador.h.
 export const ABILITY = {
   ATAQUE_LIGERO: 0,
@@ -44,6 +47,22 @@ export interface ClockState {
   sun: number; // where the sun is: 0 dawn, 0.5 noon, 1 dusk; -1 at night
   gatesOpen: boolean;
   gatesChangeMs: number; // time until the gates close (if open) or open (if closed)
+}
+
+// Today in the lunar calendar (src/mecanicas/calendario.h).
+export interface CalendarState {
+  t: number; // day of the cycle: 0 to 179
+  month: number; // 0 to 5
+  monthName: string;
+  dayOfMonth: number; // 1 to 30
+  stretch: (typeof MOON_STRETCH)[number];
+  dayName: string; // long: "Tercera luz creciente"
+  hudText: string; // short: "Mes de Zeus · 3ª creciente"
+  moonPhase: number; // 0 to 1: 0 new moon, 0.5 full moon
+  luminosity: number; // 0 pitch dark, 1 full moon: for the maze at night
+  waxing: boolean; // lit on the right; waning, on the left
+  frame: number; // cell of the 30-phase spritesheet: 0 to 29
+  daysUntilShip: number; // the black-sailed ship: 0 means it arrives today
 }
 
 export interface PlayerStats {
@@ -212,6 +231,12 @@ export interface GameWasm {
   // A saved game, right after start() with its seed: the clock moved on to
   // `clockMs` (the maze growing as it did) and the player at (x, y).
   loadGame(clockMs: number, x: number, y: number): void;
+  // Today in the lunar calendar.
+  calendar(): CalendarState;
+  // Testing aids: one day on, or straight to day `t`. They leave the clock
+  // alone, and a reload takes the date from the clock again.
+  calendarNextDay(): void;
+  calendarSet(t: number): void;
   // Game time since the start (the clock's total), to save it.
   clockMs(): number;
   // Whether the player holds a shield: covering, it can walk (slowly).
@@ -290,6 +315,18 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const daylight = num("web_reloj_luz", 0);
   const sun = num("web_reloj_sol", 0);
   const gates = num("web_reloj_compuertas", 0);
+  const calendarT = num("web_calendario_t", 0);
+  const calendarMonth = num("web_calendario_mes", 0);
+  const calendarMonthName = mod.cwrap<() => string>("web_calendario_nombre_mes", "string", []);
+  const calendarDay = num("web_calendario_dia_del_mes", 0);
+  const calendarStretch = num("web_calendario_tramo", 0);
+  const calendarDayName = mod.cwrap<() => string>("web_calendario_nombre_dia", "string", []);
+  const calendarHudText = mod.cwrap<() => string>("web_calendario_texto_hud", "string", []);
+  const calendarPhase = num("web_calendario_fase", 0);
+  const calendarLuminosity = num("web_calendario_luminosidad", 0);
+  const calendarWaxing = num("web_calendario_creciente", 0);
+  const calendarFrame = num("web_calendario_frame", 0);
+  const calendarShip = num("web_calendario_dias_hasta_barco", 0);
   const useAbility = call("web_usar", 1);
   const hold = call("web_mantener", 2);
   const abilityActive = num("web_hab_activa", 1);
@@ -462,6 +499,22 @@ export async function loadGameWasm(): Promise<GameWasm> {
       gatesOpen: gates() === 1,
       gatesChangeMs: gatesChange(),
     }),
+    calendar: () => ({
+      t: calendarT(),
+      month: calendarMonth(),
+      monthName: calendarMonthName(),
+      dayOfMonth: calendarDay(),
+      stretch: MOON_STRETCH[calendarStretch()] ?? "CRECIENTE",
+      dayName: calendarDayName(),
+      hudText: calendarHudText(),
+      moonPhase: calendarPhase(),
+      luminosity: calendarLuminosity(),
+      waxing: calendarWaxing() === 1,
+      frame: calendarFrame(),
+      daysUntilShip: calendarShip(),
+    }),
+    calendarNextDay: call("web_calendario_avanzar_dia", 0),
+    calendarSet: call("web_calendario_fijar", 1),
     useAbility,
     holdAbility: (id, held) => hold(id, held ? 1 : 0),
     abilities: () =>

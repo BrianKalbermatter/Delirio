@@ -1,7 +1,6 @@
-// The big tree in the square (Brian's Arbol1), to try the meadow style in
-// game before making more. It stands to the right of the spawn, with a solid
-// trunk, a few loose sticks on the ground around it and Brian's flowers
-// growing around its foot.
+// A tree to the right of the spawn with fallen branches around it, the first
+// of the square's trees (domain/trees.ts). The sticks and flowers are from the
+// big tree (Arbol1, render/big-tree.ts).
 
 export interface SampleTree {
   x: number; // centre of the trunk's foot, world px
@@ -26,8 +25,6 @@ export interface Stick {
 
 const OFFSET_X = 320; // px right of the spawn
 const OFFSET_Y = -20;
-const TRUNK_WIDTH = 40;
-const TRUNK_DEPTH = 12; // px of the trunk's foot that block the way
 const STICK_KINDS = 4;
 // Sticks lie around the tree, not under its trunk: angle (radians), distance (px).
 const STICK_SPOTS: [number, number][] = [
@@ -73,9 +70,4 @@ export function placeSampleTree(spawn: { x: number; y: number }): SampleTree {
   ];
   const branches = BRANCH_SPOTS.map(([dx, dy], i) => ({ x: x + dx, y: y + dy, kind: i % BRANCH_KINDS }));
   return { x, y, sticks, flowers, branches };
-}
-
-// The part of the trunk the player's feet bump into.
-export function sampleTrunkBox(tree: SampleTree): { x: number; y: number; w: number; h: number } {
-  return { x: tree.x - TRUNK_WIDTH / 2, y: tree.y - TRUNK_DEPTH, w: TRUNK_WIDTH, h: TRUNK_DEPTH };
 }

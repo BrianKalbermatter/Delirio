@@ -29,6 +29,9 @@ const Jugador *juego_jugador_completo(void); // con sus habilidades
 int juego_hay_destino(void);
 Direccion juego_destino(void);
 const Reloj *juego_reloj(void);
+// El dia de hoy en el calendario lunar. `luminosidad` es la que va a usar el
+// laberinto de noche (a menor luminosidad, menos visibilidad).
+const FechaLunar *juego_fecha(void);
 const Laberinto *juego_laberinto(void);
 
 // Una caja solida sobre el piso (una roca grande), en pixeles del mundo.
@@ -39,6 +42,11 @@ void juego_quitar_obstaculo(int i);
 // Para probar: multiplica la velocidad del reloj (1 = normal). No acelera el
 // movimiento, solo el paso de los dias.
 void juego_velocidad_tiempo(float factor);
+
+// Para probar: pasa un dia del calendario, o va directo al dia t. No toca el
+// reloj, y al recargar la partida la fecha vuelve a salir del reloj.
+void juego_calendario_avanzar_dia(void);
+void juego_calendario_fijar(int t);
 
 // Para probar: lleva el reloj a poco antes de que las puertas empiecen a
 // cerrarse (hasta 15 s), a velocidad normal, y pone al jugador frente a la

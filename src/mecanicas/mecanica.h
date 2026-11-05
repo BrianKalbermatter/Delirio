@@ -9,11 +9,14 @@
 //   - Amanece y anochece de a poco: reloj_luz() va de 0 (noche) a 1 (dia).
 //   - El laberinto crece por primera vez a los 30 segundos, y despues cada vez
 //     que cae la noche, durante los primeros DIAS_DE_CRECIMIENTO dias.
+//   - Cada amanecer pasa un dia del calendario lunar (calendario.h).
 //   - Mas adelante: gasta agua y comida.
 //
 // Tiempo -> a medida que pasa el tiempo, el laberinto se hace mas extenso. Cuando se para? cuando el jugador vence a las hermanas medusas, luego el laberinto avanaza extendiendose a la Etapa 2, derrotar a otro jefe, asi... hasta que llegue el laberinto Etapa 6. Aca es cuando el laberinto llega a su fase final, tenes todo lo necesario.Dependiendo de que tanto exploraste vas a poder saber donde va a estar el MINOTAURO, ultimo jefe. Lo derrotas y se te abrira la puerta para que puedas escapar.
 #ifndef MECANICA_H
 #define MECANICA_H
+
+#include "calendario.h"
 
 #define MINUTO_MS 60000.0f
 #define SEGUNDO_MS 1000.0f
@@ -53,6 +56,7 @@ typedef struct reloj {
   float ms_en_fase;    // cuanto lleva la fase actual
   int expansiones;     // cuantas veces crecio el laberinto
   int primera_expansion_hecha;
+  Calendario calendario; // pasa un dia con cada amanecer
 } Reloj;
 
 // Lo que paso en un paso del reloj. Se combinan como bits:
