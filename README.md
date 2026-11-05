@@ -23,6 +23,7 @@ Days last 6 real minutes and nights 16 (press **F** to speed up the clock).
 | Mouse | Aim: the character always looks at the cursor |
 | Shift (hold) | Run |
 | Space | Jump · again in the air: double jump (once learned in Skills) |
+| Left click | With the axe in hand, next to a tree: chop it (hold it to keep swinging) |
 | Left click (hold) | With the spear in the right hand: wind up and aim at the cursor while the bar under your feet charges; release to throw it (the fuller the bar, the further it flies) |
 | Right click (hold) | Cover: blocks hits. With the shield in a hand you raise it and can walk, slowly; without it you stand still |
 | V | Parry |
@@ -64,6 +65,14 @@ with patches of old stone paving, between low
 walls seen in perspective: their sides lean away from the middle of the
 screen, and any wall in front of you opens a round window so you never get
 lost behind it.
+
+Trees grow all over the square, as many green as orange, in groves with
+clearings between them and thicker in the dark corner; some have stones and
+grass at the foot. Their trunks are solid, and a tree turns see-through while
+you walk behind it. They grow in the same places in every game. Near some of
+them lie **saplings** to pick up with E (planting them comes later). With the
+**axe** in hand, left click next to a tree: three blows fell it, in a rain of
+its leaves, and it stays down.
 
 ### The bosses' zones
 
@@ -201,7 +210,11 @@ gold square beside it and, under it, the **experience** to the next one.
 Every enemy you kill gives 25 experience (by hand, with the spear or
 punching the ground); level 1 needs 100, level 2 needs 200, and so on.
 
-Levelling up heals you fully and gives a **point**. Points are spent
+Levelling up takes a moment: yellow stars turn around you leaving a trail of
+essence, closing in until it bursts in red, blue and yellow, and a slow,
+colorless wave crosses the screen: only the image bends, harder the further it
+gets, with ripples behind it and the view shaking (the HUD stays still). It heals you fully and gives a
+**point**. Points are spent
 whenever you like, away from the fight, in the **Skills** tab of the side
 panel, with the **+** next to each one:
 
@@ -225,6 +238,20 @@ Then the items are used up and the result goes to the inventory.
 | Spear | 3 branches on a diagonal | 4 s |
 | Torch | a branch on top of another | 3 s |
 | Axe | 2 enemy swords side by side, 2 branches under one of them | 5 s |
+
+## The moon
+
+Every dawn is a day of the lunar calendar: 6 months of 30 days, and then it
+starts over. The months are Zeus, Deukos, Sfagianes, Lapatos, Dipsios and
+Klareon. Days have names, not numbers: from the new moon, through the waxing
+light and the full moon, to the countdown (*Faltan nueve lunas*...) and *Viejo
+y nuevo*, the day one month ends and the next begins. The black-sailed ship
+arrives on the last day of the Month of Zeus.
+
+For now it is only the logic (`src/mecanicas/calendario.c`), shown in the debug
+panel. `game.calendar()` gives the date, with the `luminosity` the maze will use
+at night; the clock's sprite goes in `Hud.showMoonClock`. To see the 30 days of
+a month and run the tests: `bash tests/calendario.sh [month, 0 to 5]`.
 
 ## Saving
 
@@ -267,6 +294,10 @@ read from its Aseprite file and recoloured to the square's greens.
 | Sample tree (layers Sombra, Tronco, Copa, Pasto) and loose sticks | `art/arbol.py` + `art/arbol_aseprite.lua` | Layers with `python3 art/arbol.py client/public/sprites <layers_dir>`, then `Aseprite -b --script-param dir=<layers_dir> --script-param out=<arbol_muestra.aseprite> --script-param sticks=<palitos.png> --script arbol_aseprite.lua`. After retouching: `Aseprite -b arbol_muestra.aseprite --save-as client/public/sprites/arbol.png` |
 | Big tree from line art (layers Sombra, Tronco, Copa, Hojas; tags `idle`, `chop`) | `Arboles/Arbol1.aseprite` + `art/pintar_arbol.py` + `art/animar_arbol.py` + `art/arbol_animado_aseprite.lua` | Export the line art to PNG, `python3 art/animar_arbol.py <line_art.png> <dir>`, then `Aseprite -b --script-param dir=<dir> --script-param out=<Arbol1_pintado.aseprite> --script arbol_animado_aseprite.lua`; sheets with `bash client/scripts/export-sprites.sh` |
 | Gramilla, tufts and twigs around the big tree's foot (run after `gramilla.py`) | `art/pasto_arbol.py` | `python3 art/pasto_arbol.py client/public/sprites` |
+| Level up around the body (layers Atras, Frente; tags `rodea`, `estalla`) | `art/nivel_aura.py` + `art/nivel_aura_aseprite.lua` → `sprites/Efectos/NivelAura.aseprite` | `bash art/nivel_aura_build.sh` redraws it from zero; after retouching it in Aseprite, `bash art/nivel_aura_build.sh --export` |
+| Trees of the square: green (layers Sombra, Arbol) | `art/arbol2_original.png` + `art/arbol2.py` + `art/arbol2_aseprite.lua` → `sprites/Arboles/Arbol2.aseprite` | `bash art/arbol2_build.sh` recovers it from the image; after retouching it in Aseprite, `bash art/arbol2_build.sh --export` |
+| Trees of the square: orange, and the stones and tufts at their foot | `art/arbol3_original.png` + `art/arbol3.py` (needs scipy) + `art/arbol3_aseprite.lua` → `sprites/Arboles/Arbol3.aseprite`, `Arbol3_pie.aseprite` | `bash art/arbol3_build.sh`, or with `--export` after retouching |
+| Saplings (2 frames, one per tree) | `art/retonos.py` + `art/retonos_aseprite.lua` → `sprites/Arboles/Retonos.aseprite` | `bash art/retonos_build.sh`, or with `--export` after retouching |
 | Branches around the big tree | `art/plaza_deco.py` + `art/frames_aseprite.lua` → `sprites/Plaza/Ramas.aseprite` | `python3 art/plaza_deco.py <dir>`, then `Aseprite -b --script-param dir=<dir>/ramas --script-param out=Ramas.aseprite --script frames_aseprite.lua`; sheet with `bash client/scripts/export-sprites.sh` |
 | Wind on Brian's flowers (tag `viento`) | `art/flores_viento.py` + `art/frames_aseprite.lua` → `sprites/Laberinto/Terreno/{Flores,Flores2}_viento.aseprite` (his `Flores` and `Flores2` stay untouched) | `python3 art/flores_viento.py <Terreno dir> <dir>`, then per folder `Aseprite -b --script-param dir=<dir>/<name> --script-param out=<name>_viento.aseprite --script-param tag=viento --script frames_aseprite.lua`; sheets with `bash client/scripts/export-sprites.sh` |
 | Bushes to hide in (3 variants, tags `viento_0..2`; the first frame of each is the bush at rest) | `art/arbusto.py` (placeholder, to repaint) | `python3 art/arbusto.py client/public/sprites` |
