@@ -68,6 +68,9 @@ the same in every game; only the maze around it changes with the seed.
 - **Wild sheep** graze in the square, in flocks of up to five and some on
   their own. Get close and they bolt, the whole flock at once: faster than you
   walk, slower than you run.
+- **Wild birds** fly over everything by day, wherever they like, and land
+  here and there to peck at the floor. Walk up to one and it flies off; the
+  ones that get far away are gone and others come.
 - **Old stumps** are scattered all over the square, no two alike: years of
   moss on the wood, with stones and tall grass grown around them. They are
   solid.
@@ -318,6 +321,7 @@ read from its Aseprite file and recoloured to the square's greens.
 | The pit by the spawn | `art/hueco_original.png` + `art/hueco.py` (needs scipy) → `client/public/sprites/hueco.png`, and prints its collision rows for `src/mecanicas/laberinto.c` | `python3 art/hueco.py` |
 | Fruit bushes (berries, grapes, pomegranates; with and without fruit, shown at 3 sizes) and the fruit as items | `art/arbustos_frutos_original.png` + `art/arbustos_frutos.py` (needs scipy) → `client/public/sprites/arbusto_frutos.{png,json}`, `client/public/assets/frutas.{png,json}` | `python3 art/arbustos_frutos.py` |
 | Sheep (one drawing facing right; tags `pasta`, `camina`, `corre`) | `art/ovejas_original.png` + `art/ovejas.py` → `client/public/sprites/oveja.{png,json}` | `python3 art/ovejas.py` |
+| Birds (8; perched, pecking and 3 of the wing each) | `art/aves_original.png` + `art/aves.py` (needs scipy) → `client/public/sprites/aves.{png,json}` | `python3 art/aves.py` |
 | Stumps (3, each at 3 ages) | `art/tocones_original.png` + `art/tocones.py` (needs scipy) → `client/public/sprites/tocones.{png,json}` | `python3 art/tocones.py` |
 | Bushes to hide in (9, one frame each; the game only uses the 3 round ones) | `sprites/Plaza/Arbustos_original.png` + `art/arbustos.py` → `sprites/Plaza/Arbustos.aseprite` | `bash art/arbustos_build.sh`, or with `--export` after retouching |
 | Wind on the big tree (its `idle` tag) | `art/arbol_viento.lua` → `sprites/Arboles/Arbol1_pintado.aseprite` (rebuilds the wind from the first frame; rerun after retouching it) | `Aseprite -b --script-param file=Arbol1_pintado.aseprite --script arbol_viento.lua`, then `bash client/scripts/export-sprites.sh` |

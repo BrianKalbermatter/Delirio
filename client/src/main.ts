@@ -28,6 +28,7 @@ import { ITEM_SPRITES, placeItems, type Prop, WEAPON_ITEMS } from "./domain/leve
 import { Square } from "./domain/square";
 import { placeSampleTree } from "./domain/sample-tree";
 import { placeSaplings, placeTrees, SPECIES } from "./domain/trees";
+import { Flock } from "./domain/birds";
 import { placeMeadow } from "./domain/meadow";
 import { placeStumps } from "./domain/stumps";
 import { TileMap } from "./domain/tile-map";
@@ -37,6 +38,7 @@ import { AbilityEffects } from "./infrastructure/render/ability-effects";
 import { Animator } from "./infrastructure/render/animator";
 import { PlazaDeco } from "./infrastructure/render/plaza-deco";
 import { BushViews, FRUIT_ITEMS } from "./infrastructure/render/bushes";
+import { BirdViews } from "./infrastructure/render/birds";
 import { SheepViews } from "./infrastructure/render/sheep";
 import { StumpViews } from "./infrastructure/render/stumps";
 import { RockField } from "./infrastructure/render/rocks";
@@ -255,6 +257,7 @@ const [
   fruitBushSheet,
   stumpSheet,
   sheepSheet,
+  birdSheet,
   treeImage,
   treeShadowImage,
   orangeTreeImage,
@@ -298,6 +301,8 @@ const [
   loadSpriteSheet(`${BASE}sprites/tocones`),
   // The wild sheep of the square (art/ovejas.py).
   loadSpriteSheet(`${BASE}sprites/oveja`),
+  // The wild birds (art/aves.py).
+  loadSpriteSheet(`${BASE}sprites/aves`),
   // The trees of the square with their shadows, and the stones and tufts at
   // their foot (art/arbol2_build.sh, art/arbol3_build.sh).
   loadImage(`${BASE}sprites/arbol_2.png`),
@@ -442,6 +447,14 @@ const square = new Square(map, spawn);
 // The first tree of the square, with fallen branches around it.
 const tree = placeSampleTree(spawn);
 const sheepViews = new SheepViews(sheepSheet, standing);
+// By day; at night the ones around stay, and no more come.
+const DAYLIGHT_FOR_BIRDS = 0.25;
+const flock = new Flock((x, y) => {
+  const col = Math.floor(x / map.tileSize);
+  const row = Math.floor(y / map.tileSize);
+  return !map.isWall(col, row) && !map.isDoor(col, row) && !map.isPit(col, row) && !map.isLava(col, row);
+});
+const birdViews = new BirdViews(birdSheet, standing, ground);
 const bushViews = new BushViews(game.bushes(), bushSheet, fruitBushSheet, standing);
 // Fallen branches lie around the tree, each drawn with its own variant (in a
 // saved game they are among the saved floor items).
@@ -1023,6 +1036,8 @@ function update(dtMs: number): void {
   };
   plazaDeco.update(dtMs, inView);
   sheepViews.update(dtMs, game.sheep(), inView);
+  flock.update(dtMs, player, inView, game.clock().daylight > DAYLIGHT_FOR_BIRDS);
+  birdViews.update(dtMs, flock.birds);
   treeViews.update(dtMs);
   rockField.update(dtMs, {
     left: camera.x - canvas.width / 2,
