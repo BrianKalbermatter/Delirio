@@ -58,7 +58,22 @@ the same in every game; only the maze around it changes with the seed.
   plants. They are scenery: you walk through them.
 - **Pebbles and fallen branches** lie all over the square (and a branch now
   and then in the corridors), so the first tools can be made right away.
-- **The dark forest floor** covers the top-right corner, ready for trees.
+- **The forest** covers the top-right corner: earth, moss and stones under a
+  thick wood. It is dark because little light gets in and fog drifts through
+  it, thicker the deeper you go, and you can still see what is on the ground.
+- **Fruit bushes** of three sizes grow in the square and the corridors. Press
+  E next to one to pick its fruit, and double click it in the inventory to eat
+  it: the red pomegranates give life, the grapes and berries are poisonous.
+  The fruit grows back in about a day. They are too small to hide in.
+- **Wild sheep** graze in the square, in flocks of up to five and some on
+  their own. Get close and they bolt, the whole flock at once: faster than you
+  walk, slower than you run.
+- **Old stumps** are scattered all over the square, no two alike: years of
+  moss on the wood, with stones and tall grass grown around them. They are
+  solid.
+- **The pit** lies right next to the spawn: one, always in the same place. A
+  cliff drops to a sunken floor nobody can reach: you cannot walk or jump
+  across it, and a spear falls at its edge.
 
 Past the gates, the maze floor is pale yellow sand dotted with pebbles,
 with patches of old stone paving, between low
@@ -194,9 +209,9 @@ at it on its own**, once a second, one enemy at a time. The one it is after
 has a **white ring** on the floor around it; it sticks to that one while it
 lives and stays near, then moves on to the next.
 
-**Bushes** are out of the game for now, until their new sprites come (the
-mechanic is kept: `HAY_ARBUSTOS` in `src/mecanicas/enemigos.c`). With them,
-like League of Legends' brush, they grow next to every circle and
+**Bushes** to hide in are out for now, until there are new drawings
+(`HAY_ARBUSTOS_GRANDES` in `src/mecanicas/enemigos.c`). They work like this:
+like League of Legends' brush, grow next to every circle and
 here and there in the square and the corridors. Walk in and you turn
 see-through: enemies cannot see you unless they bump right into you or
 stand in the same bush. Attacking from a bush gives you away for a second.
@@ -300,7 +315,11 @@ read from its Aseprite file and recoloured to the square's greens.
 | Saplings (2 frames, one per tree) | `art/retonos.py` + `art/retonos_aseprite.lua` → `sprites/Arboles/Retonos.aseprite` | `bash art/retonos_build.sh`, or with `--export` after retouching |
 | Branches around the big tree | `art/plaza_deco.py` + `art/frames_aseprite.lua` → `sprites/Plaza/Ramas.aseprite` | `python3 art/plaza_deco.py <dir>`, then `Aseprite -b --script-param dir=<dir>/ramas --script-param out=Ramas.aseprite --script frames_aseprite.lua`; sheet with `bash client/scripts/export-sprites.sh` |
 | Wind on Brian's flowers (tag `viento`) | `art/flores_viento.py` + `art/frames_aseprite.lua` → `sprites/Laberinto/Terreno/{Flores,Flores2}_viento.aseprite` (his `Flores` and `Flores2` stay untouched) | `python3 art/flores_viento.py <Terreno dir> <dir>`, then per folder `Aseprite -b --script-param dir=<dir>/<name> --script-param out=<name>_viento.aseprite --script-param tag=viento --script frames_aseprite.lua`; sheets with `bash client/scripts/export-sprites.sh` |
-| Bushes to hide in (3 variants, tags `viento_0..2`; the first frame of each is the bush at rest) | `art/arbusto.py` (placeholder, to repaint) | `python3 art/arbusto.py client/public/sprites` |
+| The pit by the spawn | `art/hueco_original.png` + `art/hueco.py` (needs scipy) → `client/public/sprites/hueco.png`, and prints its collision rows for `src/mecanicas/laberinto.c` | `python3 art/hueco.py` |
+| Fruit bushes (berries, grapes, pomegranates; with and without fruit, shown at 3 sizes) and the fruit as items | `art/arbustos_frutos_original.png` + `art/arbustos_frutos.py` (needs scipy) → `client/public/sprites/arbusto_frutos.{png,json}`, `client/public/assets/frutas.{png,json}` | `python3 art/arbustos_frutos.py` |
+| Sheep (one drawing facing right; tags `pasta`, `camina`, `corre`) | `art/ovejas_original.png` + `art/ovejas.py` → `client/public/sprites/oveja.{png,json}` | `python3 art/ovejas.py` |
+| Stumps (3, each at 3 ages) | `art/tocones_original.png` + `art/tocones.py` (needs scipy) → `client/public/sprites/tocones.{png,json}` | `python3 art/tocones.py` |
+| Bushes to hide in (9, one frame each; the game only uses the 3 round ones) | `sprites/Plaza/Arbustos_original.png` + `art/arbustos.py` → `sprites/Plaza/Arbustos.aseprite` | `bash art/arbustos_build.sh`, or with `--export` after retouching |
 | Wind on the big tree (its `idle` tag) | `art/arbol_viento.lua` → `sprites/Arboles/Arbol1_pintado.aseprite` (rebuilds the wind from the first frame; rerun after retouching it) | `Aseprite -b --script-param file=Arbol1_pintado.aseprite --script arbol_viento.lua`, then `bash client/scripts/export-sprites.sh` |
 | Shadow under the big tree | `art/sombra_arbol.py` → `client/public/sprites/sombra_arbol.png` | `python3 art/sombra_arbol.py client/public/sprites` |
 | Player (Personaje_3, every animation in 8 directions, the spear throw), its weapons in either hand, slam dirt; the weapons as items (lying, held, icon; the spear also flying and stuck in the ground, in 16 directions) | `art/personaje_3.py` + `art/personaje_3_build.py` + `art/armas.py` (weapons: `WEAPONS`) | `bash art/armas_build.sh` (also writes `Personaje_3_Anim.aseprite`). Its sheets are packed (`armas.write_packed_sheet`: each frame cut to its pixels, repeats stored once) to keep them small on the GPU |
