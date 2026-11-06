@@ -13,14 +13,17 @@
 // Hay cuatro clases de enemigo (TipoEnemigo):
 //   - Espartanos: los de nivel 1, los que bailan en las rondas.
 //   - Fantasmas: flotan y no tienen miedo. Bailan en las hogueras embrujadas
-//     y salen de cualquier hoguera a deambular.
+//     y salen de cualquier hoguera a deambular. No se acercan: levantan el
+//     brazo y le dejan caer algo encima; la sombra en el piso avisa donde.
 //   - Espiritus: como los fantasmas, pero se quedan lejos y tiran sombras
 //     (Enemigos.tiros).
 //   - Esqueletos: se levantan de algunos espartanos muertos y caminan derecho
 //     al jugador, despacio, sin asustarse. Algunos ya estaban ahi, tirados
 //     como otra pila de huesos, y se levantan cuando el jugador pasa cerca.
+//     De cerca se agachan y se le tiran encima; caen mal y tardan en pararse.
 //   - La rueda: esqueleto grande que se levanta de los huesos del bosque oscuro
-//     de la plaza (enemigos_huesos_bosque). Lento y duro.
+//     de la plaza (enemigos_huesos_bosque). Lento y duro. Se planta, levanta
+//     el brazo y tira dos manotazos: despues se queda agitado, para devolverle.
 //   - Aquiles, el centauro, baja la lanza y embiste en linea recta. Si no te
 //     corres te lleva puesto; despues se queda agitado un rato.
 //   - Medusa, jefa de su sala, tira flechas y mantiene la distancia, y las
@@ -125,6 +128,11 @@ typedef enum arma_enemigo {
   ARMA_NINGUNA, ARMA_LANZA, ARMA_ANTORCHA, ARMA_HACHA
 } ArmaEnemigo;
 
+// Un ataque de los que se detienen a pegar: avisa, pega y queda abierto.
+typedef enum fase_ataque {
+  ATAQUE_NADA, ATAQUE_PREPARA, ATAQUE_PEGA, ATAQUE_RECUPERA
+} FaseAtaque;
+
 typedef struct enemigo {
   TipoEnemigo tipo;
   Entity entidad;      // posicion = los pies; dir = hacia donde se mueve
@@ -152,8 +160,10 @@ typedef struct enemigo {
   int asiento;         // su lugar en el circulo de la ronda
   int manada;          // indice en Enemigos.manadas
   float naciendo_ms;   // > 0 mientras aparece o se levanta: todavia no hace nada
-  float tiro_ms;       // espiritu: hasta su proxima sombra; esqueleto: hasta su proximo golpe
+  float tiro_ms;       // espiritu: hasta su proxima sombra; esqueleto: hasta su proximo ataque
   float lanzando_ms;   // > 0 mientras el espiritu prepara la sombra
+  FaseAtaque fase;     // espartano, fantasma, esqueleto y rueda (enemigos.c, ATAQUE)
+  float fase_ms;       // lo que le queda a la fase
   // Lo que suelta al morir (se elige al nacer)
   Botin botin;
   int monedas;         // 1 a 3
@@ -166,8 +176,8 @@ typedef struct enemigo {
   float espera_ms;     // hasta que puede cargar otro golpe
   float afuera_ms;     // cuanto hace que el jugador salio de su sala
   float embiste_ms;    // > 0 mientras el centauro embiste
-  Direccion embiste;   // para donde
-  int embiste_pego;    // 1: ya le pego en esta embestida
+  Direccion embiste;   // para donde (y para donde salta el esqueleto)
+  int embiste_pego;    // 1: ya le pego en esta embestida (o en este ataque)
 } Enemigo;
 
 // Un grupo bailando en circulo alrededor de la hoguera de `centro`.
@@ -186,11 +196,13 @@ typedef struct ronda {
   float paso_ms;  // hasta que cambie de sentido
 } Ronda;
 
-// Una sombra tirada por un espiritu.
+// Una sombra tirada por un espiritu, una flecha de medusa o lo que un fantasma
+// deja caer: eso no vuela, baja sobre `posicion` y estalla al tocar el piso.
 typedef struct tiro {
   int activo;
   int flecha;     // 1: flecha de medusa; 0: sombra de espiritu
   int rebotado;   // 1: volvio del escudo y ahora lastima enemigos
+  int cae;        // 1: viene de arriba, tirado por un fantasma
   Direccion posicion, dir;
   float vuelo_ms; // cuanto le queda antes de deshacerse
 } Tiro;
@@ -284,6 +296,11 @@ int enemigos_vivo(const Enemigos *e, int i);
 // Un golpe solo al enemigo `i` (como los del jugador: si sobrevive escapa y
 // su grupo se alerta). Devuelve 1 si le pego.
 int enemigos_golpe_a(Enemigos *e, int i, int danio);
+
+// Lo que cae: a que altura va (1 arriba, 0 en el piso) y cuanto lleva de
+// estallido (0 a 1, despues de tocar el piso).
+float enemigos_tiro_altura(const Tiro *t);
+float enemigos_tiro_estalla(const Tiro *t);
 
 // El jugador ataco: si estaba en un arbusto, se lo ve un ratito.
 void enemigos_delatar(Enemigos *e);

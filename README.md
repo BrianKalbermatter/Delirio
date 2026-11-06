@@ -222,13 +222,20 @@ in hand sends a spirit's clot back to the nearest enemy, hurting it.
 The maze is full of heaps of bones, of those who came before. Most are just
 that; some get up when you walk past.
 
-- **Ghosts** float and have no fear: they stalk you and throw themselves at you.
+- **Ghosts** float and have no fear: they circle you, raise an arm and let
+  something fall on you from above. The mark on the floor says where: step off it.
 - **Spirits** keep their distance and throw clots of darkness. A clot stops at
   walls; blocking or jumping saves you from it.
 - **The wheel skeleton** gets up from the bones of the square's dark forest: big,
-  slow and tough, with a wheel of spikes on its back.
+  slow and tough, with a wheel of spikes on its back. It plants itself, lifts its
+  arm and throws two slaps, then stands there out of breath: your turn.
 - **Skeletons** get up from some dead spartans and walk straight at you, slowly,
-  without ever running away.
+  without ever running away. Close by they crouch and jump at you: step aside and
+  hit them while they get up.
+
+Whoever hits you stops to do it, spartans too: first the warning, then the blow,
+then a moment open to yours (`ATAQUE` in `src/mecanicas/enemigos.c`, tests in
+`bash tests/ataques.sh`). Hitting a ghost or a spartan while it winds up stops it.
 
 **Minimap.** Top left, round, a little past what the screen shows: walls, floor,
 enemies (red dots) and symbols. What you have had on screen shows what it is
@@ -376,7 +383,7 @@ read from its Aseprite file and recoloured to the square's greens.
 | Enemy (Espartano1: idle/walk/run in 8 directions, roll, three deaths, pinned to a wall) | `Espartano1.aseprite` + `art/espartano.py` (built on `personaje_3.py`, blood from `art/enemigo1.py`) | `python3 art/espartano.py <dir>`, then `Aseprite -b --script-param dir=<dir> --script-param out=Espartano1_Anim.aseprite --script-param body=Espartano --script art/bicho_aseprite.lua`; sheet with `bash client/scripts/export-sprites.sh` |
 | Old enemy (Enemigo1, not used now) | `art/enemigo1.py` | Same as Espartano1, with `body=Enemigo` |
 | Bonfire, the spawner (tags `arde`, `herida`, `agoniza`, `apagada`) | `art/hoguera_original.png` + `art/hoguera.py` (needs scipy) → `client/public/sprites/hoguera.{png,json}` | `python3 art/hoguera.py` |
-| Ghost, spirit and skeleton (one drawing each looking left, moved by the script) and the spirit's shot | `art/fantasma_original.png`, `art/espiritu_original.png`, `art/esqueleto_original.png` + `art/espectros.py` (needs scipy) → `client/public/sprites/{fantasma,espiritu,esqueleto,espiritu_tiro}.{png,json}` | `python3 art/espectros.py` |
+| Ghost, spirit and skeleton (one drawing each looking left, moved by the script) and what the spirit and the ghost throw | `art/fantasma_original.png`, `art/espiritu_original.png`, `art/esqueleto_original.png` + `art/espectros.py` (needs scipy) → `client/public/sprites/{fantasma,fantasma_tiro,espiritu,esqueleto,espiritu_tiro}.{png,json}` | `python3 art/espectros.py` |
 | Achilles the centaur (`quieto`, `camina`, `prepara`, `embiste`, `muere`) | `art/centauro_original.png` + `art/espectros.py` → `client/public/sprites/centauro.{png,json}` | `python3 art/espectros.py` |
 | Medusa and her little ones (`quieto`, `camina`, `dispara`, `aparece`, `muere`), the arrow, and the wheel skeleton | `art/medusa_original.png`, `art/rueda_original.png` + `art/espectros.py` → `client/public/sprites/{medusa,medusa_mini,flecha,rueda}.{png,json}` | `python3 art/espectros.py` |
 | Shrines (10, awake and asleep) | `art/santuarios_original.png` + `art/santuarios.py` (needs scipy) → `client/public/sprites/santuarios.{png,json}` | `python3 art/santuarios.py` |

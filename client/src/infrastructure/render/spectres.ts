@@ -3,7 +3,7 @@
 // Each has one drawing, looking left, mirrored when it looks right. Also what
 // they throw.
 import { type Container, Graphics, Sprite } from "pixi.js";
-import type { EnemyState, Shot } from "../wasm/game-wasm";
+import type { ATTACK, EnemyState, Shot } from "../wasm/game-wasm";
 import { STATE } from "../wasm/game-wasm";
 import { Animator } from "./animator";
 import { DEPTH, depthOf } from "./depth";
@@ -14,12 +14,18 @@ const FLOOR_MARGIN = 3; // px of the frames under the feet (art/espectros.py)
 const BAR_WIDTH = 20;
 const SHOT_ABOVE = 26; // px over the floor it flies at
 const TURN_AT = 0.2; // sideways share of the look from which it turns around
+const DROP_FROM = 190; // px over the floor a ghost's drop starts falling from
+const DROP_MARK = 26; // half the width of the mark it casts on the floor when it lands
+const DROP_MARK_COLOR = 0x0c0a12;
+const DROP_MARK_EDGE = 0xd6dae8;
+const DROP_FLOOR = 4; // px of its frames under the floor (art/espectros.py)
 
 export interface SpectreSheets {
   ghost: SpriteSheet;
   spirit: SpriteSheet;
   skeleton: SpriteSheet;
   shot: SpriteSheet;
+  drop: SpriteSheet;
   medusa: SpriteSheet;
   mini_medusa: SpriteSheet;
   wheel: SpriteSheet;
@@ -33,11 +39,13 @@ const BAR_ABOVE: Record<Kind, number> = { ghost: 104, spirit: 86, skeleton: 68, 
 // Drawn this much bigger, times what C says for a boss (the centaur's picture
 // is already big).
 const SCALE: Record<Kind, number> = { ghost: 1, spirit: 1, skeleton: 1, medusa: 1, mini_medusa: 1, wheel: 1.5, centaur: 0.5 };
-const TAGS: Record<Kind, { idle: string; move: string; strike: string; born: string; charge?: string }> = {
-  ghost: { idle: "flota", move: "flota", strike: "ataca", born: "aparece" },
+// What each moment of an attack of src/mecanicas/enemigos.c shows.
+type AttackTags = Record<NonNullable<(typeof ATTACK)[number]>, string>;
+const TAGS: Record<Kind, { idle: string; move: string; strike: string; born: string; charge?: string; attack?: AttackTags }> = {
+  ghost: { idle: "flota", move: "flota", strike: "ataca", born: "aparece", attack: { prepare: "ataca", strike: "ataca", recover: "flota" } },
   spirit: { idle: "flota", move: "flota", strike: "lanza", born: "aparece" },
-  skeleton: { idle: "quieto", move: "camina", strike: "ataca", born: "levanta" },
-  wheel: { idle: "quieto", move: "camina", strike: "ataca", born: "levanta" },
+  skeleton: { idle: "quieto", move: "camina", strike: "prepara", born: "levanta", attack: { prepare: "prepara", strike: "salta", recover: "aterriza" } },
+  wheel: { idle: "quieto", move: "camina", strike: "prepara", born: "levanta", attack: { prepare: "prepara", strike: "manotazo", recover: "recupera" } },
   medusa: { idle: "quieto", move: "camina", strike: "dispara", born: "aparece" },
   mini_medusa: { idle: "quieto", move: "camina", strike: "dispara", born: "aparece" },
   centaur: { idle: "quieto", move: "camina", strike: "prepara", born: "quieto", charge: "embiste" },
@@ -56,8 +64,9 @@ interface SpectreView {
 
 export class SpectreViews {
   private readonly views = new Map<number, SpectreView>();
-  private readonly shots: { sprite: Sprite; animator: Animator }[] = [];
+  private readonly shots: { sprite: Sprite; mark: Graphics; animator: Animator }[] = [];
   private frame = 0;
+  private dropClockMs = 0;
 
   constructor(
     private readonly depth: Container,
@@ -107,6 +116,7 @@ export class SpectreViews {
       view.animator.seek(Number.MAX_SAFE_INTEGER);
     } else if (dead) view.animator.play("muere", false);
     else if (enemy.birthMs > 0) view.animator.play(tags.born, false);
+    else if (enemy.attack && tags.attack) view.animator.play(tags.attack[enemy.attack], false);
     else if (state === "CORRIENDO" && tags.charge) view.animator.play(tags.charge);
     else if (state === "ATACANDO" || enemy.mood === "ATACA") view.animator.play(tags.strike, view.kind !== "centaur");
     else {
@@ -136,16 +146,22 @@ export class SpectreViews {
   private showShots(shots: Shot[], dtMs: number): void {
     while (this.shots.length < shots.length) {
       const sprite = new Sprite();
-      this.depth.addChild(sprite);
+      const mark = new Graphics();
+      this.depth.addChild(mark, sprite);
       const animator = new Animator(this.sheets.shot);
       animator.play("vuela");
-      this.shots.push({ sprite, animator });
+      this.shots.push({ sprite, mark, animator });
     }
-    this.shots.forEach(({ sprite, animator }, i) => {
+    this.shots.forEach(({ sprite, mark, animator }, i) => {
       const shot = shots[i];
       sprite.visible = shot !== undefined;
+      mark.visible = shot?.drop != null && shot.drop.burst === 0;
       if (!shot) return;
       sprite.zIndex = depthOf(shot.y, DEPTH.prop);
+      if (shot.drop) {
+        this.showDrop(sprite, mark, shot, shot.drop, dtMs);
+        return;
+      }
       if (shot.arrow) {
         sprite.texture = this.sheets.arrow.frames[0].texture;
         sprite.anchor.set(0.5);
@@ -161,5 +177,26 @@ export class SpectreViews {
       sprite.rotation = 0;
       placeFrame(sprite, frame, shot.x, shot.y - SHOT_ABOVE);
     });
+  }
+
+  // Comes down faster and faster, over a mark on the floor that says where.
+  private showDrop(sprite: Sprite, mark: Graphics, shot: Shot, drop: NonNullable<Shot["drop"]>, dtMs: number): void {
+    const falling = this.sheets.drop.animations.get("cae") ?? [];
+    const splash = this.sheets.drop.animations.get("estalla") ?? [];
+    this.dropClockMs += dtMs;
+    sprite.anchor.set(0);
+    sprite.rotation = 0;
+    if (drop.burst > 0) {
+      placeFrame(sprite, splash[Math.min(splash.length - 1, Math.floor(drop.burst * splash.length))], shot.x, shot.y + DROP_FLOOR);
+      return;
+    }
+    const closing = 1 - drop.height;
+    const frame = falling[Math.floor(this.dropClockMs / falling[0].durationMs) % falling.length];
+    placeFrame(sprite, frame, shot.x, shot.y + DROP_FLOOR - DROP_FROM * (1 - closing * closing));
+    const half = DROP_MARK * (0.4 + 0.6 * closing);
+    mark.clear();
+    mark.ellipse(shot.x, shot.y, half, half * 0.45).fill({ color: DROP_MARK_COLOR, alpha: 0.35 + 0.35 * closing });
+    mark.ellipse(shot.x, shot.y, DROP_MARK, DROP_MARK * 0.45).stroke({ color: DROP_MARK_EDGE, alpha: 0.5, width: 1 });
+    mark.zIndex = depthOf(shot.y - 1, DEPTH.prop); // under whoever stands on it
   }
 }

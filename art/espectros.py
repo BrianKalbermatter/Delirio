@@ -4,12 +4,14 @@ from the dead (art/esqueleto_original.png). This takes each picture back to its
 real pixels, cuts it out and moves it. All three look left: the game mirrors them.
 
 Usage: python3 art/espectros.py   (needs numpy and scipy)
-Writes client/public/sprites/{fantasma,espiritu,esqueleto,espiritu_tiro,rueda,
-medusa,medusa_mini,flecha}.{png,json}.
+Writes client/public/sprites/{fantasma,fantasma_tiro,espiritu,esqueleto,espiritu_tiro,
+rueda,medusa,medusa_mini,flecha}.{png,json}.
 Each stands on the bottom middle of its frame, on the shadow drawn there.
 Tags: fantasma flota/ataca/aparece/muere, espiritu flota/lanza/aparece/muere,
-esqueleto and rueda quieto/camina/ataca/levanta/muere, espiritu_tiro and flecha vuela,
-medusa and medusa_mini quieto/camina/dispara/aparece/muere.
+esqueleto quieto/camina/prepara/salta/aterriza/levanta/muere, rueda quieto/camina/
+prepara/manotazo/recupera/levanta/muere, espiritu_tiro and flecha vuela, fantasma_tiro
+cae/estalla, medusa and medusa_mini quieto/camina/dispara/aparece/muere.
+The attacks last what ATAQUE says in src/mecanicas/enemigos.c.
 """
 import json
 import math
@@ -23,6 +25,8 @@ from scipy import ndimage
 HERE = os.path.dirname(os.path.abspath(__file__))
 SPRITES = os.path.join(HERE, "..", "client", "public", "sprites")
 SHADOW = (0, 0, 0, 90)
+DROP_DARK = (14, 12, 20, 255)  # what the ghost throws
+DROP_LIGHT = (214, 218, 232, 255)
 
 
 def real_pixels(name, grid, ox=0.0, oy=0.0):
@@ -81,6 +85,42 @@ def padded(rgba, side):
     return out
 
 
+def turned(rgba, degrees, pivot):
+    """Turned around `pivot`, counterclockwise, on the same canvas."""
+    img = Image.fromarray(np.ascontiguousarray(rgba), "RGBA")
+    return np.asarray(img.rotate(degrees, resample=Image.NEAREST, center=pivot))
+
+
+def cut_out(rgba, polygon):
+    """Splits it in what is inside `polygon` ((x, y) px) and the rest."""
+    mask = Image.new("1", (rgba.shape[1], rgba.shape[0]))
+    ImageDraw.Draw(mask).polygon(polygon, fill=1)
+    inside = np.asarray(mask)
+    part, rest = rgba.copy(), rgba.copy()
+    part[~inside] = 0
+    rest[inside] = 0
+    return part, rest
+
+
+def stacked(layers):
+    img = Image.fromarray(np.ascontiguousarray(layers[0]), "RGBA")
+    for layer in layers[1:]:
+        img.alpha_composite(Image.fromarray(np.ascontiguousarray(layer), "RGBA"))
+    return np.asarray(img)
+
+
+def squatting(rgba, hip, share):
+    """The legs folded to `share` of their height, the rest coming down with them.
+    Returns it and how many px the hip came down."""
+    legs = rgba[hip:]
+    folded = max(1, round(legs.shape[0] * share))
+    out = np.zeros_like(rgba)
+    down = legs.shape[0] - folded
+    out[rgba.shape[0] - folded:] = np.asarray(Image.fromarray(legs, "RGBA").resize((legs.shape[1], folded), Image.NEAREST))
+    out[down:hip + down] = rgba[:hip]
+    return out, down
+
+
 def dissolved(rgba, share, seed, rise=0):
     """`share` of its pixels gone, the first ones from the top, the rest going up."""
     out = rgba.copy()
@@ -118,6 +158,15 @@ def write(name, tags, size, ms):
 GHOST_FRAME = (72, 120)
 GHOST_HOVER = 12  # px from the floor to the hem
 GHOST_STEPS = 8
+GHOST_ARM = [(42, 60), (58, 60), (58, 76), (42, 76)]  # on the padded drawing
+GHOST_SHOULDER = (42, 62)
+GHOST_HAND = (13, 7)  # from the shoulder, before raising it
+# The throw, frame by frame: the arm goes up with something growing in the hand,
+# lets it go up and out of sight, and comes down. It falls on the player later.
+GHOST_RAISE = [15, 45, 75, 95, 100, 100, 55, 15]
+GHOST_RISE = [0, 1, 3, 5, 6, 6, 3, 1]
+GHOST_ORB = [1, 2, 3, 4, 4, 0, 0, 0]
+GHOST_ORB_GONE = {5: 12, 6: 30}  # px over the hand at which it is seen leaving
 
 
 def ghost():
@@ -154,14 +203,72 @@ def ghost():
         y = -GHOST_HOVER + bob
         return on_frame(GHOST_FRAME, [(flowing, 0, y), (moved, 0, y)], round(26 * (1 - share)), bob)
 
+    arm, armless = cut_out(body, GHOST_ARM)
+
+    def throwing(step):
+        phase = 2 * math.pi * step / GHOST_STEPS
+        moved = shear(armless, lambda y: (1.6 * ((y - hem_from) / (height - hem_from)) * math.sin(phase + y * 0.3) if y > hem_from else 0)
+                      + 3.0 * (GHOST_RAISE[step] / 100) * (1 - y / height))
+        y = -GHOST_HOVER - GHOST_RISE[step]
+        raised = turned(arm, GHOST_RAISE[step], GHOST_SHOULDER)
+        flowing = np.roll(lines, -(step * 3) % height, axis=0)
+        img = on_frame(GHOST_FRAME, [(flowing, 0, y), (raised, 0, y), (moved, 0, y)], 26, GHOST_RISE[step] // 2)
+        # What it throws, in the hand and then on its way up
+        t = math.radians(GHOST_RAISE[step])
+        hand_x = GHOST_SHOULDER[0] + GHOST_HAND[0] * math.cos(t) + GHOST_HAND[1] * math.sin(t)
+        hand_y = GHOST_SHOULDER[1] - GHOST_HAND[0] * math.sin(t) + GHOST_HAND[1] * math.cos(t)
+        x = GHOST_FRAME[0] // 2 - body.shape[1] // 2 + hand_x
+        top = GHOST_FRAME[1] - 3 - height + y + hand_y
+        d = ImageDraw.Draw(img)
+        radius = GHOST_ORB[step]
+        if radius:
+            d.ellipse((x - radius, top - radius - 2, x + radius, top + radius - 2), fill=DROP_DARK, outline=DROP_LIGHT)
+        elif step in GHOST_ORB_GONE:
+            up = top - GHOST_ORB_GONE[step]
+            d.ellipse((x - 2, up - 3, x + 2, up + 3), fill=DROP_DARK, outline=DROP_LIGHT)
+            d.line((x, up + 4, x, up + 12), fill=DROP_LIGHT)
+        return img
+
     tags = {
         "flota": [drawn(s) for s in range(GHOST_STEPS)],
-        "ataca": [drawn(s, -5.0) for s in range(GHOST_STEPS)],
+        "ataca": [throwing(s) for s in range(GHOST_STEPS)],
         "aparece": [drawn(s, 0, 1 - (s + 1) / GHOST_STEPS) for s in range(GHOST_STEPS)],
         "muere": [drawn(s, 0, (s + 1) / GHOST_STEPS) for s in range(GHOST_STEPS)],
     }
     write("fantasma", tags, GHOST_FRAME, {"flota": 120, "ataca": 80, "aparece": 90, "muere": 90})
     print("ghost", body.shape)
+
+
+def dropped():
+    """What the ghost lets fall on the player: a clot of the dark with a pale edge,
+    and the splash on the floor. Both stand on the bottom middle of the frame."""
+    size = (48, 36)
+    cx, floor = size[0] // 2, size[1] - 4
+    falling = []
+    for step in range(4):
+        img = Image.new("RGBA", size)
+        d = ImageDraw.Draw(img)
+        d.polygon([(cx, floor - 24), (cx - 5, floor - 8), (cx - 4, floor - 3), (cx + 4, floor - 3), (cx + 5, floor - 8)], fill=DROP_DARK)
+        d.line((cx - 5, floor - 8, cx, floor - 24), fill=DROP_LIGHT)
+        d.line((cx + 5, floor - 8, cx, floor - 24), fill=(120, 124, 140, 255))
+        d.point((cx - 2 + step % 2, floor - 8), fill=DROP_LIGHT)
+        d.point((cx + 1, floor - 6 - step % 2), fill=DROP_LIGHT)
+        falling.append(img)
+    splash = []
+    for step in range(5):
+        img = Image.new("RGBA", size)
+        d = ImageDraw.Draw(img)
+        wide, tall = 6 + step * 4, 2 + step
+        fade = 255 - step * 45
+        d.ellipse((cx - wide, floor - tall, cx + wide, floor + tall), fill=(16, 14, 22, fade), outline=(200, 205, 220, fade))
+        rng = random.Random(step)
+        for k in range(8):  # what flies off
+            t = k * math.pi / 4 + rng.uniform(-0.3, 0.3)
+            far = wide + 3
+            x, y = cx + far * math.cos(t), floor - 3 - (step + 2) * abs(math.sin(t)) * 2 + (step * step) * 0.4
+            d.point((round(x), round(y)), fill=DROP_LIGHT[:3] + (fade,))
+        splash.append(img)
+    write("fantasma_tiro", {"cae": falling, "estalla": splash}, size, {"cae": 70, "estalla": 60})
 
 
 # ---------------------------------------------------------------- spirit
@@ -229,11 +336,31 @@ def thrown():
 BONES_FRAME = (64, 80)
 BONES_SHRINK = 0.75  # the picture is a head too tall next to a spartan
 HIP = 0.53  # share of its height, from the top
-WHEEL_FRAME = (96, 88)
+WHEEL_FRAME = (112, 92)
 WHEEL_HIP = 0.7
 WHEEL_OFFSET = (0, 0)
 WHEEL_BOX = (10, 10, 160, 86)  # inside the picture's frame, in real pixels
 WALK_STEPS = 8
+ROOM = 28  # px around a body that turns, so it is not cut
+
+# The skeleton's arms and shoulders, on the padded drawing.
+BONES_ARMS = [
+    ([(13, 23), (18, 23), (18, 38), (13, 38)], (17, 23)),
+    ([(31, 23), (35, 23), (35, 38), (31, 38)], (31, 23)),
+]
+# The jump at the player: it folds with the arms back, flies head first with them
+# ahead, and lands badly. Share of the legs, lean, arms, frame by frame.
+CROUCH = [(0.85, 1, 20), (0.7, 2, 40), (0.58, 3, 55), (0.52, 3, 60)]
+FLIGHT = [(38, 10), (56, 17), (66, 9)]  # how far it tips over and how high it goes
+LANDING = [(0.5, -7, -35), (0.5, -7, -30), (0.62, -5, -20), (0.8, -3, -10), (0.95, -1, 0)]
+
+# The wheel skeleton's free arm, in the picture, and its shoulder.
+WHEEL_ARM = [(41, 12), (50, 15), (54, 20), (54, 39), (45, 39), (46, 30), (43, 22), (41, 18)]
+WHEEL_SHOULDER = (43, 15)
+# Its arm (0 hanging, turning forward and up) and lean (- forward), frame by frame.
+WINDUP = [(-50, 1), (-95, 2), (-135, 3), (-160, 4)]
+SLAPS = [(-125, 1), (-70, -5), (-35, -7), (-140, 0), (-75, -6), (-30, -8)]  # two: 150 and 420 ms in
+WINDED = [(-20, -6), (-12, -4), (-5, -2), (0, -1)]
 
 
 def skeleton():
@@ -243,7 +370,48 @@ def skeleton():
     full = trimmed(np.dstack([px, solid * np.uint8(255)]))
     small = Image.fromarray(full, "RGBA")
     small = small.resize((round(small.width * BONES_SHRINK), round(small.height * BONES_SHRINK)), Image.NEAREST)
-    walker("esqueleto", padded(np.asarray(small), 12), HIP, BONES_FRAME, 24)
+    walker("esqueleto", padded(np.asarray(small), 12), HIP, BONES_FRAME, 24, jump)
+
+
+def roomy(rgba):
+    return np.pad(rgba, ((ROOM, ROOM), (ROOM, ROOM), (0, 0)))
+
+
+def jump(body, hip, size, shadow):
+    """The skeleton's attack: `prepara`, `salta` and `aterriza`."""
+    arms, torso = [], body
+    for polygon, shoulder in BONES_ARMS:
+        arm, torso = cut_out(torso, polygon)
+        arms.append((roomy(arm), (shoulder[0] + ROOM, shoulder[1] + ROOM)))
+    torso = roomy(torso)
+    room_hip = hip + ROOM
+
+    def folded(share, lean, arm_turn):
+        low, down = squatting(torso[:-ROOM], room_hip, share)
+        low = np.vstack([low, torso[-ROOM:]])
+        low = shear(low, lambda y: lean * (1 - (y - ROOM) / hip) if y < room_hip + down else 0)
+        layers = [low]
+        for arm, shoulder in arms:
+            at_shoulder = round(lean * (1 - (shoulder[1] - ROOM) / hip))
+            moved = np.roll(np.roll(turned(arm, arm_turn, shoulder), down, axis=0), at_shoulder, axis=1)
+            layers.append(moved)
+        return on_frame(size, [(stacked(layers), 0, ROOM)], shadow)
+
+    def flying(tip, lift):
+        reaching = [turned(arm, -150, shoulder) for arm, shoulder in arms]
+        legs = shear(torso, lambda y: 5 * max(0, y - room_hip) / (body.shape[0] - hip))
+        whole = stacked([legs] + reaching)
+        middle = (whole.shape[1] / 2, ROOM + body.shape[0] / 2)
+        half = body.shape[0] // 2
+        # Turned around its middle: what is drawn at the feet goes up by the turn
+        return on_frame(size, [(turned(whole, tip, middle), 0, ROOM - lift - half // 3)], round(shadow * (1 - lift / 40)), lift // 3)
+
+    tags = {
+        "prepara": [folded(*pose) for pose in CROUCH],
+        "salta": [flying(*pose) for pose in FLIGHT],
+        "aterriza": [folded(*pose) for pose in LANDING],
+    }
+    return tags, {"prepara": 105, "salta": 100, "aterriza": 130}
 
 
 def wheel():
@@ -257,11 +425,41 @@ def wheel():
     box[top:bottom, left:right] = True
     labels, n = ndimage.label(solid & box, structure=np.ones((3, 3)))
     biggest = 1 + int(np.argmax(ndimage.sum(solid & box, labels, range(1, n + 1))))
-    walker("rueda", padded(trimmed(np.dstack([px, (labels == biggest) * np.uint8(255)])), 12), WHEEL_HIP, WHEEL_FRAME, 44)
+    drawing = trimmed(np.dstack([px, (labels == biggest) * np.uint8(255)]))
+    arm, armless = cut_out(drawing, WHEEL_ARM)
+    # In the picture the free arm is the far one: turned around, the wheel stays
+    # on its back and the hand goes first
+    body = padded(drawing[:, ::-1], 12)
+    arm = roomy(padded(arm[:, ::-1], 12))
+    armless = padded(armless[:, ::-1], 12)
+    shoulder = (body.shape[1] - 1 - (WHEEL_SHOULDER[0] + 12) + ROOM, WHEEL_SHOULDER[1] + ROOM)
+    walker("rueda", body, WHEEL_HIP, WHEEL_FRAME, 44, lambda *rest: slaps(armless, arm, shoulder, *rest))
 
 
-def walker(name, body, hip_share, size, shadow):
-    """Quieto, camina, ataca, levanta and muere for a body with two legs."""
+def slaps(armless, arm, shoulder, body, hip, size, shadow):
+    """The wheel skeleton's attack: stops, lifts the arm (`prepara`), gives two
+    slaps (`manotazo`) and stands there out of breath (`recupera`)."""
+    legs = armless.copy()
+    legs[:hip] = 0
+    top = armless.copy()
+    top[hip:] = 0
+
+    def posed(turn, lean):
+        bent = shear(top, lambda y: lean * (1 - y / hip) if y < hip else 0)
+        at_shoulder = round(lean * (1 - (shoulder[1] - ROOM) / hip))
+        hand = np.roll(turned(arm, turn, shoulder), at_shoulder, axis=1)
+        return on_frame(size, [(legs, 0, 0), (bent, 0, 0), (hand, 0, ROOM)], shadow)
+
+    tags = {
+        "prepara": [posed(*pose) for pose in WINDUP],
+        "manotazo": [posed(*pose) for pose in SLAPS],
+        "recupera": [posed(*pose) for pose in WINDED],
+    }
+    return tags, {"prepara": 95, "manotazo": 90, "recupera": 150}
+
+
+def walker(name, body, hip_share, size, shadow, attack):
+    """Quieto, camina, levanta, muere and `attack` for a body with two legs."""
     height, width = body.shape[:2]
     hip = int(height * hip_share)
     middle = width // 2 + 1
@@ -292,12 +490,6 @@ def walker(name, body, hip_share, size, shadow):
     def idle(step):
         sway = shear(top, lambda y: math.sin(step * math.pi / 2) * (1 - y / hip) if y < hip else 0)
         return on_frame(size, [(legs, 0, 0), (sway, 0, 0)], shadow)
-
-    def reach(step):
-        phase = 2 * math.pi * step / 4
-        swing = 7 * math.sin(phase)
-        lean = shear(top, lambda y: -5 * (1 - y / hip) if y < hip else 0)
-        return on_frame(size, [(leg(left, swing), 0, 0), (leg(right, -swing), 0, 0), (lean, 0, 0)], shadow)
 
     def rise(step, steps=10):
         up = (step + 1) / steps
@@ -335,11 +527,12 @@ def walker(name, body, hip_share, size, shadow):
     tags = {
         "quieto": [idle(s) for s in range(4)],
         "camina": [walk(s) for s in range(WALK_STEPS)],
-        "ataca": [reach(s) for s in range(4)],
         "levanta": [rise(s) for s in range(10)],
         "muere": [fall(s) for s in range(9)],
     }
-    write(name, tags, size, {"quieto": 220, "camina": 110, "ataca": 90, "levanta": 110, "muere": 90})
+    strikes, strike_ms = attack(body, hip, size, shadow)
+    tags.update(strikes)
+    write(name, tags, size, {"quieto": 220, "camina": 110, "levanta": 110, "muere": 90, **strike_ms})
     print(name, body.shape, "bones", n)
 
 
@@ -533,6 +726,7 @@ def centaur():
 
 if __name__ == "__main__":
     ghost()
+    dropped()
     spirit()
     thrown()
     skeleton()

@@ -73,6 +73,9 @@ const DEATH_BY_FACING: Record<Direction, string> = {
   up_right: "death_back",
 };
 
+// How far from its feet the body goes at each moment of the blow, in px.
+const LUNGE: Partial<Record<NonNullable<EnemyState["attack"]>, number>> = { prepare: -5, strike: 11 };
+
 const MOTION_BY_STATE: Record<(typeof STATE)[number], string> = {
   QUIETO: "idle",
   CAMINANDO: "walk",
@@ -160,9 +163,9 @@ export class EnemyViews {
   }
 
   private place(view: EnemyView, enemy: EnemyState, dtMs: number): void {
-    const wanted = MOTION_BY_STATE[STATE[enemy.state] ?? "QUIETO"];
+    const wanted = enemy.attack ? "idle" : MOTION_BY_STATE[STATE[enemy.state] ?? "QUIETO"];
     view.stillMs = wanted === "idle" ? view.stillMs + dtMs : 0;
-    if (wanted !== "idle" || view.stillMs >= STEADY_MS) view.motion = wanted;
+    if (wanted !== "idle" || view.stillMs >= STEADY_MS || enemy.attack) view.motion = wanted;
     const motion = view.motion;
     const dead = motion === "death";
     let { x, y } = enemy;
@@ -197,6 +200,10 @@ export class EnemyViews {
     if (!view.slide) view.animator.update(dtMs);
     view.x = x;
     view.y = y;
+    // Its sheet has no blow: it stops, draws back and throws itself forward
+    const lunge = dead ? 0 : (LUNGE[enemy.attack ?? "recover"] ?? 0);
+    x += enemy.lookX * lunge;
+    y += enemy.lookY * lunge;
     const frame = view.animator.currentFrame();
     if (!frame) return;
     placeFrame(view.sprite, frame, x, y - hop + FEET_PADDING * enemy.scale, enemy.scale);

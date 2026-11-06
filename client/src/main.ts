@@ -269,6 +269,7 @@ const [
   spiritSheet,
   skeletonSheet,
   spiritShotSheet,
+  ghostDropSheet,
   medusaSheet,
   miniMedusaSheet,
   wheelSheet,
@@ -328,6 +329,7 @@ const [
   loadSpriteSheet(`${BASE}sprites/espiritu`),
   loadSpriteSheet(`${BASE}sprites/esqueleto`),
   loadSpriteSheet(`${BASE}sprites/espiritu_tiro`),
+  loadSpriteSheet(`${BASE}sprites/fantasma_tiro`),
   // Medusa, her little ones, the arrow, and the wheel skeleton of the forest
   // (art/espectros.py).
   loadSpriteSheet(`${BASE}sprites/medusa`),
@@ -647,6 +649,7 @@ const spectreViews = new SpectreViews(standing, {
   spirit: spiritSheet,
   skeleton: skeletonSheet,
   shot: spiritShotSheet,
+  drop: ghostDropSheet,
   medusa: medusaSheet,
   mini_medusa: miniMedusaSheet,
   wheel: wheelSheet,

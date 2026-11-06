@@ -107,6 +107,7 @@ EMSCRIPTEN_KEEPALIVE int web_jugador_quemaduras(void) { return juego_quemaduras(
 // 1 mientras los enemigos todavia no entran a la plaza (el primer dia)
 EMSCRIPTEN_KEEPALIVE int web_tregua(void) { return juego_tregua(); }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_tipo(int i) { return enemigo(i)->tipo; }
+EMSCRIPTEN_KEEPALIVE int web_enemigo_fase(int i) { return enemigo(i)->fase; }
 EMSCRIPTEN_KEEPALIVE float web_enemigo_naciendo(int i) { return enemigo(i)->naciendo_ms; }
 EMSCRIPTEN_KEEPALIVE int web_enemigo_tirado(int i) { return enemigo(i)->tirado; }
 
@@ -130,6 +131,9 @@ EMSCRIPTEN_KEEPALIVE float web_tiro_y(int i) { return juego_enemigos()->tiros[i]
 EMSCRIPTEN_KEEPALIVE float web_tiro_dir_x(int i) { return juego_enemigos()->tiros[i].dir.x; }
 EMSCRIPTEN_KEEPALIVE float web_tiro_dir_y(int i) { return juego_enemigos()->tiros[i].dir.y; }
 EMSCRIPTEN_KEEPALIVE int web_tiro_flecha(int i) { return juego_enemigos()->tiros[i].flecha; }
+EMSCRIPTEN_KEEPALIVE int web_tiro_cae(int i) { return juego_enemigos()->tiros[i].cae; }
+EMSCRIPTEN_KEEPALIVE float web_tiro_altura(int i) { return enemigos_tiro_altura(&juego_enemigos()->tiros[i]); }
+EMSCRIPTEN_KEEPALIVE float web_tiro_estalla(int i) { return enemigos_tiro_estalla(&juego_enemigos()->tiros[i]); }
 
 EMSCRIPTEN_KEEPALIVE int web_enemigo_arbusto(int i) {
   return arbustos_en(&juego_enemigos()->arbustos, enemigo(i)->entidad.posicion);

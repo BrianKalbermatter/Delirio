@@ -122,8 +122,13 @@
 #define MEDUCITA_LEJOS 260.0f    // mas lejos del medio de la sala, vuelve
 #define VEL_ESQUELETO 58.0f
 #define ESQUELETO_VE 420.0f      // despierto ve mas lejos que un espartano
-#define ESQUELETO_RITMO_MS 1300.0f // entre golpe y golpe
-#define ESQUELETO_GOLPE_MS 360.0f // lo que se ve el golpe (4 frames de 90 ms)
+#define SALTO_VEL 330.0f         // el esqueleto en el aire
+#define RUEDA_PARA 44.0f         // tan cerca se planta: su mano llega desde ahi
+#define MANOTAZO_1_MS 390.0f     // los dos golpes: lo que le queda a la fase
+#define MANOTAZO_2_MS 120.0f     // cuando cada mano llega (art/espectros.py, SLAPS)
+#define CAE_MS 850.0f            // lo que tarda en bajar lo del fantasma
+#define ESTALLA_MS 300.0f        // y lo que dura el estallido en el piso (5 de 60 ms)
+#define CAE_RADIO 30.0f
 #define ESQUELETO_POR_100 30     // de cada 100 espartanos muertos, los que se levantan
 #define APARECE_MS 720.0f        // la animacion de aparecer (8 frames de 90 ms)
 #define LEVANTA_MS 1100.0f       // la de levantarse (10 de 110 ms)
@@ -350,6 +355,14 @@ static int danio_de_golpe(const Jugador *j){
   return j->armadura ? (vida + GOLPES_CON_ARMADURA - 1) / GOLPES_CON_ARMADURA : vida;
 }
 
+// Le da un golpe, si no se cubrio ni salto. Devuelve el danio.
+static int pegar(Jugador *j){
+  if (jugador_activa(j, HAB_BLOQUEAR) || jugador_activa(j, HAB_SALTAR) || jugador_muerto(j)) return 0;
+  int danio = danio_de_golpe(j);
+  j->entidad.vida -= danio;
+  return danio;
+}
+
 // El que manda en la manada `m`: el primero vivo. -1 si no queda ninguno.
 static int lider(const Enemigos *e, int m){
   const Manada *ma = &e->manadas[m];
@@ -380,6 +393,32 @@ static void nuevo_coraje(Enemigos *e, Enemigo *en){
 static void cambiar_animo(Enemigo *en, Animo animo){
   en->animo = animo;
   en->animo_ms = 0;
+  en->fase = ATAQUE_NADA; // el que se asusta no termina de pegar
+}
+
+// Un ataque de los que se detienen: `prepara` avisa, `pega` es cuando lastima
+// (dura lo que su animacion en art/espectros.py) y `recupera` es el momento de
+// devolverle. El fantasma no pega: tira al terminar de preparar.
+typedef struct ataque_def {
+  float alcance;     // mas cerca que esto, ataca
+  float golpe;       // hasta donde lastima
+  float prepara_ms, pega_ms, recupera_ms;
+  float ritmo_ms;    // caminantes: de ahi al proximo ataque
+} AtaqueDef;
+
+static const AtaqueDef ATAQUE[] = {
+  [ENEMIGO_ESPARTANO] = {ALCANCE, ALCANCE * 1.6f, 240.0f, 120.0f, 0.0f, 0.0f},
+  [ENEMIGO_FANTASMA]  = {280.0f, 0.0f, 720.0f, 0.0f, 300.0f, 0.0f},
+  [ENEMIGO_ESQUELETO] = {105.0f, ALCANCE + 6.0f, 420.0f, 300.0f, 650.0f, 500.0f},
+  [ENEMIGO_RUEDA]     = {52.0f, 60.0f, 380.0f, 540.0f, 600.0f, 700.0f},
+};
+
+static void empezar_ataque(Enemigo *en){
+  en->fase = ATAQUE_PREPARA;
+  en->fase_ms = ATAQUE[en->tipo].prepara_ms;
+  en->tiro_ms = ATAQUE[en->tipo].ritmo_ms;
+  en->embiste_pego = 0;
+  en->entidad.estados = ATACANDO;
 }
 
 // Uno nuevo en `lugar`, sin perder con quien anda.
@@ -1403,6 +1442,25 @@ static void tirar(Enemigos *e, Direccion desde, Direccion hacia, int flecha){
   }
 }
 
+// Lo que el fantasma deja caer sobre `lugar`.
+static void dejar_caer(Enemigos *e, Direccion lugar){
+  for (int i = 0; i < TIROS_MAX; i++){
+    Tiro *t = &e->tiros[i];
+    if (t->activo) continue;
+    *t = (Tiro){.activo = 1, .cae = 1, .posicion = lugar, .vuelo_ms = CAE_MS + ESTALLA_MS};
+    return;
+  }
+}
+
+float enemigos_tiro_altura(const Tiro *t){
+  float falta = (t->vuelo_ms - ESTALLA_MS) / CAE_MS;
+  return t->cae && falta > 0 ? falta : 0.0f;
+}
+
+float enemigos_tiro_estalla(const Tiro *t){
+  return t->cae && t->vuelo_ms < ESTALLA_MS ? 1.0f - t->vuelo_ms / ESTALLA_MS : 0.0f;
+}
+
 // El espiritu que vio al jugador: se queda a tiro y cada tanto le tira una
 // sombra. Quieto mientras la prepara.
 static float acosar(Enemigos *e, Enemigo *en, int lo_ve, float dist, Direccion hacia, float dt_ms, Direccion *dir){
@@ -1428,13 +1486,17 @@ static float acosar(Enemigos *e, Enemigo *en, int lo_ve, float dist, Direccion h
   return VEL_ACECHO;
 }
 
-// El esqueleto: si ve al jugador va derecho y pega cada tanto; si no, espera.
-// Devuelve la velocidad; el golpe lo da enemigos_actualizar.
+// El esqueleto: si ve al jugador va derecho y lo ataca cada tanto; si no, espera.
+// Devuelve la velocidad; el ataque lo sigue paso_ataque.
 static float perseguir(Enemigo *en, int lo_ve, float dist, Direccion hacia, Direccion *dir){
   *dir = (Direccion){0, 0};
   if (!lo_ve) return 0;
   en->mira = hacia;
-  if (dist <= ALCANCE) return 0;
+  if (dist <= ATAQUE[en->tipo].alcance && en->tiro_ms <= 0){
+    empezar_ataque(en);
+    return 0;
+  }
+  if (dist <= (en->tipo == ENEMIGO_RUEDA ? RUEDA_PARA : ALCANCE)) return 0;
   *dir = hacia;
   return en->tipo == ENEMIGO_RUEDA ? VEL_RUEDA : VEL_ESQUELETO;
 }
@@ -1489,9 +1551,14 @@ static float decidir(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jugad
       }
       // Coraje: mas rapido si el jugador no lo esta mirando
       en->coraje += lo_ve ? dt_ms * (distraido(j, (Direccion){-hacia.x, -hacia.y}) ? 2.5f : 1.0f) : 0;
-      if (en->coraje >= en->valor && e->atacando < MAX_ATACANTES){
+      // El fantasma tira de lejos: necesita verlo, y en la tregua la plaza es sagrada
+      int fantasma = en->tipo == ENEMIGO_FANTASMA;
+      int a_tiro = !fantasma || (lo_ve && dist <= ATAQUE[en->tipo].alcance &&
+                                 (e->plaza_permitida || !en_plaza_px(j->entidad.posicion)));
+      if (en->coraje >= en->valor && e->atacando < MAX_ATACANTES && a_tiro){
         cambiar_animo(en, ANIMO_ATACA);
         e->atacando++;
+        if (fantasma) empezar_ataque(en);
         break;
       }
       // Lejos: se acerca de costado (la vuelta larga). Cerca: lo rodea.
@@ -1577,6 +1644,13 @@ static int mover_tiros(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_m
   for (int i = 0; i < TIROS_MAX; i++){
     Tiro *t = &e->tiros[i];
     if (!t->activo) continue;
+    if (t->cae){
+      float antes = t->vuelo_ms;
+      t->vuelo_ms -= dt_ms;
+      if (antes > ESTALLA_MS && t->vuelo_ms <= ESTALLA_MS && distancia(t->posicion, j->entidad.posicion) <= CAE_RADIO) danio += pegar(j);
+      if (t->vuelo_ms <= 0) t->activo = 0;
+      continue;
+    }
     float paso = (t->flecha ? FLECHA_VEL : TIRO_VEL) * dt_ms / 1000.0f;
     t->posicion.x += t->dir.x * paso;
     t->posicion.y += t->dir.y * paso;
@@ -1608,6 +1682,61 @@ static int mover_tiros(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_m
     }
   }
   return danio;
+}
+
+// El salto del esqueleto: derecho a donde estaba el jugador, hasta chocar. En la
+// tregua tampoco cruza las puertas de la plaza.
+static void saltar(Enemigos *e, Enemigo *en, const Laberinto *lab, float dt_ms){
+  float paso = SALTO_VEL * dt_ms / 1000.0f;
+  Direccion antes = en->entidad.posicion;
+  float movido = laberinto_mover(lab, &en->entidad.posicion, en->embiste.x * paso, en->embiste.y * paso);
+  if (!e->plaza_permitida && en_plaza_px(en->entidad.posicion) && !en_plaza_px(antes)){
+    en->entidad.posicion = antes;
+    movido = 0;
+  }
+  en->entidad.dir = en->mira = en->embiste;
+  if (movido < paso * 0.3f) en->fase_ms = 0;
+}
+
+// Un paso del ataque en curso, quieto en su lugar (salvo el salto). Devuelve el
+// danio que le hizo al jugador.
+static int paso_ataque(Enemigos *e, Enemigo *en, const Laberinto *lab, Jugador *j, float dt_ms){
+  const AtaqueDef *a = &ATAQUE[en->tipo];
+  Direccion jugador = j->entidad.posicion;
+  float antes = en->fase_ms;
+  int danio = 0;
+  en->fase_ms -= dt_ms;
+  en->entidad.estados = ATACANDO;
+  if (en->fase == ATAQUE_PREPARA){
+    en->mira = unitario((Direccion){jugador.x - en->entidad.posicion.x, jugador.y - en->entidad.posicion.y});
+    if (en->fase_ms > 0) return 0;
+    en->embiste = en->mira; // ya no corrige: se lo puede esquivar
+    if (en->tipo == ENEMIGO_FANTASMA) dejar_caer(e, jugador);
+    en->fase = ATAQUE_PEGA;
+    en->fase_ms = a->pega_ms;
+    return 0;
+  }
+  if (en->fase == ATAQUE_PEGA){
+    if (en->tipo == ENEMIGO_ESQUELETO) saltar(e, en, lab, dt_ms);
+    int llega = en->tipo != ENEMIGO_RUEDA || (antes > MANOTAZO_1_MS && en->fase_ms <= MANOTAZO_1_MS) ||
+                (antes > MANOTAZO_2_MS && en->fase_ms <= MANOTAZO_2_MS);
+    if (llega && !en->embiste_pego && distancia(jugador, en->entidad.posicion) <= a->golpe){
+      danio = pegar(j);
+      en->embiste_pego = danio > 0;
+    }
+    if (en->fase_ms > 0) return danio;
+    en->fase = ATAQUE_RECUPERA;
+    en->fase_ms = a->recupera_ms;
+    return danio;
+  }
+  if (en->fase_ms > 0) return 0;
+  en->fase = ATAQUE_NADA;
+  if (en->tipo == ENEMIGO_ESPARTANO) cambiar_animo(en, ANIMO_HUYE);
+  else if (en->tipo == ENEMIGO_FANTASMA){
+    nuevo_coraje(e, en);
+    cambiar_animo(en, ANIMO_ACECHA);
+  }
+  return 0;
 }
 
 // Los que estan lejos de la vista del jugador se acomodan sin caminar: los
@@ -1778,6 +1907,11 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
       continue;
     }
 
+    if (en->fase != ATAQUE_NADA){
+      danio_total += paso_ataque(e, en, lab, j, dt_ms);
+      continue;
+    }
+
     if (acomodar_lejos(e, en, lab, jugador, &reciclados)) continue;
 
     Direccion dir;
@@ -1810,42 +1944,23 @@ int enemigos_actualizar(Enemigos *e, const Laberinto *lab, Jugador *j, float dt_
     }
 
     if (en->animo == ANIMO_CHARLA) en->entidad.estados = e->rondas[en->ronda].sentido != 0 ? CAMINANDO : QUIETO;
-    else if (en->lanzando_ms > 0) en->entidad.estados = ATACANDO;
+    else if (en->lanzando_ms > 0 || en->fase != ATAQUE_NADA) en->entidad.estados = ATACANDO;
     else if (movido < 0.01f) en->entidad.estados = QUIETO;
     else if (velocidad >= VEL_ATAQUE || velocidad >= VEL_HUIDA) en->entidad.estados = CORRIENDO;
     else en->entidad.estados = CAMINANDO;
 
-    // El esqueleto no escapa: pega cada tanto mientras lo tenga al alcance. Si
-    // el jugador se fue lejos, se deshace
+    // El esqueleto no escapa. Si el jugador se fue lejos, se deshace
     if (es_caminante(en)){
       en->tiro_ms -= dt_ms;
-      float dist = distancia(jugador, en->entidad.posicion);
-      if (dist > DEMASIADO_LEJOS && en->tipo == ENEMIGO_ESQUELETO){
+      if (distancia(jugador, en->entidad.posicion) > DEMASIADO_LEJOS && en->tipo == ENEMIGO_ESQUELETO){
         en->activo = 0;
         en->reaparece_ms = en->es_paseante ? PASEANTE_VUELVE_MS : con_ronda(e, en) ? REAPARECE_RONDA_MS : 0;
-      } else if (dist <= ALCANCE && en->tiro_ms <= 0){
-        en->tiro_ms = ESQUELETO_RITMO_MS;
-        int a_salvo = jugador_activa(j, HAB_BLOQUEAR) || jugador_activa(j, HAB_SALTAR);
-        if (!a_salvo && !jugador_muerto(j)){
-          j->entidad.vida -= danio_de_golpe(j);
-          danio_total += danio_de_golpe(j);
-        }
       }
-      if (en->tiro_ms > ESQUELETO_RITMO_MS - ESQUELETO_GOLPE_MS) en->entidad.estados = ATACANDO;
       continue;
     }
 
-    // Llego al jugador: un golpe y a escapar
-    if (en->animo == ANIMO_ATACA){
-      if (distancia(jugador, en->entidad.posicion) <= ALCANCE){
-        int a_salvo = jugador_activa(j, HAB_BLOQUEAR) || jugador_activa(j, HAB_SALTAR);
-        if (!a_salvo && !jugador_muerto(j)){
-          j->entidad.vida -= danio_de_golpe(j);
-          danio_total += danio_de_golpe(j);
-        }
-        cambiar_animo(en, ANIMO_HUYE);
-      }
-    }
+    // Llego al jugador: se planta, pega una vez y a escapar
+    if (en->animo == ANIMO_ATACA && en->fase == ATAQUE_NADA && distancia(jugador, en->entidad.posicion) <= ATAQUE[en->tipo].alcance) empezar_ataque(en);
   }
   return danio_total;
 }

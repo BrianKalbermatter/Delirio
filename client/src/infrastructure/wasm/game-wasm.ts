@@ -84,6 +84,9 @@ export interface PlayerStats {
 // Same order as `enum animo` in src/mecanicas/enemigos.h.
 export const MOOD = ["DEAMBULA", "ACECHA", "ATACA", "HUYE", "CHARLA"] as const;
 
+// Where an attack is, same order as `enum fase_ataque` in src/mecanicas/enemigos.h.
+export const ATTACK = [null, "prepare", "strike", "recover"] as const;
+
 // What it is, same order as `enum tipo_enemigo` in src/mecanicas/enemigos.h.
 export const ENEMY_KIND = ["spartan", "ghost", "spirit", "skeleton", "bonfire", "medusa", "mini_medusa", "wheel", "centaur"] as const;
 
@@ -104,6 +107,7 @@ export interface Shot {
   dirX: number; // where it flies (unit)
   dirY: number;
   arrow: boolean; // a Medusa's
+  drop: { height: number; burst: number } | null; // a ghost's, coming down on x, y: 1 up to 0 on the floor, then its splash 0 to 1
 }
 
 // An enemy (src/mecanicas/enemigos.c), by its slot in C's list.
@@ -121,6 +125,7 @@ export interface EnemyState {
   state: number; // index into STATE
   pinned: (typeof PINNED)[number]; // dead, pinned to a wall facing this way
   mood: (typeof MOOD)[number];
+  attack: (typeof ATTACK)[number];
   life: number;
   lifeMax: number;
   hitMs: number; // > 0 right after being hit
@@ -336,6 +341,9 @@ export async function loadGameWasm(): Promise<GameWasm> {
   const shotDirX = num("web_tiro_dir_x", 1);
   const shotDirY = num("web_tiro_dir_y", 1);
   const shotArrow = num("web_tiro_flecha", 1);
+  const shotDrops = num("web_tiro_cae", 1);
+  const shotHeight = num("web_tiro_altura", 1);
+  const shotBurst = num("web_tiro_estalla", 1);
   const sheepX = num("web_oveja_x", 1);
   const sheepY = num("web_oveja_y", 1);
   const sheepDirX = num("web_oveja_dir_x", 1);
@@ -447,6 +455,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
       "arma",
       "suelta_arma",
       "tipo",
+      "fase",
       "naciendo",
       "tirado",
     ].map((field) => [field, num(`web_enemigo_${field}`, 1)]),
@@ -534,6 +543,7 @@ export async function loadGameWasm(): Promise<GameWasm> {
           state: enemy.estado(i),
           pinned: PINNED[enemy.clavado(i)] ?? null,
           mood: MOOD[enemy.animo(i)] ?? "DEAMBULA",
+          attack: ATTACK[enemy.fase(i)] ?? null,
           life: enemy.vida(i),
           lifeMax: enemy.vida_max(i),
           hitMs: enemy.golpeado(i),
@@ -565,7 +575,9 @@ export async function loadGameWasm(): Promise<GameWasm> {
     shots: () => {
       const list: Shot[] = [];
       for (let i = 0; i < shotMax; i++) {
-        if (shotActive(i)) list.push({ x: shotX(i), y: shotY(i), dirX: shotDirX(i), dirY: shotDirY(i), arrow: shotArrow(i) === 1 });
+        if (!shotActive(i)) continue;
+        const drop = shotDrops(i) === 1 ? { height: shotHeight(i), burst: shotBurst(i) } : null;
+        list.push({ x: shotX(i), y: shotY(i), dirX: shotDirX(i), dirY: shotDirY(i), arrow: shotArrow(i) === 1, drop });
       }
       return list;
     },
