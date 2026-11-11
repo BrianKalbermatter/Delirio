@@ -1,0 +1,359 @@
+{
+ "frames": [
+  {
+   "filename": "lanza_brillo 0",
+   "frame": {
+    "x": 290,
+    "y": 0,
+    "w": 13,
+    "h": 13
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 22,
+    "y": 22,
+    "w": 13,
+    "h": 13
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 30
+  },
+  {
+   "filename": "lanza_brillo 1",
+   "frame": {
+    "x": 238,
+    "y": 0,
+    "w": 31,
+    "h": 31
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 13,
+    "y": 13,
+    "w": 31,
+    "h": 31
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 40
+  },
+  {
+   "filename": "lanza_brillo 2",
+   "frame": {
+    "x": 104,
+    "y": 0,
+    "w": 47,
+    "h": 47
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 5,
+    "y": 5,
+    "w": 47,
+    "h": 47
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 50
+  },
+  {
+   "filename": "lanza_brillo 3",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 53,
+    "h": 53
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 2,
+    "y": 2,
+    "w": 53,
+    "h": 53
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 50
+  },
+  {
+   "filename": "lanza_brillo 4",
+   "frame": {
+    "x": 196,
+    "y": 0,
+    "w": 41,
+    "h": 41
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 8,
+    "y": 8,
+    "w": 41,
+    "h": 41
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 60
+  },
+  {
+   "filename": "lanza_brillo 5",
+   "frame": {
+    "x": 152,
+    "y": 0,
+    "w": 43,
+    "h": 43
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 7,
+    "y": 7,
+    "w": 43,
+    "h": 43
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 60
+  },
+  {
+   "filename": "lanza_brillo 6",
+   "frame": {
+    "x": 54,
+    "y": 0,
+    "w": 49,
+    "h": 49
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 4,
+    "y": 4,
+    "w": 49,
+    "h": 49
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 70
+  },
+  {
+   "filename": "lanza_brillo 7",
+   "frame": {
+    "x": 318,
+    "y": 0,
+    "w": 9,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 24,
+    "y": 24,
+    "w": 9,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 70
+  },
+  {
+   "filename": "lanza_brillo 8",
+   "frame": {
+    "x": 304,
+    "y": 0,
+    "w": 13,
+    "h": 13
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 22,
+    "y": 22,
+    "w": 13,
+    "h": 13
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 70
+  },
+  {
+   "filename": "lanza_brillo 9",
+   "frame": {
+    "x": 270,
+    "y": 0,
+    "w": 19,
+    "h": 19
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 19,
+    "y": 19,
+    "w": 19,
+    "h": 19
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 70
+  },
+  {
+   "filename": "lanza_brillo 10",
+   "frame": {
+    "x": 304,
+    "y": 0,
+    "w": 13,
+    "h": 13
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 22,
+    "y": 22,
+    "w": 13,
+    "h": 13
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 70
+  },
+  {
+   "filename": "lanza_brillo 11",
+   "frame": {
+    "x": 318,
+    "y": 0,
+    "w": 9,
+    "h": 9
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 24,
+    "y": 24,
+    "w": 9,
+    "h": 9
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 70
+  },
+  {
+   "filename": "lanza_brillo 12",
+   "frame": {
+    "x": 328,
+    "y": 0,
+    "w": 7,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 25,
+    "y": 25,
+    "w": 7,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 70
+  },
+  {
+   "filename": "lanza_brillo 13",
+   "frame": {
+    "x": 336,
+    "y": 0,
+    "w": 5,
+    "h": 5
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 26,
+    "y": 26,
+    "w": 5,
+    "h": 5
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 70
+  },
+  {
+   "filename": "lanza_brillo 14",
+   "frame": {
+    "x": 328,
+    "y": 0,
+    "w": 7,
+    "h": 7
+   },
+   "rotated": false,
+   "trimmed": true,
+   "spriteSourceSize": {
+    "x": 25,
+    "y": 25,
+    "w": 7,
+    "h": 7
+   },
+   "sourceSize": {
+    "w": 56,
+    "h": 56
+   },
+   "duration": 70
+  }
+ ],
+ "meta": {
+  "app": "art/armas.py",
+  "image": "lanza_brillo.png",
+  "format": "RGBA8888",
+  "size": {
+   "w": 341,
+   "h": 53
+  },
+  "scale": "1",
+  "trimFrames": true,
+  "frameTags": [
+   {
+    "name": "destello",
+    "from": 0,
+    "to": 6,
+    "direction": "forward"
+   },
+   {
+    "name": "brillo",
+    "from": 7,
+    "to": 14,
+    "direction": "forward"
+   }
+  ]
+ }
+}

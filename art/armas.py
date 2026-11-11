@@ -45,18 +45,19 @@ from PIL import Image
 
 # grip: pixel the hand holds. angle: direction grip -> head, degrees clockwise
 # from straight up. edge: side of the head the edge faces, as drawn ("ccw" or
-# "cw"). scale: drawn size (1 = as in Aseprite). The swings go clockwise, so
+# "cw"). scale: drawn size (1 = as in Aseprite); held_scale: in the hand, when it
+# is not the same as on the floor and in the inventory. The swings go clockwise, so
 # they draw the weapon with its edge on the clockwise side (mirroring it when needed): the edge leads, not the back.
 WEAPONS = [
     {"id": "hacha", "aseprite": "Hacha.aseprite", "grip": (30, 40), "angle": -45, "edge": "ccw", "scale": 0.6},
     # Brian's torch (sprites/Objetos/Antorcha.aseprite): straight handle, flame on top.
     {"id": "antorcha", "aseprite": "..\\Objetos\\Antorcha.aseprite", "grip": (23, 40), "angle": 0, "edge": "ccw",
      "scale": 0.9, "carry_w": 150},
-    # Brian's spear (sprites/Armas/Lanza1_Arma.aseprite): drawn on a diagonal on
-    # a big canvas, so it is trimmed to its pixels (grip in canvas pixels).
-    # Thrown, it flies and sticks in the ground (stuck: see item_sheet).
-    {"id": "lanza", "aseprite": "..\\Armas\\Lanza1_Arma.aseprite", "grip": (98, 84), "angle": 45, "edge": "ccw",
-     "scale": 0.75, "carry_w": 150, "trim": True, "stuck": True},
+    # The main character's spear, cut from his picture (art/lanza.py): on a
+    # diagonal, trimmed to its pixels (grip in canvas pixels). Thrown, it flies
+    # and sticks in the ground (stuck: see item_sheet).
+    {"id": "lanza", "grip": (14, 29), "angle": 45, "edge": "ccw",
+     "scale": 1.5, "carry_w": 150, "trim": True, "stuck": True},
     # Brian's stone pickaxe (sprites/Armas/PicoPiedra.aseprite): handle on a
     # diagonal, head up and to the right, on a 64x64 canvas (trimmed).
     {"id": "pico", "aseprite": "..\\Armas\\PicoPiedra.aseprite", "grip": (12, 41), "angle": 45, "edge": "ccw",
@@ -64,7 +65,7 @@ WEAPONS = [
     # Round shield (sprites/Armas/Escudo_Redondo.aseprite, from art/escudo.py):
     # held by the middle, carried upright like the torch.
     {"id": "escudo", "aseprite": "..\\Armas\\Escudo_Redondo.aseprite", "grip": (23, 23), "angle": 0, "edge": "ccw",
-     "scale": 0.5, "carry_w": 150},
+     "scale": 0.5, "held_scale": 0.7, "carry_w": 150},
 ]
 
 CELL_W, CELL_H = 64, 96

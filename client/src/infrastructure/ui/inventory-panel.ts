@@ -1,14 +1,19 @@
 // Inventory tab of the side panel: the slot grid on top, the selected item,
 // and below them the player standing on a lit background with a square on
-// each body part. Items are put on by dragging them onto a square, by
-// selecting them and clicking the square, or with a double click (use it).
-// Under the player, the crafting grid: items go in the same way, and a click
-// on the result starts making it while a bar fills up. Beside it, the recipe
+// each body part. Under the player, the crafting grid, and a click on the
+// result starts making it while a bar fills up.
+//
+// Items move freely between all those squares (domain/hand.ts): a click picks
+// up what a square has and it follows the cursor, a click on another square
+// lays it down (stacked, or swapped). Dragging works too: press on a square,
+// let go on another. The right button picks up half a stack or lays down
+// one; a double click uses an item. On the map, what is carried is dropped. Beside it, the recipe
 // book: everything the build level allows, with its shape, and what the next
 // build level unlocks (greyed).
 // Plain DOM next to the game canvas.
 import { EQUIP_SLOT_NAMES, EQUIP_SLOTS, type EquipSlot, type Equipment } from "../../domain/equipment";
 import { CRAFT_SIZE, type CraftingGrid, MAX_BUILD_LEVEL, type Recipe, RECIPES } from "../../domain/crafting";
+import { type Hand, type Place, samePlace } from "../../domain/hand";
 import type { Inventory } from "../../domain/inventory";
 import { ITEMS } from "../../domain/items";
 import type { ItemKind } from "../../domain/items";
@@ -26,23 +31,10 @@ const DOUBLE_CLICK_MS = 350;
 const DRAG_START = 4;
 
 export interface InventoryHandlers {
-  // Right click on a slot: drop one item of it.
-  drop: (index: number) => void;
   // Double click on a slot: drink it, hold it, wear it...
   use: (index: number) => void;
-  // A slot dragged onto another: moved there (stacked or swapped).
-  move: (from: number, to: number) => void;
-  // An inventory slot dragged onto a body part's square.
-  equip: (slot: EquipSlot, index: number) => void;
-  // Left click on a body part's square: put the selected item on it, or take
-  // off what it has.
-  clickEquip: (slot: EquipSlot) => void;
-  // Right click on it: take it off.
-  takeOff: (slot: EquipSlot) => void;
-  // An inventory slot dragged (or the selected one clicked) onto a crafting
-  // square, and a crafting square emptied back into the inventory.
-  putInCraft: (cell: number, index: number) => void;
-  takeFromCraft: (cell: number) => void;
+  // Why an item could not go where it was laid down.
+  refused: (message: string) => void;
   // Click on the result: start making it, or stop (right click).
   craft: () => void;
   cancelCraft: () => void;
@@ -58,19 +50,23 @@ export class InventoryPanel {
   private readonly craftLabel: HTMLElement;
   private readonly recipesEl: HTMLElement;
   private shownBuildLevel = 0;
-  private readonly ghost = document.createElement("canvas");
+  private readonly ghost = document.createElement("div");
+  private shownHeld = -1; // the hand's version the ghost shows
   readonly doll: HTMLCanvasElement;
   private renderedVersion = "";
   private readonly boxes = new Map<string, { x: number; y: number; w: number; h: number }>();
   private lastClick = { index: -1, ms: 0 };
-  // The slot being dragged and where the cursor was when it was grabbed.
-  private drag: { index: number; x: number; y: number; moved: boolean } | null = null;
+  // The square pressed with the left button while it is down, where the
+  // cursor was then, and whether that press picked something up (so letting
+  // go on another square, a drag, lays it there).
+  private press: { place: Place; x: number; y: number; picked: boolean } | null = null;
 
   constructor(
     root: HTMLElement,
     private readonly inventory: Inventory,
     private readonly equipment: Equipment,
     private readonly crafting: CraftingGrid,
+    private readonly hand: Hand,
     private readonly sheets: Map<string, SpriteSheet>,
     private readonly cursor: { x: number; y: number },
     on: InventoryHandlers,
@@ -105,18 +101,7 @@ export class InventoryPanel {
     for (let cell = 0; cell < CRAFT_SIZE * CRAFT_SIZE; cell++) {
       const button = document.createElement("button");
       button.className = "slot craft-cell";
-      button.addEventListener("click", () => {
-        if (crafting.cells[cell]) on.takeFromCraft(cell);
-        else on.putInCraft(cell, inventory.selected);
-      });
-      button.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        on.takeFromCraft(cell);
-      });
-      button.addEventListener(VIRTUAL_MOUSEUP, () => {
-        if (this.drag?.moved) on.putInCraft(cell, this.drag.index);
-      });
-      button.addEventListener("mousedown", (e) => e.preventDefault());
+      this.wire(button, { kind: "crafting", cell }, on);
       craftGrid.appendChild(button);
       this.craftEls.push(button);
     }
@@ -129,21 +114,14 @@ export class InventoryPanel {
     this.doll = dollEl.querySelector("canvas")!;
     this.ghost.className = "drag-ghost";
     this.ghost.hidden = true;
+    this.ghost.append(document.createElement("canvas"), document.createElement("span"));
     document.body.appendChild(this.ghost);
 
     for (const slot of EQUIP_SLOTS) {
       const button = document.createElement("button");
       button.className = `slot equip equip-${slot}`;
       button.dataset.label = EQUIP_SLOT_NAMES[slot];
-      button.addEventListener("click", () => on.clickEquip(slot));
-      button.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        on.takeOff(slot);
-      });
-      button.addEventListener(VIRTUAL_MOUSEUP, () => {
-        if (this.drag?.moved) on.equip(slot, this.drag.index);
-      });
-      button.addEventListener("mousedown", (e) => e.preventDefault());
+      this.wire(button, { kind: "equipment", slot }, on);
       dollEl.appendChild(button);
       this.equipEls.set(slot, button);
     }
@@ -151,42 +129,65 @@ export class InventoryPanel {
     inventory.slots.forEach((_, i) => {
       const button = document.createElement("button");
       button.className = "slot";
-      button.addEventListener("click", () => {
-        inventory.select(i);
-        const now = performance.now();
-        if (this.lastClick.index === i && now - this.lastClick.ms < DOUBLE_CLICK_MS) {
-          this.lastClick.index = -1;
-          on.use(i);
-          return;
-        }
-        this.lastClick = { index: i, ms: now };
-        if (inventory.slots[i]) this.drag = { index: i, x: cursor.x, y: cursor.y, moved: false };
-      });
-      button.addEventListener("contextmenu", (e) => {
-        e.preventDefault();
-        on.drop(i);
-      });
-      button.addEventListener(VIRTUAL_MOUSEUP, () => {
-        if (this.drag?.moved && this.drag.index !== i) on.move(this.drag.index, i);
-      });
-      // Keep focus on the game: a focused button would also react to Space.
-      button.addEventListener("mousedown", (e) => e.preventDefault());
+      this.wire(button, { kind: "inventory", index: i }, on);
       slotsEl.appendChild(button);
       this.slotEls.push(button);
     });
 
-    // Released anywhere: the drag ends (after the square under it took it).
+    // Released anywhere: the press ends (after the square under it took it).
     document.addEventListener(VIRTUAL_MOUSEUP, () => {
-      if (this.drag) this.slotEls[this.drag.index]?.classList.remove("is-dragging");
-      this.drag = null;
-      this.ghost.hidden = true;
+      this.press = null;
     });
   }
 
-  // The inventory slot being dragged (null when none, or not moved yet), for
-  // a release outside the panel (on the map: drop it there).
-  get draggedIndex(): number | null {
-    return this.drag?.moved ? this.drag.index : null;
+  // Whether what the hand carries is being dragged out of a square (let go on
+  // the map, it is dropped there).
+  get dragging(): boolean {
+    return this.press !== null && this.press.picked && this.hand.held !== null && this.moved(this.press);
+  }
+
+  // A square's clicks: left picks up or lays down (a double click on an
+  // inventory slot uses it), right takes half or lays one, and letting go on
+  // it after dragging from another lays down what was picked up there.
+  private wire(button: HTMLButtonElement, place: Place, on: InventoryHandlers): void {
+    const report = (message: string | null) => {
+      if (message) on.refused(message);
+    };
+    button.addEventListener("click", () => {
+      if (place.kind === "inventory") {
+        const i = place.index;
+        this.inventory.select(i);
+        const now = performance.now();
+        if (this.lastClick.index === i && now - this.lastClick.ms < DOUBLE_CLICK_MS) {
+          // The first click picked it up: back in its slot, and used.
+          this.lastClick.index = -1;
+          if (this.hand.held && !this.inventory.slots[i]) report(this.hand.click(place));
+          this.press = null;
+          on.use(i);
+          return;
+        }
+        this.lastClick = { index: i, ms: now };
+      }
+      const picked = this.hand.held === null;
+      report(this.hand.click(place));
+      this.press = { place, x: this.cursor.x, y: this.cursor.y, picked: picked && this.hand.held !== null };
+    });
+    button.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      report(this.hand.rightClick(place));
+    });
+    button.addEventListener(VIRTUAL_MOUSEUP, () => {
+      const press = this.press;
+      if (press?.picked && this.hand.held && this.moved(press) && !samePlace(press.place, place)) {
+        report(this.hand.click(place));
+      }
+    });
+    // Keep focus on the game: a focused button would also react to Space.
+    button.addEventListener("mousedown", (e) => e.preventDefault());
+  }
+
+  private moved(press: { x: number; y: number }): boolean {
+    return Math.hypot(this.cursor.x - press.x, this.cursor.y - press.y) >= DRAG_START;
   }
 
   // Called every frame; only touches the DOM when the inventory changed, and
@@ -194,7 +195,7 @@ export class InventoryPanel {
   update(): void {
     this.showDrag();
     this.showCraftProgress();
-    const version = `${this.inventory.version}/${this.equipment.version}/${this.crafting.version}`;
+    const version = `${this.inventory.version}/${this.equipment.version}/${this.crafting.version}/${this.hand.version}`;
     if (this.renderedVersion === version) return;
     this.renderedVersion = version;
     this.showCrafting();
@@ -204,8 +205,8 @@ export class InventoryPanel {
       el.replaceChildren();
       el.classList.toggle("is-empty", !item);
       el.title = item
-        ? `${EQUIP_SLOT_NAMES[slot]}: ${item.name} (click or right click: take off)`
-        : `${EQUIP_SLOT_NAMES[slot]} (drag an item here)`;
+        ? `${EQUIP_SLOT_NAMES[slot]}: ${item.name} (click: pick up)`
+        : `${EQUIP_SLOT_NAMES[slot]} (lay an item here)`;
       if (item) el.appendChild(this.icon(item));
     }
 
@@ -215,7 +216,7 @@ export class InventoryPanel {
       el.replaceChildren();
       el.title = "";
       if (!slot) return;
-      el.title = `${slot.item.name} (double click: use · right click: drop)`;
+      el.title = `${slot.item.name} (click: pick up · right click: half · double click: use)`;
       el.appendChild(this.icon(slot.item));
       if (slot.count > 1) {
         const count = document.createElement("span");
@@ -295,7 +296,7 @@ export class InventoryPanel {
     this.crafting.cells.forEach((item, cell) => {
       const el = this.craftEls[cell];
       el.replaceChildren();
-      el.title = item ? `${item.name} (click or right click: take back)` : "";
+      el.title = item ? `${item.name} (click: pick up)` : "";
       if (item) el.appendChild(this.icon(item));
       el.classList.toggle("is-locked", this.crafting.isCrafting);
     });
@@ -326,23 +327,20 @@ export class InventoryPanel {
     if (this.craftLabel.textContent !== label) this.craftLabel.textContent = label;
   }
 
+  // What the hand carries, under the cursor, with how many.
   private showDrag(): void {
-    const drag = this.drag;
-    const item = drag ? this.inventory.slots[drag.index]?.item : undefined;
-    if (!drag || !item) {
-      this.ghost.hidden = true;
-      return;
+    const held = this.hand.held;
+    this.ghost.hidden = !held;
+    if (!held) return;
+    if (this.shownHeld !== this.hand.version) {
+      this.shownHeld = this.hand.version;
+      const [canvas, count] = this.ghost.children as unknown as [HTMLCanvasElement, HTMLElement];
+      const icon = this.icon(held.item);
+      canvas.width = icon.width;
+      canvas.height = icon.height;
+      canvas.getContext("2d")!.drawImage(icon, 0, 0);
+      count.textContent = held.count > 1 ? String(held.count) : "";
     }
-    if (!drag.moved && Math.hypot(this.cursor.x - drag.x, this.cursor.y - drag.y) < DRAG_START) return;
-    if (!drag.moved) {
-      drag.moved = true;
-      this.slotEls[drag.index]?.classList.add("is-dragging");
-      const icon = this.icon(item);
-      this.ghost.width = icon.width;
-      this.ghost.height = icon.height;
-      this.ghost.getContext("2d")!.drawImage(icon, 0, 0);
-    }
-    this.ghost.hidden = false;
     const half = this.ghost.offsetWidth / 2;
     this.ghost.style.transform = `translate(${this.cursor.x - half}px, ${this.cursor.y - half}px)`;
   }

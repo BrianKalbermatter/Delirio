@@ -29,15 +29,16 @@ Days last 4 real minutes and nights 6.
 | V | Parry |
 | C | Support |
 | R | Punch the ground: dirt flies and the screen shakes |
-| E | Pick up the branch, weapon, torch or spear at your feet |
+| E | Pick up whatever is at your feet (coins are picked up just by walking over them) |
 | Drag a slot onto another · onto the map | Move it there (same items stack, others swap) · drop it where the cursor is (within reach) |
 | — | Attacks have no key: next to an enemy you swing at it on your own |
 | 1-9 or click a slot | Select an inventory slot |
 | Double click a slot | Use it: drink a potion, open the map book, hold a weapon or the torch |
-| Drag a slot onto a body square | Put it there (helmet, armor, pants, right or left hand) |
-| Right click a slot · a body square | Drop it on the floor · take it off |
-| X | Drop one item of the selected slot |
-| Drag items into the crafting grid · click the result | Craft (Inventory tab, under the player) |
+| Click any square (inventory, body, crafting) · click another | Pick up what it has (it follows the cursor) · lay it there: stacked on the same item, swapped with another. Dragging from one to the other works too |
+| Right click a square | With nothing carried: pick up half the stack. Carrying: lay down one |
+| Click · right click on the map, carrying | Drop all of it · one of it there (within reach) |
+| X | Drop one item of the selected slot (or of what is carried) |
+| Lay items in the crafting grid · click the result | Craft (Inventory tab, under the player) |
 | **+** in the Skills tab | Spend a level point |
 | Click a tab | Side panel: Technical, Inventory, Skills |
 | `` ` `` | Map book (left click draws, right click erases) |
@@ -124,9 +125,10 @@ gives a lot of experience and is gone for good (it is kept in the save).
 
 ## Your character and the inventory
 
-You play Brian's Personaje_3 (masked, with a strap across the black tunic),
-drawn in the 8 directions. Near the start lie an **axe**, a **torch** and a
-round **shield** (best in the left hand).
+You play the warrior of `art/personaje_4_original.png`, drawn in the 8 directions. Nothing
+to use lies near the start: the **axe**, the **torch** and the **spear** are
+crafted, and the round **shield** and the potions are found far into the maze.
+Every object, its recipe and whether it works yet: [OBJETOS.md](OBJETOS.md).
 **Build level.** What you can craft depends on your build level, shown on
 top of the recipe book beside the crafting grid (Inventory tab): every
 recipe of your level with the shape to lay out, and, greyed, what the next
@@ -150,9 +152,9 @@ Broken rocks stay broken in the save. When the maze grows, the new corridors
 get their rocks too.
 The **spear** is crafted: pick up three fallen **branches** in the corner
 of the square (the big tree is gone until its new sprites come) and lay them on a diagonal in the crafting grid (Inventory tab, under
-the player). Pick things up with **E**: the axe and the torch go to the
+the player). Pick things up with **E** (all but the coins): they go to the
 inventory (16 slots, in the **Inventory** tab of the side panel); double
-click one, or drag it onto a hand, to hold it. The right hand swings, the
+click one, or lay it on a hand, to hold it. The right hand swings, the
 left one carries. The torch burns with an animated flame and lights up much
 more around you, by night and by day. Potions give back 30 life.
 
@@ -257,7 +259,7 @@ whoever is inside when the gates close spends the night in there with you.
 Some carry a weapon in hand, drawn like yours: a **spear**, an **axe** or a
 **torch**. When one dies it drops 1 to 3 spinning **coins**, now and then
 something it had on it (a potion, a branch, an enemy sword) and, sometimes,
-its weapon. Coins and items you walk over glide to you once you are close
+its weapon. Coins glide to you once you are close
 (further with the **Reach** skill).
 
 You never attack with a key: get an enemy close and your character **swings
@@ -294,12 +296,13 @@ panel, with the **+** next to each one:
 | Life | +15 max life | 10 |
 | Mobility | +8% walk, run and jump speed | 5 |
 | Double jump | Space again in the air jumps once more | 1 |
-| Reach | Coins and items you walk over glide to you from further away (40 px, +18 px a level) | 5 |
+| Reach | Coins glide to you from further away (40 px, +18 px a level) | 5 |
 
 ## Crafting
 
-Under the player in the **Inventory** tab is a 3x3 crafting grid. Drag items
-into its squares (one per square; right click takes one back). When they make
+Under the player in the **Inventory** tab is a 3x3 crafting grid. Lay items
+in its squares (one per square: a click with a stack lays one, a click on a
+square picks it back up). When they make
 a recipe's shape (anywhere in the grid, also mirrored) the result shows to
 the right: click it and a bar fills while it is made (right click stops it).
 Then the items are used up and the result goes to the inventory.
@@ -375,13 +378,16 @@ read from its Aseprite file and recoloured to the square's greens.
 | Fruit bushes (berries, grapes, pomegranates; with and without fruit, shown at 3 sizes) and the fruit as items | `art/arbustos_frutos_original.png` + `art/arbustos_frutos.py` (needs scipy) → `client/public/sprites/arbusto_frutos.{png,json}`, `client/public/assets/frutas.{png,json}` | `python3 art/arbustos_frutos.py` |
 | Sheep (one drawing facing right; tags `pasta`, `camina`, `corre`) | `art/ovejas_original.png` + `art/ovejas.py` → `client/public/sprites/oveja.{png,json}` | `python3 art/ovejas.py` |
 | Birds (8; perched, pecking and 3 of the wing each) | `art/aves_original.png` + `art/aves.py` (needs scipy) → `client/public/sprites/aves.{png,json}` | `python3 art/aves.py` |
+| Log dropped by felled trees (as drawn and mirrored) | `art/tronco_original.png` + `art/tronco.py` → `client/public/assets/tronco.{png,json}` | `python3 art/tronco.py` |
 | Stumps (3, each at 3 ages) | `art/tocones_original.png` + `art/tocones.py` (needs scipy) → `client/public/sprites/tocones.{png,json}` | `python3 art/tocones.py` |
 | Bushes to hide in (9, one frame each; the game only uses the 3 round ones) | `sprites/Plaza/Arbustos_original.png` + `art/arbustos.py` → `sprites/Plaza/Arbustos.aseprite` | `bash art/arbustos_build.sh`, or with `--export` after retouching |
 | Wind on the big tree (its `idle` tag) | `art/arbol_viento.lua` → `sprites/Arboles/Arbol1_pintado.aseprite` (rebuilds the wind from the first frame; rerun after retouching it) | `Aseprite -b --script-param file=Arbol1_pintado.aseprite --script arbol_viento.lua`, then `bash client/scripts/export-sprites.sh` |
 | Shadow under the big tree | `art/sombra_arbol.py` → `client/public/sprites/sombra_arbol.png` | `python3 art/sombra_arbol.py client/public/sprites` |
-| Player (Personaje_3, every animation in 8 directions, the spear throw), its weapons in either hand, slam dirt; the weapons as items (lying, held, icon; the spear also flying and stuck in the ground, in 16 directions) | `art/personaje_3.py` + `art/personaje_3_build.py` + `art/armas.py` (weapons: `WEAPONS`) | `bash art/armas_build.sh` (also writes `Personaje_3_Anim.aseprite`). Its sheets are packed (`armas.write_packed_sheet`: each frame cut to its pixels, repeats stored once) to keep them small on the GPU |
+| Player: the warrior of `art/personaje_4_original.png`, dressed by `art/personaje_4.py` on the model of `art/personaje_3.py`: every animation in 8 directions, the same pattern as Personaje_3 (idle, walk, run, block, jump, attack, slam, pickup, throw with the spear up over the head while it charges, death, plus `mira` and `estira` left alone and `guardia` with an enemy close); its weapons in either hand (`held_scale` in `armas.WEAPONS`: a size just for the hand), slam dirt; the weapons as items (lying, held, icon; the spear also flying and stuck in the ground, in 16 directions) | `art/personaje_4.py` + `art/personaje_3.py` + `art/personaje_3_build.py` + `art/armas.py` (weapons: `WEAPONS`) | `bash art/armas_build.sh` (also writes `Personaje_4_Anim.aseprite` and `Personaje_4_Lanza_preview.aseprite`; retouches there do not go back to the game). Its sheets are packed (`armas.write_packed_sheet`: each frame cut to its pixels, repeats stored once) to keep them small on the GPU |
+| Flash of the charged spear (`destello`, `brillo`), drawn on its point (`sprites/lanza_punta.json`) | `art/lanza_brillo.py` (run by `art/armas_build.sh`) | `bash art/armas_build.sh` |
 | Enemy (Espartano1: idle/walk/run in 8 directions, roll, three deaths, pinned to a wall) | `Espartano1.aseprite` + `art/espartano.py` (built on `personaje_3.py`, blood from `art/enemigo1.py`) | `python3 art/espartano.py <dir>`, then `Aseprite -b --script-param dir=<dir> --script-param out=Espartano1_Anim.aseprite --script-param body=Espartano --script art/bicho_aseprite.lua`; sheet with `bash client/scripts/export-sprites.sh` |
 | Old enemy (Enemigo1, not used now) | `art/enemigo1.py` | Same as Espartano1, with `body=Enemigo` |
+| The spear, cut from the player's picture | `art/personaje_4_original.png` + `art/lanza.py` (run by `art/armas_build.sh`) | `bash art/armas_build.sh` |
 | Bonfire, the spawner (tags `arde`, `herida`, `agoniza`, `apagada`) | `art/hoguera_original.png` + `art/hoguera.py` (needs scipy) → `client/public/sprites/hoguera.{png,json}` | `python3 art/hoguera.py` |
 | Ghost, spirit and skeleton (one drawing each looking left, moved by the script) and what the spirit and the ghost throw | `art/fantasma_original.png`, `art/espiritu_original.png`, `art/esqueleto_original.png` + `art/espectros.py` (needs scipy) → `client/public/sprites/{fantasma,fantasma_tiro,espiritu,esqueleto,espiritu_tiro}.{png,json}` | `python3 art/espectros.py` |
 | Achilles the centaur (`quieto`, `camina`, `prepara`, `embiste`, `muere`) | `art/centauro_original.png` + `art/espectros.py` → `client/public/sprites/centauro.{png,json}` | `python3 art/espectros.py` |

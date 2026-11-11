@@ -1,4 +1,4 @@
--- Builds Personaje_3_Anim.aseprite from the frames written by personaje_3_build.py.
+-- Builds Personaje_4_Anim.aseprite from the frames written by personaje_3_build.py.
 --
 -- Usage (batch):
 --   Aseprite.exe -b --script-param dir=<frames dir> --script-param out=<file> --script p3_aseprite.lua
@@ -14,7 +14,8 @@ for line in io.lines(app.fs.joinPath(dir, "durations.txt")) do
   durations[#durations + 1] = tonumber(line)
 end
 
-local sprite = Sprite(64, 96, ColorMode.RGB)
+local first = Image{ fromFile = app.fs.joinPath(dir, "armado_0.png") }
+local sprite = Sprite(first.width, first.height, ColorMode.RGB)
 for _ = 2, #durations do sprite:newEmptyFrame() end
 
 local armed = sprite.layers[1]
@@ -29,7 +30,7 @@ for f = 1, #durations do
     if not img:isEmpty() then sprite:newCel(layer, f, img, Point(0, 0)) end
   end
 end
-armed.isVisible = false
+armed.isVisible = dir:find("lanza") ~= nil -- the spear preview only has this layer
 
 for line in io.lines(app.fs.joinPath(dir, "tags.txt")) do
   local name, from, to = line:match("(%S+) (%d+) (%d+)")

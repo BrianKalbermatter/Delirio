@@ -193,6 +193,7 @@ class Pose:
         self.lean = 0.0               # torso pitch forward
         self.twist = 0.0              # torso yaw (positive turns left)
         self.head_pitch = 0.0         # head nods forward
+        self.head_yaw = 0.0           # head turns to its left
         self.head_roll = 0.0
         # Feet targets (forward, up), relative to the rest position of each foot.
         self.foot = {"r": (0.0, 0.0), "l": (0.0, 0.0)}
@@ -263,7 +264,14 @@ def two_bone(hip, foot, l1, l2, bend_forward=True):
 
 
 class Model:
-    """Builds the parts of one frame: local (forward, left, up) -> world."""
+    """Builds the parts of one frame: local (forward, left, up) -> world. A
+    subclass dresses it differently (personaje_4.py): the materials, the head."""
+
+    leg_material = staticmethod(flat(BLACK))
+    arm_material = staticmethod(flat(BLACK))
+    torso_material = staticmethod(tunic)
+    collar_material = staticmethod(collar)
+    foot_material = staticmethod(flat(BLACK))
 
     def __init__(self, facing_deg, pose):
         a = math.radians(facing_deg)
@@ -327,18 +335,18 @@ class Model:
             ankle = (0.5 + ff, s * (HIP_L + 0.8), 2.6 + fu)
             knee = two_bone(hip, ankle, THIGH, SHIN)
             legs[side] = (hip, knee, ankle)
-            self.segment(hip, knee, 4.2, 4.2, flat(BLACK), f"thigh_{side}")
-            self.segment(knee, ankle, 3.8, 3.8, flat(BLACK), f"shin_{side}")
+            self.segment(hip, knee, 4.2, 4.2, self.leg_material, f"thigh_{side}")
+            self.segment(knee, ankle, 3.8, 3.8, self.leg_material, f"shin_{side}")
             toe = add(ankle, rot_y((3.2, 0.0, -0.6), pose.foot_pitch[side]))
-            self.segment(ankle, toe, 2.6, 1.8, flat(BLACK), f"foot_{side}", extra=1.2)
+            self.segment(ankle, toe, 2.6, 1.8, self.foot_material, f"foot_{side}", extra=1.2)
 
         # Torso (black tunic with the straps) and a skirt over the hips.
         self.ellipsoid(self.torso(tuple(TORSO_C)), [self.torso_dir(v) for v in ((1, 0, 0), (0, 1, 0), (0, 0, 1))],
-                       tuple(TORSO_R), tunic(TORSO_C, TORSO_R), "torso")
+                       tuple(TORSO_R), self.torso_material(TORSO_C, TORSO_R), "torso")
         self.ellipsoid(self.torso(SKIRT_C), [self.torso_dir(v) for v in ((1, 0, 0), (0, 1, 0), (0, 0, 1))],
-                       SKIRT_R, tunic(SKIRT_C, SKIRT_R), "skirt")
+                       SKIRT_R, self.torso_material(SKIRT_C, SKIRT_R), "skirt")
         self.ellipsoid(self.torso((0.6, 0.0, NECK_U)), [self.torso_dir(v) for v in ((1, 0, 0), (0, 1, 0), (0, 0, 1))],
-                       (5.2, 6.2, 2.6), collar, "collar")
+                       (5.2, 6.2, 2.6), self.collar_material, "collar")
 
         # Arms.
         for side, s in (("r", -1), ("l", 1)):
@@ -353,26 +361,32 @@ class Model:
             fore = self.torso_dir(fore)
             wrist = add(elbow, scale(fore, FOREARM))
             hand = add(wrist, scale(fore, 1.6))
-            self.segment(sh, elbow, 2.8, 2.8, flat(BLACK), f"upper_{side}")
-            self.segment(elbow, wrist, 2.5, 2.5, flat(BLACK), f"fore_{side}")
-            hand_mat = flat(BLACK)
+            self.segment(sh, elbow, 2.8, 2.8, self.arm_material, f"upper_{side}")
+            self.segment(elbow, wrist, 2.5, 2.5, self.arm_material, f"fore_{side}")
+            hand_mat = self.arm_material
             self.ellipsoid(hand, [fore, (0, 1, 0) if abs(fore[1]) < 0.9 else (1, 0, 0), np.cross(fore, (0, 1, 0)) if abs(fore[1]) < 0.9 else (0, 0, 1)],
                            (2.0, 2.2, 2.0) if pose.fist[side] else (2.4, 2.0, 1.7), hand_mat, f"hand_{side}")
             if side == "l" and not pose.fist[side]:
                 claw = add(wrist, scale(fore, 3.6))
-                self.ellipsoid(claw, [fore, (0, 1, 0), (1, 0, 0)], (1.0, 1.8, 1.4), flat(BLACK), "claws_l")
+                self.ellipsoid(claw, [fore, (0, 1, 0), (1, 0, 0)], (1.0, 1.8, 1.4), self.arm_material, "claws_l")
             setattr(self, f"hand_{side}", hand)
             setattr(self, f"shoulder_{side}", sh)
 
         # Head: green skull, the mask plate with its eye holes, the beak.
         def head(p):
             rel = np.subtract(p, (0.0, 0.0, NECK_U))
-            rel = rot_x(rot_y(tuple(rel), pose.head_pitch), pose.head_roll)
+            rel = rot_x(rot_y(rot_z(tuple(rel), pose.head_yaw), pose.head_pitch), pose.head_roll)
             return self.torso(add((0.0, 0.0, NECK_U), rel))
 
         def head_dir(v):
-            return self.torso_dir(rot_x(rot_y(v, pose.head_pitch), pose.head_roll))
+            return self.torso_dir(rot_x(rot_y(rot_z(v, pose.head_yaw), pose.head_pitch), pose.head_roll))
 
+        self.build_head(head, head_dir)
+        self.head_center = head(HEAD_C)
+        return self.parts
+
+    def build_head(self, head, head_dir):
+        pose = self.pose
         I = [(1, 0, 0), (0, 1, 0), (0, 0, 1)]
         self.ellipsoid(head(HEAD_C), [head_dir(v) for v in I], (8.2, 8.0, 8.8), head_skin, "head")
         self.ellipsoid(head((4.0, 0.0, 43.6)), [head_dir(v) for v in I], (5.2, 7.4, 7.0), mask_plate, "mask")
@@ -401,8 +415,6 @@ class Model:
             self.ellipsoid(tuple((np.asarray(pa) + np.asarray(pb)) / 2),
                            [unit(fwd - d * (fwd @ d)), head_dir((0, 1, 0)), d],
                            (1.5, 1.6, h / 2 + 0.6), crest, f"crest_{i}")
-        self.head_center = head(HEAD_C)
-        return self.parts
 
 
 def screen(world):
@@ -417,8 +429,11 @@ def screen_dir(world_dir):
     return np.array([d[0], -(d[2] + K * d[1])])
 
 
+MODEL = Model  # what draw() poses: personaje_3_build.py sets the player's
+
+
 def draw(facing, pose):
-    model = Model(ANGLE[facing], pose)
+    model = MODEL(ANGLE[facing], pose)
     img, _, _ = render(model.build())
     return img, model
 

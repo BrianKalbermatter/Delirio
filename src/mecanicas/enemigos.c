@@ -85,6 +85,12 @@
 #define VENTAJA_HOGUERA 3       // celdas de camino que tiene que ahorrar volver a salir de otra hoguera
 #define CAZA_RUMBO_MS 400.0f    // cazando miran el camino asi de seguido
 #define RUTA_CADA_MS 1000.0f    // cada cuanto se traza el camino hasta el jugador
+// El que lo vio y lo perdio detras de un muro lo busca dando la vuelta por los
+// pasillos, si el jugador queda a estas celdas de camino como mucho y por este
+// tiempo; si no, se da por vencido y se va.
+#define BUSCA_CELDAS 4
+#define BUSCA_MS 25000.0f
+#define CUERPO_ANCHO 14.0f      // medio ancho del cuerpo: para no cortar las esquinas
 
 // Rondas: cuantas al empezar y como son. En la plaza no hay: es la base.
 #define RONDAS_LABERINTO 12
@@ -323,19 +329,36 @@ static int pasos_desde(const Enemigos *e, Direccion p){
   return c < 0 || f < 0 || c >= LAB_MAX_CELDAS || f >= LAB_MAX_CELDAS ? -1 : e->ruta[f][c];
 }
 
-// El rumbo desde `pies` por el camino al jugador. 0 si queda lejos o no se llega.
-static int rumbo_al_jugador(const Enemigos *e, const Laberinto *lab, Direccion pies, Direccion jugador, Direccion *rumbo){
+// 1 si entra el cuerpo entero de a a b: la linea del medio y las de los
+// costados, a CUERPO_ANCHO de ella.
+static int paso_ancho(const Laberinto *lab, Direccion a, Direccion b){
+  Direccion d = unitario((Direccion){b.x - a.x, b.y - a.y});
+  Direccion lado = {-d.y * CUERPO_ANCHO, d.x * CUERPO_ANCHO};
+  return linea_libre(lab, a, b) &&
+         linea_libre(lab, (Direccion){a.x + lado.x, a.y + lado.y}, (Direccion){b.x + lado.x, b.y + lado.y}) &&
+         linea_libre(lab, (Direccion){a.x - lado.x, a.y - lado.y}, (Direccion){b.x - lado.x, b.y - lado.y});
+}
+
+// El rumbo desde `pies` por el camino al jugador, si queda a `max_pasos`
+// celdas de camino como mucho. 0 si queda lejos o no se llega. Va al medio de
+// la celda siguiente; si de donde esta rozaria la esquina del muro, primero
+// al medio de la suya, que de ahi se pasa derecho.
+static int rumbo_al_jugador(const Enemigos *e, const Laberinto *lab, Direccion pies, Direccion jugador, int max_pasos, Direccion *rumbo){
   int pasos = pasos_desde(e, pies);
-  if (pasos < 0 || pasos > CAZA_CELDAS) return 0;
+  if (pasos < 0 || pasos > max_pasos) return 0;
   int c = celda_de(pies.x), f = celda_de(pies.y);
   Direccion destino = jugador;
   for (int v = 0; v < 4 && pasos > 0; v++){
     int dc = VECINOS[v][0], df = VECINOS[v][1];
     if (!hay_paso(lab, c, f, dc, df) || e->ruta[f + df][c + dc] != pasos - 1) continue;
     destino = centro_de_celda(c + dc, f + df);
+    Direccion medio = centro_de_celda(c, f);
+    if (distancia(pies, medio) > 8.0f && !paso_ancho(lab, pies, destino)) destino = medio;
     break;
   }
-  *rumbo = unitario((Direccion){destino.x - pies.x, destino.y - pies.y});
+  Direccion falta = {destino.x - pies.x, destino.y - pies.y};
+  if (largo(falta) < 1.0f) return 0;
+  *rumbo = unitario(falta);
   return 1;
 }
 
@@ -1415,7 +1438,7 @@ static float deambular(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jug
     int afuera = !en_plaza((int)(pies.x / LAB_TILE), (int)(pies.y / LAB_TILE));
     int a_su_alcance = e->plaza_permitida || !en_plaza_px(j->entidad.posicion);
     Direccion rumbo;
-    en->cazando = en->ronda < 0 && !en->es_paseante && !en->guardia && en->desinteres_ms <= 0 && a_su_alcance && rumbo_al_jugador(e, lab, pies, j->entidad.posicion, &rumbo);
+    en->cazando = en->ronda < 0 && !en->es_paseante && !en->guardia && en->desinteres_ms <= 0 && a_su_alcance && rumbo_al_jugador(e, lab, pies, j->entidad.posicion, CAZA_CELDAS, &rumbo);
     if (en->cazando){
       en->entidad.dir = rumbo;
       en->rumbo_ms = CAZA_RUMBO_MS;
@@ -1486,11 +1509,24 @@ static float acosar(Enemigos *e, Enemigo *en, int lo_ve, float dist, Direccion h
   return VEL_ACECHO;
 }
 
-// El esqueleto: si ve al jugador va derecho y lo ataca cada tanto; si no, espera.
-// Devuelve la velocidad; el ataque lo sigue paso_ataque.
-static float perseguir(Enemigo *en, int lo_ve, float dist, Direccion hacia, Direccion *dir){
+// El esqueleto: si ve al jugador va derecho y lo ataca cada tanto. Si lo vio
+// y un muro lo tapa, da la vuelta por los pasillos (`rodeo`, si hay) un rato;
+// si no, espera. Devuelve la velocidad; el ataque lo sigue paso_ataque.
+static float perseguir(Enemigo *en, int lo_ve, const Direccion *rodeo, float dist, Direccion hacia, float dt_ms, Direccion *dir){
   *dir = (Direccion){0, 0};
-  if (!lo_ve) return 0;
+  float vel = en->tipo == ENEMIGO_RUEDA ? VEL_RUEDA : VEL_ESQUELETO;
+  if (!lo_ve){
+    en->busca_ms += dt_ms;
+    if (!en->lo_busca || !rodeo || en->busca_ms > BUSCA_MS){
+      en->lo_busca = 0;
+      return 0;
+    }
+    *dir = *rodeo;
+    en->mira = *rodeo;
+    return vel;
+  }
+  en->lo_busca = 1;
+  en->busca_ms = 0;
   en->mira = hacia;
   if (dist <= ATAQUE[en->tipo].alcance && en->tiro_ms <= 0){
     empezar_ataque(en);
@@ -1498,7 +1534,7 @@ static float perseguir(Enemigo *en, int lo_ve, float dist, Direccion hacia, Dire
   }
   if (dist <= (en->tipo == ENEMIGO_RUEDA ? RUEDA_PARA : ALCANCE)) return 0;
   *dir = hacia;
-  return en->tipo == ENEMIGO_RUEDA ? VEL_RUEDA : VEL_ESQUELETO;
+  return vel;
 }
 
 // Elige como moverse segun el animo. Devuelve la velocidad y deja el rumbo
@@ -1509,12 +1545,19 @@ static float decidir(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jugad
   float dist = largo(al_jugador);
   Direccion hacia = unitario(al_jugador);
   float vision = en->animo == ANIMO_CHARLA ? VISION_CHARLA : en->tipo == ENEMIGO_ESQUELETO ? ESQUELETO_VE : en->tipo == ENEMIGO_RUEDA ? RUEDA_VE : VISION;
-  int lo_ve = !jugador_muerto(j) && dist < vision && !escondido_de(e, en, dist) &&
-              linea_libre(lab, pies, j->entidad.posicion);
+  int vivo_j = !jugador_muerto(j);
+  int escondido = escondido_de(e, en, dist);
+  int libre = linea_libre(lab, pies, j->entidad.posicion);
+  int lo_ve = vivo_j && dist < vision && !escondido && libre;
+  // Un muro en el medio (no un arbusto): el rodeo por los pasillos, si el
+  // jugador no quedo lejos de camino.
+  int tapado = vivo_j && !escondido && !libre;
+  Direccion por_camino;
+  int rodea = tapado && rumbo_al_jugador(e, lab, pies, j->entidad.posicion, BUSCA_CELDAS, &por_camino);
 
   en->animo_ms += dt_ms;
   if (en->desinteres_ms > 0) en->desinteres_ms -= dt_ms;
-  if (es_caminante(en)) return perseguir(en, lo_ve, dist, hacia, dir);
+  if (es_caminante(en)) return perseguir(en, lo_ve, rodea ? &por_camino : 0, dist, hacia, dt_ms, dir);
   switch (en->animo){
     case ANIMO_CHARLA:
       if (lo_ve){
@@ -1533,6 +1576,22 @@ static float decidir(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jugad
       return deambular(e, en, lab, j, dt_ms, dir);
 
     case ANIMO_ACECHA:
+      if (lo_ve) en->busca_ms = 0;
+      if (tapado){
+        // Detras de un muro: lo va a buscar dando la vuelta, y si quedo
+        // lejos de camino (o tarda demasiado), se da por vencido y se va
+        en->busca_ms += dt_ms;
+        if (!rodea || en->busca_ms > BUSCA_MS){
+          cambiar_animo(en, ANIMO_DEAMBULA);
+          en->desinteres_ms = DESINTERES_MS;
+          en->lanzando_ms = 0;
+          break;
+        }
+        en->animo_ms = 0; // lo sigue: no lo olvida mientras da la vuelta
+        *dir = por_camino;
+        en->mira = por_camino;
+        return VEL_ACECHO;
+      }
       if (!lo_ve){
         if (en->animo_ms > OLVIDO_MS || dist > OLVIDA_LEJOS){
           cambiar_animo(en, ANIMO_DEAMBULA);
@@ -1570,7 +1629,8 @@ static float decidir(Enemigos *e, Enemigo *en, const Laberinto *lab, const Jugad
       return VEL_ACECHO;
 
     case ANIMO_ATACA:
-      if (!lo_ve && en->animo_ms > 400.0f){
+      // Un muro en el medio: no se lo lleva por delante, lo rodea acechando
+      if (tapado || (!lo_ve && en->animo_ms > 400.0f)){
         cambiar_animo(en, ANIMO_ACECHA);
         break;
       }

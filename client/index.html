@@ -27,8 +27,8 @@
       }
       .minimap {
         position: absolute;
-        top: 8px;
-        left: 8px;
+        bottom: 8px;
+        right: 8px;
         pointer-events: none; /* the locked mouse goes through it, to the game */
         image-rendering: pixelated;
         border: 2px solid #c9a24a;
@@ -167,7 +167,6 @@
       .slot:hover, .slot.is-hover { border-color: var(--muted); }
       .slot.is-selected { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
       .slot canvas { width: 88%; image-rendering: pixelated; }
-      .slot.is-dragging canvas { opacity: 0.3; }
       .slot .count { position: absolute; right: 4px; bottom: 2px; font-size: 11px; color: var(--text); }
       /* Equipment: the player on a lit backdrop, a square on each body part */
       .doll {
@@ -205,6 +204,15 @@
         z-index: 999;
         pointer-events: none;
         image-rendering: pixelated;
+      }
+      .drag-ghost canvas { display: block; width: 100%; image-rendering: pixelated; }
+      .drag-ghost span {
+        position: absolute;
+        right: 6px;
+        bottom: 4px;
+        font-size: 12px;
+        color: var(--text);
+        text-shadow: 0 1px 2px #000, 0 0 2px #000;
       }
       .drag-ghost[hidden] { display: none; }
       .selected { min-height: 1.4em; color: var(--text); }

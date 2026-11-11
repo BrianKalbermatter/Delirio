@@ -28,6 +28,14 @@ const MOTION_BY_STATE: Record<string, Motion> = {
   MUERTO: "death",
 };
 
+// Left alone this long it does something (mira: looks around, estira: stretches),
+// as long as its frames last (art/personaje_3_build.py), and goes back to idle.
+const REST_AFTER_MS = 5000;
+const RESTS = [
+  { name: "mira", ms: 1920 },
+  { name: "estira", ms: 1540 },
+];
+
 const TURN_STEP_MS = 60; // time shown on each intermediate direction
 // Sharp turns (135° or more, e.g. left -> right) become a pivot: the character
 // stops its stride and rotates in place through the intermediate directions,
@@ -68,6 +76,10 @@ export class Character {
   y = 0;
   motion: Motion = "idle";
   facing: Direction = "front";
+  // An enemy close by: it waits in guard instead of standing idle.
+  alert = false;
+  private restMs = 0;
+  private restTurn = 0; // which of RESTS comes next
   private targetFacing: Direction = "front";
   private blocking = false;
   private turnClockMs = 0;
@@ -95,7 +107,10 @@ export class Character {
     if (this.jumpMs !== null) return `jump_${this.facing}`;
     const motion = this.pivoting ? "idle" : this.motion;
     if (this.blocking) return `${motion === "idle" ? "block" : "block_walk"}_${this.facing}`;
-    return `${motion}_${this.facing}`;
+    if (motion !== "idle") return `${motion}_${this.facing}`;
+    if (this.alert) return `guardia_${this.facing}`;
+    if (this.restMs >= REST_AFTER_MS) return `${RESTS[this.restTurn].name}_${this.facing}`;
+    return `idle_${this.facing}`;
   }
 
   get isDead(): boolean {
@@ -190,6 +205,7 @@ export class Character {
       this.action.ms += dtMs;
       if (this.action.ms >= this.action.durationMs) this.action = null;
     }
+    this.syncRest(dtMs);
     if (this.syncJump(core, dtMs)) return;
     let target: Direction | null = null;
     if (lookAt) {
@@ -208,6 +224,19 @@ export class Character {
       }
     }
     this.advanceTurn(dtMs);
+  }
+
+  private syncRest(dtMs: number): void {
+    const alone = this.motion === "idle" && !this.blocking && !this.alert && !this.action && this.jumpMs === null;
+    if (!alone) {
+      this.restMs = 0;
+      return;
+    }
+    this.restMs += dtMs;
+    if (this.restMs >= REST_AFTER_MS + RESTS[this.restTurn].ms) {
+      this.restMs = 0;
+      this.restTurn = (this.restTurn + 1) % RESTS.length;
+    }
   }
 
   // Returns true while jumping: the jump keeps the direction it took off in.
