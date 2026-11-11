@@ -21,6 +21,10 @@ export class LockedMouse {
   y = 0;
   held = false; // left button down over the game or a press surface
   rightHeld = false; // right button down (anywhere)
+  // A press on the game canvas goes here first (0 left, 2 right): true when
+  // it was used up (the inventory's hand dropping what it carries), so it
+  // does not also attack or block.
+  onGamePress: ((button: number) => boolean) | null = null;
   private hovered: Element | null = null;
   private readonly pressSurfaces = new Set<Element>();
   private readonly target = document.body;
@@ -45,6 +49,7 @@ export class LockedMouse {
     });
     document.addEventListener("mousedown", (e) => {
       if (!this.locked) return;
+      if ((e.button === 0 || e.button === 2) && this.overGame() && this.onGamePress?.(e.button)) return;
       if (e.button === 2) {
         this.rightHeld = true;
         // Over the panel, a right click goes to the button under the cursor

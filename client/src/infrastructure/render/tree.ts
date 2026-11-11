@@ -130,20 +130,21 @@ export class TreeViews {
     return best;
   }
 
-  // An axe blow: it shakes and drops leaves. True if that felled it.
-  hit(id: number): boolean {
+  // An axe blow: it shakes and drops leaves. The tree if that felled it
+  // (where it stood, for what it drops), null otherwise.
+  hit(id: number): Tree | null {
     const view = this.views.get(id);
-    if (!view) return false;
+    if (!view) return null;
     view.hits++;
     view.shakeMs = SHAKE_MS;
     const fells = view.hits >= HITS_TO_FELL;
     this.dropLeaves(view.tree, fells ? LEAVES_FELLED : LEAVES_PER_HIT);
-    if (!fells) return false;
+    if (!fells) return null;
     this.views.delete(id);
     this.felled.add(id);
     if (view.obstacle >= 0) this.maze.removeObstacle(view.obstacle);
     this.fading.push({ view, ms: FADE_MS });
-    return true;
+    return view.tree;
   }
 
   update(dtMs: number): void {

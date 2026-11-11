@@ -1,0 +1,56 @@
+{
+ "frames": [
+  {
+   "filename": "tronco 0",
+   "frame": {
+    "x": 0,
+    "y": 0,
+    "w": 33,
+    "h": 33
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 33,
+    "h": 33
+   },
+   "sourceSize": {
+    "w": 33,
+    "h": 33
+   },
+   "duration": 100
+  },
+  {
+   "filename": "tronco 1",
+   "frame": {
+    "x": 33,
+    "y": 0,
+    "w": 33,
+    "h": 33
+   },
+   "rotated": false,
+   "trimmed": false,
+   "spriteSourceSize": {
+    "x": 0,
+    "y": 0,
+    "w": 33,
+    "h": 33
+   },
+   "sourceSize": {
+    "w": 33,
+    "h": 33
+   },
+   "duration": 100
+  }
+ ],
+ "meta": {
+  "image": "tronco.png",
+  "size": {
+   "w": 66,
+   "h": 33
+  },
+  "frameTags": []
+ }
+}

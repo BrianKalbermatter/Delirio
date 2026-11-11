@@ -7,9 +7,8 @@ export interface ItemKind {
   frame: number; // frame of the sprite lying on the floor (and the icon, unless `icon`)
   icon?: number; // frame shown in the inventory, when it is not `frame`
   iconSprite?: string; // sheet `icon` is in, when not `sprite` (art/iconos.py)
-  // Picked up only with the E key while standing on it, instead of by just
-  // walking over it.
-  pickupWithKey?: boolean;
+  // Everything is picked up with the E key, but this: walking over it is enough.
+  pickupWalking?: boolean;
   // A weapon the player carries and swings (see art/armas.py): `grip` is the
   // pixel the hand holds in frame WEAPON_HELD_FRAME of its sprite, and the
   // sheets <sprite>_fx and <sprite>_fx_atras have its animations.
@@ -66,7 +65,7 @@ export const ITEMS: Record<string, ItemKind> = {
   grapes: { id: "grapes", name: "Grapes", sprite: "frutas", frame: 1, food: -18 },
   pomegranate: { id: "pomegranate", name: "Pomegranate", sprite: "frutas", frame: 2, food: 20 },
   // Dropped by every enemy that dies (art/moneda.py), spinning on the floor.
-  coin: { id: "coin", name: "Coin", sprite: "moneda", frame: 0, floorAnimation: "spin" },
+  coin: { id: "coin", name: "Coin", sprite: "moneda", frame: 0, floorAnimation: "spin", pickupWalking: true },
   enemy_sword: {
     id: "enemy_sword",
     name: "Enemy sword",
@@ -81,12 +80,14 @@ export const ITEMS: Record<string, ItemKind> = {
     name: "Branch",
     sprite: "ramas",
     frame: 0,
-    pickupWithKey: true,
   },
+  // Logs (art/tronco.py): a felled tree drops a few. Two frames, the same
+  // log both ways round, so a pile does not look stamped.
+  log: { id: "log", name: "Log", sprite: "tronco", frame: 0 },
   // Saplings (art/retonos.py), the square's trees in miniature, growing near
   // them. Picked up with E; planting them comes later. `frame` is their SPECIES.
-  sapling_green: { id: "sapling_green", name: "Green sapling", sprite: "retonos", frame: 0, pickupWithKey: true },
-  sapling_orange: { id: "sapling_orange", name: "Orange sapling", sprite: "retonos", frame: 1, pickupWithKey: true },
+  sapling_green: { id: "sapling_green", name: "Green sapling", sprite: "retonos", frame: 0 },
+  sapling_orange: { id: "sapling_orange", name: "Orange sapling", sprite: "retonos", frame: 1 },
   // Pebbles (art/rocas.py, in the colours of Brian's Roca1): lying around the
   // big rocks and left by breaking one. Picked up with E; several shapes
   // (frames), all the same item.
@@ -95,7 +96,6 @@ export const ITEMS: Record<string, ItemKind> = {
     name: "Pebble",
     sprite: "piedritas",
     frame: 0,
-    pickupWithKey: true,
   },
   // Brian's stone pickaxe (sprites/Armas/PicoPiedra.aseprite, overlays by
   // art/armas.py). Crafted from 3 pebbles and 2 branches; held in the right
@@ -106,7 +106,6 @@ export const ITEMS: Record<string, ItemKind> = {
     sprite: "pico",
     frame: 0,
     icon: WEAPON_ICON_FRAME,
-    pickupWithKey: true,
     weapon: { grip: { x: 12, y: 41 } },
   },
   // Brian's workbench (sprites/Objetos/MesaDeTrabajo.aseprite). Unlocked at
@@ -127,7 +126,6 @@ export const ITEMS: Record<string, ItemKind> = {
     sprite: "hacha",
     frame: 0,
     icon: WEAPON_ICON_FRAME,
-    pickupWithKey: true,
     weapon: { grip: { x: 30, y: 40 } },
   },
   // Brian's torch (sprites/Objetos/Antorcha.aseprite): carried like the axe, it
@@ -138,7 +136,6 @@ export const ITEMS: Record<string, ItemKind> = {
     sprite: "antorcha",
     frame: 0,
     icon: WEAPON_ICON_FRAME,
-    pickupWithKey: true,
     weapon: { grip: { x: 23, y: 40 } },
     light: { inner: 90, outer: 300 },
   },
@@ -150,7 +147,6 @@ export const ITEMS: Record<string, ItemKind> = {
     sprite: "escudo",
     frame: 0,
     icon: WEAPON_ICON_FRAME,
-    pickupWithKey: true,
     weapon: { grip: { x: 23, y: 23 } },
   },
   // Brian's spear (sprites/Armas/Lanza1_Arma.aseprite), carried upright like
@@ -163,7 +159,6 @@ export const ITEMS: Record<string, ItemKind> = {
     // Its own sprite is a thin diagonal that does not read at slot size.
     iconSprite: "iconos",
     icon: 0,
-    pickupWithKey: true,
     weapon: { grip: { x: 14, y: 39 } },
   },
 };

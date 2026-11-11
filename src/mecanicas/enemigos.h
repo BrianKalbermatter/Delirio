@@ -145,6 +145,8 @@ typedef struct enemigo {
   float valor;         // cuanto coraje necesita este enemigo (cada uno distinto)
   int lado;            // +1 o -1: de que costado rodea al jugador
   int cazando;         // 1: suelto que va por los pasillos hacia el jugador
+  int lo_busca;        // esqueleto o rueda que lo vio: lo sigue por los pasillos si un muro lo tapa...
+  float busca_ms;      // ...hace tanto que lo rodea sin verlo (pasado BUSCA_MS, se da por vencido; tambien acechando)
   float desinteres_ms; // > 0 despues de perderlo de vista: no lo busca
   int es_paseante;     // 1: anda por el laberinto sin buscar a nadie
   TipoEnemigo paseante; // y sale de la hoguera siendo esto

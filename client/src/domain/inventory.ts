@@ -64,6 +64,29 @@ export class Inventory {
     this.version++;
   }
 
+  // Takes up to `count` items out of a slot, as a stack of their own (null
+  // when the slot is empty).
+  take(index: number, count: number): Slot | null {
+    const slot = this.slots[index];
+    if (!slot || count <= 0) return null;
+    const taken = Math.min(count, slot.count);
+    slot.count -= taken;
+    if (slot.count === 0) this.slots[index] = null;
+    this.version++;
+    return { item: slot.item, count: taken };
+  }
+
+  // Lays a stack on a slot that is empty or holds the same item (stacked on
+  // it). False, and nothing changes, when it holds another item.
+  place(index: number, stack: Slot): boolean {
+    const there = this.slots[index];
+    if (there && there.item.id !== stack.item.id) return false;
+    if (there) there.count += stack.count;
+    else this.slots[index] = { item: stack.item, count: stack.count };
+    this.version++;
+    return true;
+  }
+
   select(index: number): void {
     if (index < 0 || index >= this.slots.length || index === this.selected) return;
     this.selected = index;

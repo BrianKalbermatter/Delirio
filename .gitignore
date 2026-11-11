@@ -18,3 +18,6 @@ src/compile_flags.txt
 
 # Python bytecode
 __pycache__/
+
+# IDE settings (machine-specific)
+.idea/

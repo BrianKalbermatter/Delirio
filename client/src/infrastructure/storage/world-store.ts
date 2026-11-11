@@ -14,6 +14,7 @@ export interface SavedItem {
 export interface FloorItem {
   id: string;
   frame?: number; // as it lies (a branch's variant, a stuck spear's direction); none: animated
+  bounce?: boolean; // thrown there: it bounces (see main.ts BOUNCE_MS)
   x: number;
   y: number;
 }

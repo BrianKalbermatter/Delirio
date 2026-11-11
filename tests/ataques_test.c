@@ -163,6 +163,65 @@ static void espartano_pega(void){
   ver(j.entidad.vida == 0, "el golpe lastima");
 }
 
+// Dos celdas vecinas con un muro en el medio, a `min`..`max` celdas de camino
+// una de la otra (dando la vuelta). Devuelve 1 si encontro.
+static int celdas_tapadas(int min, int max, Direccion *a, Direccion *b){
+  for (int f = 1; f < LAB_MAX_CELDAS - 1; f++){
+    for (int c = 1; c < LAB_MAX_CELDAS - 1; c++){
+      if (en_plaza(c * LAB_CELDA, f * LAB_CELDA) || hay_paso(&lab, c, f, 1, 0)) continue;
+      Direccion p = centro_de_celda(c, f), q = centro_de_celda(c + 1, f);
+      int pc = (int)(p.x / LAB_TILE), pf = (int)(p.y / LAB_TILE);
+      int qc = (int)(q.x / LAB_TILE), qf = (int)(q.y / LAB_TILE);
+      if (!zona_libre(&lab, pc, pf, 2) || !zona_libre(&lab, qc, qf, 2)) continue;
+      trazar_ruta(&e, &lab, q);
+      int pasos = pasos_desde(&e, p);
+      if (pasos < min || pasos > max) continue;
+      *a = p;
+      *b = q;
+      return 1;
+    }
+  }
+  return 0;
+}
+
+// Un enemigo de `tipo` acechando en `desde` y el jugador en `jugador`.
+static void preparar_en(TipoEnemigo tipo, Direccion desde, Direccion jugador){
+  preparar(tipo, 0);
+  j.entidad.posicion = jugador;
+  en->entidad.posicion = desde;
+  e.ruta_ms = 0;
+}
+
+static void rodea_muros(void){
+  printf("detras de un muro\n");
+  Direccion a, b;
+  if (!celdas_tapadas(2, BUSCA_CELDAS, &a, &b)){
+    ver(0, "hay dos celdas tapadas cerca de camino");
+    return;
+  }
+  preparar_en(ENEMIGO_ESPARTANO, a, b);
+  ver(AVANZAR_HASTA(distancia(en->entidad.posicion, j.entidad.posicion) < 120.0f, 30000),
+      "el espartano da la vuelta por los pasillos y llega");
+
+  preparar_en(ENEMIGO_ESQUELETO, a, b);
+  en->lo_busca = 1;
+  ver(AVANZAR_HASTA(distancia(en->entidad.posicion, j.entidad.posicion) < 120.0f, 30000),
+      "el esqueleto que lo vio tambien");
+
+  preparar_en(ENEMIGO_ESQUELETO, a, b);
+  en->lo_busca = 0;
+  AVANZAR_HASTA(0, 2000);
+  ver(distancia(en->entidad.posicion, a) < 1.0f, "el que nunca lo vio no lo busca");
+
+  if (!celdas_tapadas(BUSCA_CELDAS + 2, 40, &a, &b)){
+    ver(0, "hay dos celdas tapadas lejos de camino");
+    return;
+  }
+  preparar_en(ENEMIGO_ESPARTANO, a, b);
+  ver(AVANZAR_HASTA(en->animo == ANIMO_DEAMBULA, 200), "lejos de camino se da por vencido");
+  ver(en->desinteres_ms > 0, "y se va sin buscarlo");
+}
+
 int main(void){
   laberinto_iniciar(&lab, 7);
   jugador_iniciar(&j, "Prueba", HABILIDADES_BASE, (Entity){.vidaMAX = VIDA, .vida = VIDA});
@@ -177,6 +236,7 @@ int main(void){
   rueda_manotea();
   fantasma_tira();
   espartano_pega();
+  rodea_muros();
   printf(fallas ? "%d fallas\n" : "todo bien\n", fallas);
   return fallas != 0;
 }

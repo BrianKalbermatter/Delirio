@@ -1,10 +1,13 @@
-"""Every animation of Personaje_3, posed on the model of personaje_3.py.
+"""Every animation of the player, the warrior of personaje_4.py, posed on the
+model of personaje_3.py.
 
 All of them are rendered in the 8 directions, never mirrored, so the weapon
 is always in the RIGHT hand (the black sleeve).
 
 Animations (tag_<direction>, frames x ms):
 - idle 8x~112, walk 10x44, run 10x34
+- mira 16x120, estira 14x110: what it does when left alone a while (looks
+  around, stretches). guardia 8x~112: low and ready with an enemy close by.
 - block 8x~112, block_walk 10x70: covering, the left forearm raised across
   the chest (what that hand holds, a shield, ends up in front of the body),
   standing or edging forward with short, slow steps.
@@ -54,6 +57,7 @@ from PIL import Image
 
 import armas
 import personaje_3 as p3
+import personaje_4
 from personaje_3 import Pose, Model, render, screen, screen_dir, rot_y, rot_x, unit
 
 DIRS = p3.DIRS
@@ -98,6 +102,37 @@ def gait(i, stride, lift, swing, bend, lean, drop, sway, n=10):
         lean=lean, twist=7 * c, crest_sway=sway + 3 * abs(s),
         arm={"r": (swing * c, 18.0, bend), "l": (-swing * c, 18.0, bend)},
         head_pitch=-lean * 0.4)
+
+
+def mira(i, n=16):
+    p = idle(i % 8)
+    p.head_yaw = 48 * math.sin(2 * math.pi * i / n)
+    p.head_pitch -= 6 * abs(math.sin(2 * math.pi * i / n))
+    return p
+
+
+def estira(i, n=14):
+    up = math.sin(math.pi * i / (n - 1))
+    return pose(hip_drop=0.4, lean=-6 * up, head_pitch=-8 * up,
+                arm={"r": (150 * up, 24.0, 8.0), "l": (150 * up, 24.0, 8.0)})
+
+
+# Low and ready: the weapon forward, its point on whatever is coming.
+GUARDIA_ARM = (82.0, 18.0, 38.0)
+GUARDIA_W = 112
+
+
+def guardia(i, n=8):
+    b = math.sin(2 * math.pi * i / n)
+    return pose(hip_drop=2.6 + 0.4 * b, lean=10, foot={"r": (-6.0, 0.0), "l": (6.0, 0.0)},
+                arm={"r": (20 + 2 * b, 24.0, 40.0), "l": (45 + 2 * b, 20.0, 60.0)})
+
+
+def guardia_armed(p):
+    a = copy.deepcopy(p)
+    a.fist = {"r": True, "l": a.fist["l"]}
+    a.arm["r"] = GUARDIA_ARM
+    return a
 
 
 def walk(i):
@@ -199,15 +234,19 @@ PICKUP = [
 # head_pitch. After the release the hand is open (open) and the spear gone.
 THROW_MS = [90, 80, 220, 50, 40, 50, 60, 120, 90, 80, 90]
 THROW_RELEASE = 4
+THROW_HOLD = 2  # the frame held while it charges (THROW_HOLD_MS in the client)
+HOLD_LIFT = 2.5  # up on his feet, reaching
+HELD_UP_MAX = 72  # degrees from straight up
 _STANCE = {"r": (-7.0, 0.0), "l": (8.0, 0.0)}   # back foot behind, front foot ahead
 THROW = [
     dict(arm=(120, 26, 60), twist=-12, lean=4, hip_drop=1.5, w=120, other=(20, 26, 20),
          foot={"r": (-3.0, 0.0), "l": (3.0, 1.5)}, crest=-4),
-    dict(arm=(185, 26, 85), twist=-34, lean=-12, hip_drop=2.5, w=105, other=(70, 22, 10),
+    dict(arm=(165, 22, 40), twist=-20, lean=-8, hip_drop=2.5, w=112, up=True, other=(70, 22, 10),
          foot=_STANCE, root=(-2.0, 0.0, 0.0), crest=-12, head=-6),
-    dict(arm=(215, 30, 100), twist=-48, lean=-24, hip_drop=3.5, w=100, other=(95, 18, 0),
-         foot=_STANCE, root=(-3.5, 0.0, 0.0), crest=-18, head=-10),
-    dict(arm=(170, 20, 45), twist=-8, lean=0, hip_drop=2.5, w=96, other=(60, 22, 10),
+    # Held here while it charges: the spear up over the head, the point ahead
+    dict(arm=(176, 8, 2), twist=-8, lean=-7, hip_drop=0.5, w=98, up=True, other=(95, 18, 0),
+         foot={"r": (-7.0, -HOLD_LIFT), "l": (8.0, -HOLD_LIFT)}, root=(-2.5, 0.0, HOLD_LIFT), crest=-18, head=-10),
+    dict(arm=(170, 20, 45), twist=-8, lean=0, hip_drop=2.5, w=96, up=True, other=(60, 22, 10),
          foot=_STANCE, root=(0.0, 0.0, 0.0), crest=6, smear=True),
     dict(arm=(105, 14, 5), twist=32, lean=24, hip_drop=3.0, w=92, other=(-30, 30, 20),
          foot=_STANCE, root=(4.0, 0.0, 0.0), crest=20, head=6, open=True, gone=True),
@@ -311,7 +350,13 @@ def edge_clockwise(model, w, side="r"):
     return float(move @ cw) >= 0
 
 
-def fist(img, at, color=p3.BLACK):
+def held_up(angle):
+    """A weapon is drawn at its whole length, even pointing at the camera: raised,
+    it stays over the head instead of going down across the screen."""
+    return max(-HELD_UP_MAX, min(HELD_UP_MAX, angle))
+
+
+def fist(img, at, color=(0x6A, 0x2C, 0x2C)):
     px = img.load()
     for dx, dy in ((0, 0), (-1, 0), (0, -1), (-1, -1), (1, 0)):
         x, y = int(at[0]) + dx, int(at[1]) + dy
@@ -355,7 +400,8 @@ def weapon_frames(weapon, models, plan, floor_at=None):
                 arm = math.hypot(hx - sx, hy - sy)
                 armas.smear(layer, (int(sx) + ox, int(sy) + oy), min(a0, a1), max(a0, a1),
                             arm * 0.8, arm + weapon.reach * 0.9, step["smear"] == "fade")
-            weapon.paste(layer, hand, screen_angle(weapon_dir(model, w)), carry=not edge_clockwise(model, w))
+            angle = screen_angle(weapon_dir(model, w))
+            weapon.paste(layer, hand, held_up(angle) if step.get("up") else angle, carry=not edge_clockwise(model, w))
             fist(layer, hand)
         prev_w = step.get("w", prev_w)
     return fronts, backs
@@ -528,21 +574,21 @@ def left_versions(d, bare, armed, keep_arm=False):
     return img_l, img_both, model_l
 
 
-def loop(sheet, name, poses, ms, carry=True, keep_left=False):
-    for d in DIRS:
+def loop(sheet, name, poses, ms, carry=True, keep_left=False, dirs=DIRS, armed_as=armed_version, w=CARRY_W):
+    for d in dirs:
         free, armed, models = [], [], []
         armed_l, armed_both, models_l = [], [], []
         for p in poses:
             free.append(p3.draw(d, p)[0])
-            img, model = p3.draw(d, armed_version(p) if carry else p)
+            img, model = p3.draw(d, armed_as(p) if carry else p)
             armed.append(img)
             models.append(model)
             if carry:
-                img_l, img_both, model_l = left_versions(d, p, armed_version(p), keep_left)
+                img_l, img_both, model_l = left_versions(d, p, armed_as(p), keep_left)
                 armed_l.append(img_l)
                 armed_both.append(img_both)
                 models_l.append(model_l)
-        steps = [{"w": CARRY_W} if carry else None] * len(poses)
+        steps = [{"w": w} if carry else None] * len(poses)
         left = (armed_l, armed_both, models_l, steps) if carry else None
         sheet.add(f"{name}_{d}", free, armed, models, steps, list(ms), left)
 
@@ -567,7 +613,57 @@ def weapon_animation(sheet, name, plan, ms, legs):
         sheet.add(f"{name}_{d}", free, armed, models, list(plan), list(ms), (armed_l, armed_both, models_l, carry))
 
 
+def spear_tip(sheet, fronts, backs):
+    """The point of the spear held over the head while it charges, per direction,
+    in px from the feet (x right, y down): where the client flashes it ready. Its
+    last pixel in the overlay, ahead of the hand."""
+    tips = {}
+    for d in DIRS:
+        i = next(a for tag, a, _ in sheet.tags if tag == f"throw_{d}") + THROW_HOLD
+        model = sheet.models[i]
+        hand = np.array(screen(model.world(model.hand_r))[0]) + FX_OFFSET
+        angle = math.radians(held_up(screen_angle(weapon_dir(model, THROW[THROW_HOLD]["w"]))))
+        along = (math.sin(angle), -math.cos(angle))
+        pixels = np.maximum(np.asarray(fronts[i])[..., 3], np.asarray(backs[i])[..., 3])
+        ys, xs = np.nonzero(pixels)
+        k = int(np.argmax((xs - hand[0]) * along[0] + (ys - hand[1]) * along[1]))
+        tips[d] = [int(xs[k]) - FX_OFFSET[0] - p3.CX, int(ys[k]) - FX_OFFSET[1] - p3.FLOOR]
+    return tips
+
+
+def spear_preview(sheet, fronts, backs, tips, public, frames_dir):
+    """Personaje_4_Lanza_preview.aseprite: the charged spear with its flash, in every
+    direction, as the game shows it (carga_<direction>)."""
+    star_img = Image.open(f"{public}/sprites/lanza_brillo.png").convert("RGBA")
+    star_data = json.load(open(f"{public}/sprites/lanza_brillo.json"))
+    os.makedirs(frames_dir, exist_ok=True)
+    frames, tags = [], []
+    for d in DIRS:
+        i = next(a for tag, a, _ in sheet.tags if tag == f"throw_{d}") + THROW_HOLD
+        start = len(frames)
+        for f in star_data["frames"]:
+            cell = backs[i].copy()
+            cell.alpha_composite(sheet.armed[i], FX_OFFSET)
+            cell.alpha_composite(fronts[i])
+            r, at = f["frame"], f["spriteSourceSize"]
+            star = star_img.crop((r["x"], r["y"], r["x"] + r["w"], r["y"] + r["h"]))
+            middle = f["sourceSize"]["w"] // 2
+            x = FX_OFFSET[0] + p3.CX + tips[d][0] - middle + at["x"]
+            y = FX_OFFSET[1] + p3.FLOOR + tips[d][1] - middle + at["y"]
+            cell.paste(star, (x, y), star)
+            frames.append((cell, f["duration"]))
+        tags.append((f"carga_{d}", start, len(frames) - 1))
+    for n, (cell, _) in enumerate(frames):
+        cell.save(f"{frames_dir}/armado_{n}.png")
+        Image.new("RGBA", cell.size).save(f"{frames_dir}/libre_{n}.png")
+    with open(f"{frames_dir}/durations.txt", "w") as f:
+        f.writelines(f"{ms}\n" for _, ms in frames)
+    with open(f"{frames_dir}/tags.txt", "w") as f:
+        f.writelines(f"{n} {a} {b}\n" for n, a, b in tags)
+
+
 def main(weapon_dir_path, public, frames_dir):
+    p3.MODEL = personaje_4.Warrior
     sheet = Sheet()
     # The planted foot slides back 2 x stride in half a cycle, close to the
     # speed the body moves at: walk 17 px / 220 ms = 77 px/s (C: 110), run
@@ -576,6 +672,10 @@ def main(weapon_dir_path, public, frames_dir):
     loop(sheet, "idle", [idle(i) for i in range(8)], [113, 112] * 4)
     loop(sheet, "walk", [walk(i) for i in range(10)], [44] * 10)
     loop(sheet, "run", [run(i) for i in range(10)], [34] * 10)
+    loop(sheet, "mira", [mira(i) for i in range(16)], [120] * 16)
+    loop(sheet, "estira", [estira(i) for i in range(14)], [110] * 14)
+    loop(sheet, "guardia", [guardia(i) for i in range(8)], [113, 112] * 4,
+         armed_as=guardia_armed, w=GUARDIA_W)
     loop(sheet, "block", [block(i) for i in range(8)], [113, 112] * 4, keep_left=True)
     loop(sheet, "block_walk", [block_walk(i) for i in range(10)], [70] * 10, keep_left=True)
     loop(sheet, "jump", [jump(i) for i in range(len(JUMP))], JUMP_MS)
@@ -609,7 +709,8 @@ def main(weapon_dir_path, public, frames_dir):
                                  f"personaje_3_{suffix}")
 
     for spec in armas.WEAPONS:
-        weapon = armas.Weapon(spec, f"{weapon_dir_path}/{spec['id']}.png")
+        path = f"{weapon_dir_path}/{spec['id']}.png"
+        weapon = armas.Weapon({**spec, "scale": spec.get("held_scale", spec["scale"])}, path)
         fronts, backs = [], []
         for tag, a, b in sheet.tags:
             f, bk = weapon_frames(weapon, sheet.models[a:b + 1], sheet.steps[a:b + 1], floor.get(tag))
@@ -620,7 +721,12 @@ def main(weapon_dir_path, public, frames_dir):
                                ("fx_izq_atras", left_back)):
             armas.write_packed_sheet(f"{public}/sprites/{weapon.id}_{suffix}", frames, sheet.ms, sheet.tags,
                                      f"{weapon.id}_{suffix}")
-        armas.item_sheet(weapon, f"{public}/assets/{weapon.id}", spec["angle"])
+        armas.item_sheet(armas.Weapon(spec, path), f"{public}/assets/{weapon.id}", spec["angle"])
+        if weapon.id == "lanza":
+            with open(f"{public}/sprites/lanza_punta.json", "w") as f:
+                tips = spear_tip(sheet, fronts, backs)
+                json.dump(tips, f)
+            spear_preview(sheet, fronts, backs, tips, public, f"{frames_dir}/lanza")
 
     # Slam dirt, per direction, from where the fists hit the floor.
     dirt_front, dirt_back, dirt_tags = [], [], []
