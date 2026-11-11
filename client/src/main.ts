@@ -88,6 +88,8 @@ import { MapBook } from "./infrastructure/ui/map-book";
 import { type Mark, Minimap, playerHead } from "./infrastructure/ui/minimap";
 import { ShrineMenu } from "./infrastructure/ui/shrine-menu";
 import { PauseMenu } from "./infrastructure/ui/pause-menu";
+import { GroundCover, WEATHER_KINDS, Weather, type WeatherKind, type WeatherNow } from "./domain/weather";
+import { Front, WeatherAir, WeatherGround, WeatherSky, type View as SkyView } from "./infrastructure/render/weather";
 import {
   ABILITY,
   BOSS_NAME,
@@ -138,6 +140,19 @@ const DROP_HOP = 16; // px of the hop's peak
 // Something thrown on the floor (dropped, loot, a felled tree's logs) keeps
 // bouncing softly where it lies, so it is not missed: a hop and a smaller one
 // after it, every BOUNCE_EVERY_MS.
+// Weather.
+const OVERCAST_DIM = 0.35; // share of the daylight a fully overcast sky takes
+const THUNDER_SHAKE_MS = 500;
+const THUNDER_SHAKE_PX = 1.5;
+const WINDY = 0.95; // wind from which the log says it picks up
+const WEATHER_SAYS: Record<WeatherKind, string> = {
+  clear: "The clouds go by: the sun comes out.",
+  cloudy: "Clouds cover the sky.",
+  rain: "It starts to rain.",
+  storm: "A storm breaks.",
+  snow: "It starts to snow.",
+  ash: "Ash falls from the sky.",
+};
 const BOUNCE_EVERY_MS = 2200;
 const BOUNCE_MS = 800;
 const BOUNCE_PX = 3;
@@ -699,7 +714,7 @@ const spectreViews = new SpectreViews(standing, {
 });
 const bonfireViews = new BonfireViews(bonfireSheet, standing);
 const shrineViews = new ShrineViews(shrines, shrineSheet, standing, game.maze, savedWorld?.shrines ?? []);
-const boneField = new BoneField(seed, skeletonSheet, map, baseSpawn);
+const boneField = new BoneField(seed, skeletonSheet, map, baseSpawn, square);
 boneField.update();
 boneField.placeForest(square, game.addForestBones);
 const targetMarker = new TargetMarker();
@@ -710,13 +725,40 @@ const focusRing = new Graphics();
 const blood = new Blood();
 // The dust kicked up walking, the player's and the enemies'.
 const dust = new Dust();
+// The weather (domain/weather.ts): drawn on the floor, in the air and in the
+// sky. `?weather=rain` in the address forces one (`?weather=rain,clear`: one
+// after the other, a spell each, to see the fronts go by).
+const weather = new Weather(seed);
+const forcedWeather = (new URLSearchParams(location.search).get("weather") ?? "")
+  .split(",")
+  .filter((k): k is WeatherKind => (WEATHER_KINDS as readonly string[]).includes(k));
+weather.forced = forcedWeather;
+const groundCover = new GroundCover();
+groundCover.set(savedWorld?.weather);
+// `&cover=0.8` with it: the floor already covered that much (to look at it).
+const forcedCover = Number(new URLSearchParams(location.search).get("cover"));
+if (forcedCover > 0) {
+  groundCover.set({
+    wet: forcedWeather.some((k) => k === "rain" || k === "storm") ? forcedCover : 0,
+    snow: forcedWeather.includes("snow") ? forcedCover : 0,
+    ash: forcedWeather.includes("ash") ? forcedCover : 0,
+  });
+}
+const weatherFront = new Front();
+const weatherGround = new WeatherGround();
+const weatherAir = new WeatherAir();
+const weatherSky = new WeatherSky(() => camera.shake(THUNDER_SHAKE_MS, THUNDER_SHAKE_PX));
+let weatherNow: WeatherNow = weather.at(game.clockMs(), game.calendar().month);
+let weatherSaid: WeatherKind | null = null;
+let windSaid = false;
 // The pit lies flat on the floor: nothing can stand on it, so it never hides
 // anyone.
 const pit = new Sprite(Texture.from(pitImage));
 pit.position.set(pitBox.x, pitBox.y);
 pit.setSize(pitBox.w, pitBox.h);
-ground.addChild(maze.floor, pit, meadowGround, treeViews.ground, stumpViews.ground, boneField.view, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
+ground.addChild(maze.floor, pit, meadowGround, treeViews.ground, stumpViews.ground, weatherGround.view, boneField.view, blood.floor, dust.view, targetMarker.view, focusRing, sunShadow, jumpShadow);
 standing.addChild(blood.air, airPuff);
+world.addChild(weatherAir.view); // over everything standing
 const forestGloom = new ForestGloom(square.forest, canvas.width, canvas.height);
 const lighting = new Lighting(canvas.width, canvas.height);
 const keyPrompt = createKeyPrompt();
@@ -731,7 +773,7 @@ const hud = new Hud();
 const levelWave = new LevelWave(scene, canvas.width, canvas.height);
 const levelAura = new LevelAura(levelAuraBehindSheet, levelAuraFrontSheet);
 standing.addChild(levelAura.behind);
-scene.addChild(forestGloom.view, lighting.view, bonfireViews.light, shrineViews.light, torchGlows.rightHand.view, torchGlows.leftHand.view, playerGlow.view, levelAura.front);
+scene.addChild(weatherSky.veil, weatherSky.sunlight, forestGloom.view, lighting.view, bonfireViews.light, shrineViews.light, torchGlows.rightHand.view, torchGlows.leftHand.view, playerGlow.view, levelAura.front, weatherSky.flash);
 app.stage.addChild(
   playerBar.view,
   keyPrompt,
@@ -968,6 +1010,7 @@ function update(dtMs: number): void {
   enemyAnimMs += dtMs; // drawn in draw(), also while paused
   blood.update(dtMs);
   kickUpDust(dtMs);
+  updateWeather(dtMs);
   // Enemies that just died leave their loot.
   for (const enemy of game.enemies()) {
     const alive = STATE[enemy.state] !== "MUERTO";
@@ -1764,6 +1807,7 @@ function snapshotWorld(): SavedWorld {
     bonfiresOut: game.bonfiresOut(),
     rocks: { broken: rockField.brokenIds, loose: LOOSE_VERSION },
     felledTrees: treeViews.felledIds,
+    weather: groundCover.saved,
     shrines: shrineViews.awakeIds,
     discovered: minimap.foundKeys,
     structures: structures.map((s) => ({ id: s.item.id, x: s.x, y: s.y })),
@@ -1859,7 +1903,14 @@ function draw(): void {
   const [dirX, dirY] = vectorOf(player.facing);
   const [lightX, lightY] = worldToScreen(player.x, playerCenterY());
   forestGloom.update(-world.x, -world.y, performance.now());
-  lighting.setDaylight(game.clock().daylight);
+  const daylight = game.clock().daylight;
+  const sky = weatherView();
+  weatherFront.set(weatherNow, sky, performance.now());
+  weatherGround.show(groundCover, weatherNow, weatherFront, daylight, sky, performance.now());
+  weatherSky.show(weatherNow, weatherFront, daylight, sky);
+  weatherAir.draw();
+  // The clouds take some of the daylight.
+  lighting.setDaylight(daylight * (1 - weatherNow.overcast * OVERCAST_DIM));
   // A torch in either hand widens the light, flickering.
   const torchLight = equipment.items.find((i) => i.light)?.light;
   const flicker = torchFlicker(performance.now());
@@ -1889,6 +1940,29 @@ function draw(): void {
   cursor.setShape(book.isOpen && mouse.isOver(book.element) ? (mouse.rightHeld ? "eraser" : "pencil") : "arrow");
   cursor.update(mouse.locked, mouse.x, mouse.y);
   app.render();
+}
+
+// What the camera sees, world px.
+function weatherView(): SkyView {
+  return { left: -world.x, top: -world.y, width: canvas.width, height: canvas.height };
+}
+
+// The weather moves on with the game clock; what falls piles up on the floor.
+function updateWeather(dtMs: number): void {
+  weatherNow = weather.at(game.clockMs(), game.calendar().month);
+  const daylight = game.clock().daylight;
+  groundCover.update(dtMs, weatherNow, daylight);
+  weatherGround.update(dtMs, weatherNow);
+  weatherFront.set(weatherNow, weatherView(), performance.now());
+  weatherAir.update(dtMs, weatherNow, weatherFront, groundCover, weatherView(), daylight);
+  weatherSky.update(dtMs, weatherNow);
+  if (weatherNow.kind !== weatherSaid) {
+    if (weatherSaid !== null) gameLog.log(WEATHER_SAYS[weatherNow.kind]);
+    weatherSaid = weatherNow.kind;
+  }
+  const windy = weatherNow.wind > WINDY;
+  if (windy && !windSaid) gameLog.log("The wind picks up.");
+  windSaid = windy ? true : weatherNow.wind < WINDY * 0.7 ? false : windSaid;
 }
 
 function showControlsHint(root: HTMLElement): void {
@@ -1932,6 +2006,14 @@ function showCoreDebug(core: ReturnType<typeof coreState>): void {
     ["expansiones", String(clock.expansions)],
     ["proxima", clock.nextExpansionMs < 0 ? "no crece mas" : formatMs(clock.nextExpansionMs)],
     ["semilla", String(seed)],
+    [
+      "clima",
+      `${weatherNow.kind} · viento ${weatherNow.wind.toFixed(2)} · frente ${Math.round(weatherNow.front * 100)}%`,
+    ],
+    [
+      "suelo",
+      `charcos ${groundCover.wet.toFixed(2)} · nieve ${groundCover.snow.toFixed(2)} · ceniza ${groundCover.ash.toFixed(2)}`,
+    ],
   ]);
 }
 

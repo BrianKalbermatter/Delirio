@@ -221,7 +221,7 @@ each out of a fire of its own. They look for nobody until they see you.
 **One hit kills you.** With armor on you take three. Covering with the shield
 in hand sends a spirit's clot back to the nearest enemy, hurting it.
 
-The maze is full of heaps of bones, of those who came before. Most are just
+The maze is full of heaps of bones, of those who came before (the square is kept clear, but for its dark forest). Most are just
 that; some get up when you walk past.
 
 - **Ghosts** float and have no fear: they circle you, raise an arm and let
@@ -326,6 +326,38 @@ For now it is only the logic (`src/mecanicas/calendario.c`), shown in the debug
 panel. `game.calendar()` gives the date, with the `luminosity` the maze will use
 at night; the clock's sprite goes in `Hud.showMoonClock`. To see the 30 days of
 a month and run the tests: `bash tests/calendario.sh [month, 0 to 5]`.
+
+## The weather
+
+Every game has its own sky, random but drawn from the maze's seed, so it is the
+same after reloading. The clock is cut into spells of 75 seconds and each one
+picks its weather by the month: clear and windy in the summer months (Lapatos,
+Dipsios), rain and storms in Klareon and the winter, snow in Zeus and Deukos,
+and now and then ash from the island that burns. A spell often keeps the
+weather of the one before, so a rain can last a long while.
+
+- **Sunny**: warm light, motes of dust shining in the air, a few cloud shadows
+  going by. The sun dries and melts what is on the ground faster.
+- **Cloudy**: big cloud shadows crossing the floor with the wind.
+- **Rain and storm**: streaks leaning with the wind, splashes, the floor gets
+  wet and puddles grow in its low spots. A storm throws lightning, and the
+  thunder shakes the screen.
+- **Snow** and **ash** fall slowly and pile up in patches until they cover
+  everything; the wind slides them along the floor.
+- **Wind**: pale breezes go by, and a strong one lifts leaves, dust, snow or
+  ash off the ground.
+
+When the weather changes the wind picks up and a **front** crosses the screen
+the way it blows: a strip of cloud with a wavy edge, the new sky behind it (the
+sun coming in, or the clouds and the rain closing in) and the old one ahead.
+What lay on the ground stays, and slowly goes: puddles dry, snow melts (rain
+melts it faster), ash is blown off or washed away by the rain. It is kept in
+the save.
+
+To look at one: `?weather=snow&cover=0.8` in the address (the floor already
+that covered), or `?weather=rain,clear` to see one front after the other. The
+logic is in `client/src/domain/weather.ts`; the drawing in
+`client/src/infrastructure/render/weather.ts`.
 
 ## Saving
 

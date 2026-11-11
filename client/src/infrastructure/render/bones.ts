@@ -1,5 +1,5 @@
 // The dead of the maze: heaps of bones of those who came before, flat on the
-// floor of its cells and of the square. Scenery, placed by seed as the maze is
+// floor of its cells (not the square's: the base is kept clear). Scenery, placed by seed as the maze is
 // carved. Some of the heaps that look like these do get up: those are C's
 // (the lying skeletons of src/mecanicas/enemigos.c).
 import { Container, Sprite } from "pixi.js";
@@ -30,6 +30,7 @@ export class BoneField {
     private readonly sheet: SpriteSheet,
     private readonly map: TileMap,
     private readonly spawn: { x: number; y: number },
+    private readonly square: Square,
   ) {}
 
   // Heaps in the forest of the square, told to `add`.
@@ -67,7 +68,7 @@ export class BoneField {
           const y = (cy * CELL + WALL) * TILE + 32 + rng() * (CORRIDOR * TILE - 48);
           const frame = frames[Math.floor(rng() * frames.length)];
           const flipped = rng() < 0.5;
-          if (!this.fits(x, y)) continue;
+          if (!this.fits(x, y) || this.square.has(Math.floor(x / TILE), Math.floor(y / TILE))) continue;
           const sprite = new Sprite();
           placeFrame(sprite, frame, x, y);
           if (flipped) {

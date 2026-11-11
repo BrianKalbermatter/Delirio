@@ -3,6 +3,8 @@
 // went, so it grows the same), where the player stood, what it carried and
 // what lay on the floor. Reloading the page picks the game up from there.
 
+import type { Cover } from "../../domain/weather";
+
 const KEY_PREFIX = "delirio.world.";
 const VERSION = 1;
 
@@ -30,6 +32,8 @@ export interface SavedWorld {
   rocks?: { broken: number[]; loose?: number };
   // The trees cut down (ids from render/tree.ts). Missing in an older save.
   felledTrees?: number[];
+  // What lies on the ground from the weather. Missing in an older save.
+  weather?: Cover;
   // What the player set up (a workbench): item id and foot position.
   structures?: { id: string; x: number; y: number }[];
   shrines?: number[]; // the ones awake (ids from domain/shrines.ts)
@@ -64,6 +68,7 @@ export function loadWorld(characterId: string): SavedWorld | null {
         ? { broken: saved.rocks.broken.filter(Number.isInteger), loose: Number(saved.rocks.loose) || 1 }
         : undefined,
       felledTrees: Array.isArray(saved.felledTrees) ? saved.felledTrees.filter(Number.isInteger) : [],
+      weather: saved.weather && typeof saved.weather === "object" ? saved.weather : undefined,
       shrines: Array.isArray(saved.shrines) ? saved.shrines.filter(Number.isInteger) : [],
       discovered: Array.isArray(saved.discovered) ? saved.discovered.filter((k) => typeof k === "string") : [],
       structures: Array.isArray(saved.structures)
